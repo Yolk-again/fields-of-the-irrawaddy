@@ -1,0 +1,492 @@
+[
+  {
+    "path": "agriculture/chili_basket.png",
+    "width": 72,
+    "height": 60,
+    "mode": "RGBA",
+    "bytes": 11344
+  },
+  {
+    "path": "agriculture/green_bean_basket.png",
+    "width": 78,
+    "height": 55,
+    "mode": "RGBA",
+    "bytes": 11223
+  },
+  {
+    "path": "agriculture/haystack.png",
+    "width": 90,
+    "height": 72,
+    "mode": "RGBA",
+    "bytes": 16826
+  },
+  {
+    "path": "agriculture/rice_bowl.png",
+    "width": 67,
+    "height": 58,
+    "mode": "RGBA",
+    "bytes": 10296
+  },
+  {
+    "path": "agriculture/rice_bundle.png",
+    "width": 78,
+    "height": 69,
+    "mode": "RGBA",
+    "bytes": 13875
+  },
+  {
+    "path": "agriculture/scarecrow.png",
+    "width": 540,
+    "height": 660,
+    "mode": "RGBA",
+    "bytes": 51878
+  },
+  {
+    "path": "agriculture/tomato_basket.png",
+    "width": 86,
+    "height": 61,
+    "mode": "RGBA",
+    "bytes": 13549
+  },
+  {
+    "path": "agriculture/young_rice_plant_01.png",
+    "width": 50,
+    "height": 59,
+    "mode": "RGBA",
+    "bytes": 7203
+  },
+  {
+    "path": "agriculture/young_rice_plant_02.png",
+    "width": 39,
+    "height": 51,
+    "mode": "RGBA",
+    "bytes": 4984
+  },
+  {
+    "path": "agriculture/young_rice_plant_03.png",
+    "width": 30,
+    "height": 48,
+    "mode": "RGBA",
+    "bytes": 3733
+  },
+  {
+    "path": "animals/chicken.png",
+    "width": 384,
+    "height": 336,
+    "mode": "RGBA",
+    "bytes": 18352
+  },
+  {
+    "path": "animals/duck.png",
+    "width": 420,
+    "height": 336,
+    "mode": "RGBA",
+    "bytes": 18125
+  },
+  {
+    "path": "animals/water_buffalo.png",
+    "width": 570,
+    "height": 390,
+    "mode": "RGBA",
+    "bytes": 28092
+  },
+  {
+    "path": "buildings/crafting_workbench.png",
+    "width": 840,
+    "height": 570,
+    "mode": "RGBA",
+    "bytes": 27698
+  },
+  {
+    "path": "buildings/ko_aung_home.png",
+    "width": 151,
+    "height": 136,
+    "mode": "RGBA",
+    "bytes": 44927
+  },
+  {
+    "path": "buildings/ma_thiri_home.png",
+    "width": 158,
+    "height": 132,
+    "mode": "RGBA",
+    "bytes": 45751
+  },
+  {
+    "path": "buildings/market_stall.png",
+    "width": 900,
+    "height": 720,
+    "mode": "RGBA",
+    "bytes": 60124
+  },
+  {
+    "path": "buildings/open_barn_01.png",
+    "width": 142,
+    "height": 120,
+    "mode": "RGBA",
+    "bytes": 39131
+  },
+  {
+    "path": "buildings/open_barn_02.png",
+    "width": 111,
+    "height": 114,
+    "mode": "RGBA",
+    "bytes": 28606
+  },
+  {
+    "path": "buildings/player_home.png",
+    "width": 151,
+    "height": 136,
+    "mode": "RGBA",
+    "bytes": 44927
+  },
+  {
+    "path": "buildings/rice_granary.png",
+    "width": 134,
+    "height": 113,
+    "mode": "RGBA",
+    "bytes": 34474
+  },
+  {
+    "path": "buildings/small_shrine.png",
+    "width": 76,
+    "height": 85,
+    "mode": "RGBA",
+    "bytes": 15768
+  },
+  {
+    "path": "buildings/still_house_01.png",
+    "width": 151,
+    "height": 136,
+    "mode": "RGBA",
+    "bytes": 44927
+  },
+  {
+    "path": "buildings/stilt_house_01.png",
+    "width": 151,
+    "height": 136,
+    "mode": "RGBA",
+    "bytes": 44927
+  },
+  {
+    "path": "buildings/stilt_house_02.png",
+    "width": 158,
+    "height": 132,
+    "mode": "RGBA",
+    "bytes": 45751
+  },
+  {
+    "path": "buildings/village_monastery.png",
+    "width": 101,
+    "height": 127,
+    "mode": "RGBA",
+    "bytes": 28077
+  },
+  {
+    "path": "characters/farmer_blue.png",
+    "width": 288,
+    "height": 384,
+    "mode": "RGBA",
+    "bytes": 17572
+  },
+  {
+    "path": "characters/farmer_green.png",
+    "width": 288,
+    "height": 384,
+    "mode": "RGBA",
+    "bytes": 17497
+  },
+  {
+    "path": "characters/farmer_purple.png",
+    "width": 288,
+    "height": 384,
+    "mode": "RGBA",
+    "bytes": 17831
+  },
+  {
+    "path": "characters/farmer_red.png",
+    "width": 288,
+    "height": 384,
+    "mode": "RGBA",
+    "bytes": 17674
+  },
+  {
+    "path": "characters/ko_aung.png",
+    "width": 288,
+    "height": 384,
+    "mode": "RGBA",
+    "bytes": 14138
+  },
+  {
+    "path": "characters/ma_thiri.png",
+    "width": 288,
+    "height": 384,
+    "mode": "RGBA",
+    "bytes": 15884
+  },
+  {
+    "path": "decorations/bamboo_fence_segment.png",
+    "width": 540,
+    "height": 300,
+    "mode": "RGBA",
+    "bytes": 22326
+  },
+  {
+    "path": "decorations/bamboo_planter.png",
+    "width": 384,
+    "height": 384,
+    "mode": "RGBA",
+    "bytes": 27380
+  },
+  {
+    "path": "decorations/flower_bed.png",
+    "width": 122,
+    "height": 63,
+    "mode": "RGBA",
+    "bytes": 20098
+  },
+  {
+    "path": "decorations/irrigation_channel.png",
+    "width": 302,
+    "height": 32,
+    "mode": "RGBA",
+    "bytes": 20286
+  },
+  {
+    "path": "decorations/potted_plants_row.png",
+    "width": 146,
+    "height": 40,
+    "mode": "RGBA",
+    "bytes": 15743
+  },
+  {
+    "path": "decorations/raised_vegetable_bed.png",
+    "width": 92,
+    "height": 38,
+    "mode": "RGBA",
+    "bytes": 8291
+  },
+  {
+    "path": "decorations/village_sign.png",
+    "width": 480,
+    "height": 450,
+    "mode": "RGBA",
+    "bytes": 24996
+  },
+  {
+    "path": "resources/bamboo_bundle.png",
+    "width": 384,
+    "height": 384,
+    "mode": "RGBA",
+    "bytes": 29293
+  },
+  {
+    "path": "resources/coconut.png",
+    "width": 384,
+    "height": 384,
+    "mode": "RGBA",
+    "bytes": 23167
+  },
+  {
+    "path": "resources/herb_bunch.png",
+    "width": 384,
+    "height": 384,
+    "mode": "RGBA",
+    "bytes": 34805
+  },
+  {
+    "path": "resources/wood_bundle.png",
+    "width": 384,
+    "height": 384,
+    "mode": "RGBA",
+    "bytes": 20596
+  },
+  {
+    "path": "terrain/cracked_soil.png",
+    "width": 94,
+    "height": 92,
+    "mode": "RGB",
+    "bytes": 15354
+  },
+  {
+    "path": "terrain/dry_soil.png",
+    "width": 94,
+    "height": 91,
+    "mode": "RGB",
+    "bytes": 13600
+  },
+  {
+    "path": "terrain/field_grass.png",
+    "width": 93,
+    "height": 92,
+    "mode": "RGB",
+    "bytes": 17269
+  },
+  {
+    "path": "terrain/harvested_straw.png",
+    "width": 93,
+    "height": 91,
+    "mode": "RGB",
+    "bytes": 19560
+  },
+  {
+    "path": "terrain/lush_grass.png",
+    "width": 92,
+    "height": 91,
+    "mode": "RGB",
+    "bytes": 15988
+  },
+  {
+    "path": "terrain/muddy_grass.png",
+    "width": 93,
+    "height": 91,
+    "mode": "RGB",
+    "bytes": 15967
+  },
+  {
+    "path": "terrain/plain_grass.png",
+    "width": 92,
+    "height": 91,
+    "mode": "RGB",
+    "bytes": 14281
+  },
+  {
+    "path": "terrain/rice_seedlings.png",
+    "width": 92,
+    "height": 92,
+    "mode": "RGB",
+    "bytes": 16436
+  },
+  {
+    "path": "terrain/riverbank.png",
+    "width": 91,
+    "height": 91,
+    "mode": "RGB",
+    "bytes": 14625
+  },
+  {
+    "path": "terrain/stone_ground.png",
+    "width": 94,
+    "height": 91,
+    "mode": "RGB",
+    "bytes": 21789
+  },
+  {
+    "path": "terrain/village_ground_base.png",
+    "width": 1440,
+    "height": 640,
+    "mode": "RGB",
+    "bytes": 630265
+  },
+  {
+    "path": "terrain/wet_rice_paddy.png",
+    "width": 91,
+    "height": 91,
+    "mode": "RGB",
+    "bytes": 16047
+  },
+  {
+    "path": "terrain/young_crops.png",
+    "width": 91,
+    "height": 92,
+    "mode": "RGB",
+    "bytes": 16223
+  },
+  {
+    "path": "tools/hoe.png",
+    "width": 384,
+    "height": 384,
+    "mode": "RGBA",
+    "bytes": 14343
+  },
+  {
+    "path": "tools/rice_seed_bag.png",
+    "width": 384,
+    "height": 384,
+    "mode": "RGBA",
+    "bytes": 17161
+  },
+  {
+    "path": "tools/sickle.png",
+    "width": 384,
+    "height": 384,
+    "mode": "RGBA",
+    "bytes": 18057
+  },
+  {
+    "path": "tools/watering_can.png",
+    "width": 384,
+    "height": 384,
+    "mode": "RGBA",
+    "bytes": 19280
+  },
+  {
+    "path": "ui/coin.png",
+    "width": 384,
+    "height": 384,
+    "mode": "RGBA",
+    "bytes": 29975
+  },
+  {
+    "path": "vegetation/fruit_tree_large.png",
+    "width": 129,
+    "height": 157,
+    "mode": "RGBA",
+    "bytes": 43329
+  },
+  {
+    "path": "vegetation/fruit_tree_round.png",
+    "width": 106,
+    "height": 154,
+    "mode": "RGBA",
+    "bytes": 37160
+  },
+  {
+    "path": "vegetation/palm_tree_small.png",
+    "width": 74,
+    "height": 80,
+    "mode": "RGBA",
+    "bytes": 14799
+  },
+  {
+    "path": "vegetation/palm_tree_tall.png",
+    "width": 98,
+    "height": 160,
+    "mode": "RGBA",
+    "bytes": 32642
+  },
+  {
+    "path": "water/canal_vertical.png",
+    "width": 119,
+    "height": 260,
+    "mode": "RGBA",
+    "bytes": 53203
+  },
+  {
+    "path": "water/lotus_pond.png",
+    "width": 135,
+    "height": 105,
+    "mode": "RGBA",
+    "bytes": 27375
+  },
+  {
+    "path": "water/river_bend.png",
+    "width": 124,
+    "height": 126,
+    "mode": "RGBA",
+    "bytes": 31423
+  },
+  {
+    "path": "water/stream_section.png",
+    "width": 58,
+    "height": 69,
+    "mode": "RGBA",
+    "bytes": 10662
+  },
+  {
+    "path": "water/wooden_bridge_asset.png",
+    "width": 105,
+    "height": 67,
+    "mode": "RGBA",
+    "bytes": 14824
+  }
+]
