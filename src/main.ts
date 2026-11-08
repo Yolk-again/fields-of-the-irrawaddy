@@ -1,4 +1,3 @@
-
 import Phaser from "phaser";
 import "./style.css";
 import "./game/assets.css";
@@ -12,12 +11,17 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
   width: 640,
   height: 360,
 
-  backgroundColor: "#78a85f",
+  backgroundColor: "#68ad45",
 
+  input: {
+    activePointers: 3
+  },
+
+  // Crisp pixel art: nearest-neighbour sampling, no smoothing, whole-pixel positions.
   render: {
-    pixelArt: false,
-    antialias: true,
-    roundPixels: false
+    pixelArt: true,
+    antialias: false,
+    roundPixels: true
   },
 
   scale: {
@@ -28,4 +32,21 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
   scene: [FarmScene]
 };
 
-new Phaser.Game(gameConfig);
+// Make sure the pixel font is ready before Phaser renders its first Text objects.
+async function boot(): Promise<void> {
+  try {
+    const wait = new Promise<void>(resolve => window.setTimeout(resolve, 2500));
+    await Promise.race([
+      Promise.all([
+        document.fonts.load('12px "Pixelify Sans"'),
+        document.fonts.load('12px "Noto Sans Myanmar"')
+      ]),
+      wait
+    ]);
+  } catch {
+    // fall back to the monospace stack silently
+  }
+  new Phaser.Game(gameConfig);
+}
+
+void boot();

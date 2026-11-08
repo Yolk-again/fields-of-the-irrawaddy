@@ -2,6 +2,7 @@
 import Phaser from "phaser";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
+import { pixelPanel } from "../ui/PixelUI";
 
 interface Villager {
   id: "ma" | "ko";
@@ -13,6 +14,7 @@ interface Villager {
   scheduleKey: string;
   activityKey: string;
   container: Phaser.GameObjects.Container;
+  sprite: Phaser.GameObjects.Sprite;
   nameText: Phaser.GameObjects.Text;
   activityText: Phaser.GameObjects.Text;
   promptText: Phaser.GameObjects.Text;
@@ -89,10 +91,10 @@ export class VillageSystem {
 
   private createHomes(): void {
     this.maHomeLabel = this.createHouse(
-      820, 250, "ma_home_asset", "village.maHome", 132, 118
+      820, 250, "ma_home_asset", "village.maHome", 132, 132
     );
     this.koHomeLabel = this.createHouse(
-      695, 145, "ko_home_asset", "village.koHome", 125, 112
+      695, 145, "ko_home_asset", "village.koHome", 128, 128
     );
   }
 
@@ -101,12 +103,12 @@ export class VillageSystem {
     bottomY: number,
     texture: string,
     labelKey: string,
-    width: number,
+    _width: number,
     height: number
   ): Phaser.GameObjects.Text {
     this.scene.add.image(x, bottomY, texture)
       .setOrigin(0.5, 1)
-      .setDisplaySize(width, height)
+      .setScale(2)
       .setDepth(bottomY);
 
     return this.scene.add.text(
@@ -135,8 +137,9 @@ export class VillageSystem {
     y: number,
     texture: string
   ): void {
-    const shadow = this.scene.add.ellipse(0, 17, 23, 7, 0x30251d, 0.25);
-    const character = this.scene.add.image(0, 0, texture).setDisplaySize(32, 42);
+    const shadow = this.scene.add.ellipse(0, 19, 22, 7, 0x1d3015, 0.38);
+    const sheetKey = texture.replace("_asset", "_sheet");
+    const character = this.scene.add.sprite(0, 22, sheetKey, 0).setOrigin(0.5, 1).setScale(2);
     const container = this.scene.add.container(x, y, [shadow, character]);
     container.setDepth(y + 30);
 
@@ -186,6 +189,7 @@ export class VillageSystem {
       scheduleKey: "",
       activityKey: "",
       container,
+      sprite: character,
       nameText,
       activityText,
       promptText
@@ -212,9 +216,7 @@ export class VillageSystem {
   };
 
   private createClock(): void {
-    const background = this.scene.add.rectangle(520, 85, 190, 31, 0x34271d, 0.96)
-      .setOrigin(0.5).setScrollFactor(0).setDepth(150);
-    background.setStrokeStyle(2, 0xd6b36b);
+    const background = pixelPanel(this.scene, 520, 85, 190, 31).setDepth(150);
 
     this.clockText = this.scene.add.text(520, 85, "", {
       fontFamily: this.language.getFontFamily(),
@@ -230,12 +232,9 @@ export class VillageSystem {
     this.dialoguePanel = this.scene.add.container(0, 0);
     this.dialoguePanel.setScrollFactor(0).setDepth(300).setVisible(false);
 
-    const background = this.scene.add.rectangle(320, 300, 590, 105, 0x34271d, 0.99);
-    background.setStrokeStyle(3, 0xd6b36b);
+    const background = pixelPanel(this.scene, 320, 300, 590, 105, { alpha: 1 });
 
     const border = this.scene.add.graphics();
-    border.lineStyle(1, 0x79382e, 1);
-    border.strokeRect(27, 248, 586, 104);
 
     this.speakerText = this.scene.add.text(48, 258, "", {
       fontFamily: this.language.getFontFamily(),
@@ -262,6 +261,10 @@ export class VillageSystem {
       color: "#e6c47e"
     });
 
+    const continueHitArea = this.scene.add.rectangle(320, 305, 550, 43, 0x79382e, 0.01)
+      .setInteractive({ useHandCursor: true });
+    continueHitArea.on("pointerdown", () => this.nextDialogue());
+
     const closeHitArea = this.scene.add.rectangle(505, 339, 120, 28, 0x79382e, 0.01)
       .setInteractive({ useHandCursor: true });
     closeHitArea.on("pointerdown", this.closeDialogue);
@@ -273,6 +276,7 @@ export class VillageSystem {
       this.dialogueText,
       this.instructionText,
       this.closeText,
+      continueHitArea,
       closeHitArea
     ]);
 
@@ -406,7 +410,11 @@ export class VillageSystem {
     const dx = villager.targetX - villager.x;
     const dy = villager.targetY - villager.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    if (distance < 2) return;
+    if (distance < 2) {
+      villager.sprite.anims.stop();
+      villager.sprite.setFrame(0);
+      return;
+    }
 
     const delta = Math.min(this.scene.game.loop.delta, 50) / 1000;
     const movement = 48 * delta;
@@ -415,6 +423,14 @@ export class VillageSystem {
 
     if (this.canMoveTo(nextX, villager.y)) villager.x = nextX;
     if (this.canMoveTo(villager.x, nextY)) villager.y = nextY;
+
+    const key = villager.sprite.texture.key;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      villager.sprite.setFlipX(dx < 0);
+      villager.sprite.anims.play(`${key}-side`, true);
+    } else {
+      villager.sprite.anims.play(`${key}-${dy < 0 ? "up" : "down"}`, true);
+    }
 
     villager.container.setPosition(villager.x, villager.y);
     villager.container.setDepth(villager.y + 30);
@@ -475,6 +491,20 @@ export class VillageSystem {
 
   isDialogueOpen(): boolean {
     return this.isTalking;
+  }
+
+  mobileTalk(playerX: number, playerY: number): boolean {
+    if (this.isTalking) {
+      this.nextDialogue();
+      return true;
+    }
+
+    if (this.ui.hasActiveModal()) return false;
+    const nearest = this.getNearestVillager(playerX, playerY);
+    if (!nearest) return false;
+
+    this.openDialogue(nearest);
+    return true;
   }
 
   getSaveData() {

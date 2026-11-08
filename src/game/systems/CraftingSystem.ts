@@ -3,6 +3,7 @@ import Phaser from "phaser";
 import { InventorySystem, type ItemType } from "./InventorySystem";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
+import { pixelPanel } from "../ui/PixelUI";
 
 type RecipeCost = Partial<Record<ItemType, number>>;
 
@@ -31,7 +32,7 @@ export class CraftingSystem {
   private promptText!: Phaser.GameObjects.Text;
   private workbenchLabel!: Phaser.GameObjects.Text;
   private titleText!: Phaser.GameObjects.Text;
-  private recipesText!: Phaser.GameObjects.Text;
+  private recipeTexts: Phaser.GameObjects.Text[] = [];
   private materialText!: Phaser.GameObjects.Text;
   private resultText!: Phaser.GameObjects.Text;
   private closeText!: Phaser.GameObjects.Text;
@@ -82,7 +83,7 @@ export class CraftingSystem {
   private createWorkbench(): void {
     this.scene.add.image(this.benchX, 258, "crafting_workbench_asset")
       .setOrigin(0.5, 1)
-      .setDisplaySize(120, 82)
+      .setScale(2)
       .setDepth(258);
 
     this.workbenchLabel = this.scene.add.text(
@@ -137,68 +138,76 @@ export class CraftingSystem {
     this.craftingPanel = this.scene.add.container(0, 0);
     this.craftingPanel.setScrollFactor(0);
 
-    const background = this.scene.add.rectangle(320, 180, 480, 260, 0x34271d, 0.99);
-    background.setStrokeStyle(3, 0xd6b36b);
+    const background = pixelPanel(this.scene, 320, 180, 500, 290, { fill: 0x2d3829, alpha: 1 });
 
-    const border = this.scene.add.graphics();
-    border.lineStyle(2, 0x79382e, 1);
-    border.strokeRect(80, 50, 480, 260);
+    const divider = this.scene.add.rectangle(320, 84, 450, 2, 0x9b7047, 0.8);
 
-    this.titleText = this.scene.add.text(320, 68, "", {
+    this.titleText = this.scene.add.text(320, 55, "", {
       fontFamily: this.language.getFontFamily(),
       fontSize: "18px",
-      color: "#e6c47e"
+      color: "#e6c47e",
+      fontStyle: "bold"
     }).setOrigin(0.5);
 
-    const workbenchPreview = this.scene.add.image(320, 119, "crafting_workbench_asset")
-      .setDisplaySize(100, 68);
+    const workbenchPreview = this.scene.add.image(320, 113, "crafting_workbench_asset")
+      .setScale(1);
 
-    this.recipesText = this.scene.add.text(105, 160, "", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
-      color: "#f5e8c6",
-      lineSpacing: 6,
-      wordWrap: { width: 430 }
+    this.craftingPanel.add([background, divider, this.titleText, workbenchPreview]);
+
+    const recipeRows = [160, 188, 216];
+    recipeRows.forEach((y, index) => {
+      const card = this.scene.add.rectangle(320, y, 430, 24, index === 1 ? 0x493629 : 0x40513a, 1);
+      card.setStrokeStyle(1, 0x9b7047);
+      card.setInteractive({ useHandCursor: true });
+      card.on("pointerdown", () => this.craftItem(index + 1));
+      card.on("pointerover", () => card.setFillStyle(0x58734b, 1));
+      card.on("pointerout", () => card.setFillStyle(index === 1 ? 0x493629 : 0x40513a, 1));
+
+      const recipeText = this.scene.add.text(115, y, "", {
+        fontFamily: this.language.getFontFamily(),
+        fontSize: "9px",
+        color: "#fff1cf",
+        fontStyle: "bold"
+      }).setOrigin(0, 0.5);
+
+      this.recipeTexts.push(recipeText);
+      this.craftingPanel.add([card, recipeText]);
     });
 
-    this.materialText = this.scene.add.text(105, 228, "", {
+    this.materialText = this.scene.add.text(105, 239, "", {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "9px",
+      fontSize: "8px",
       color: "#d6b36b",
       lineSpacing: 4,
       wordWrap: { width: 430 }
     });
 
-    this.resultText = this.scene.add.text(320, 278, "", {
+    this.resultText = this.scene.add.text(320, 288, "", {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
+      fontSize: "9px",
       color: "#d7e6c5",
       align: "center",
       wordWrap: { width: 420 }
     }).setOrigin(0.5);
 
-    this.closeText = this.scene.add.text(320, 300, "", {
+    const closeBackground = this.scene.add.rectangle(320, 316, 145, 22, 0x79382e, 1);
+    closeBackground.setStrokeStyle(1, 0xd6b36b);
+    closeBackground.setInteractive({ useHandCursor: true });
+    closeBackground.on("pointerdown", this.closeCrafting);
+
+    this.closeText = this.scene.add.text(320, 316, "", {
       fontFamily: this.language.getFontFamily(),
       fontSize: "9px",
-      color: "#e6c47e"
+      color: "#fff1cf",
+      fontStyle: "bold"
     }).setOrigin(0.5);
 
-    const closeHitArea = this.scene.add.rectangle(320, 300, 150, 24, 0x79382e, 0.01)
-      .setInteractive({ useHandCursor: true });
-    closeHitArea.on("pointerdown", this.closeCrafting);
-
     this.craftingPanel.add([
-      background,
-      border,
-      this.titleText,
-      workbenchPreview,
-      this.recipesText,
       this.materialText,
       this.resultText,
-      this.closeText,
-      closeHitArea
+      closeBackground,
+      this.closeText
     ]);
-
     this.updateInterface();
   }
 
@@ -206,11 +215,10 @@ export class CraftingSystem {
     const font = this.language.getFontFamily();
 
     this.titleText.setText(this.language.t("craft.title"));
-    this.recipesText.setText([
-      this.language.t("craft.recipe1"),
-      this.language.t("craft.recipe2"),
-      this.language.t("craft.recipe3")
-    ].join("\n\n"));
+    ["craft.recipe1", "craft.recipe2", "craft.recipe3"].forEach((key, index) => {
+      this.recipeTexts[index].setText(this.language.t(key));
+      this.recipeTexts[index].setFontFamily(font);
+    });
 
     this.closeText.setText(this.language.t("craft.close"));
     this.promptText.setText(this.language.t("craft.prompt"));
@@ -222,19 +230,20 @@ export class CraftingSystem {
     const herbs = this.language.t("inventory.herbs");
     const coconut = this.language.t("inventory.coconut");
 
+    const materialsLabel = this.language.t("craft.materials");
+    const craftedLabel = this.language.t("craft.built");
+    const fencesLabel = this.language.t("craft.fences");
+    const plantersLabel = this.language.t("craft.planters");
+    const signsLabel = this.language.t("craft.signs");
     this.materialText.setText(
-      `${wood}: ${this.inventory.getItemCount("Wood")}   ` +
-      `${bamboo}: ${this.inventory.getItemCount("Bamboo")}\n` +
-      `${herbs}: ${this.inventory.getItemCount("Herbs")}   ` +
-      `${coconut}: ${this.inventory.getItemCount("Coconut")}\n` +
-      `FENCES: ${this.crafted.woodenFence}   ` +
-      `PLANTERS: ${this.crafted.bambooPlanter}   ` +
-      `SIGNS: ${this.crafted.villageSign}`
+      `${materialsLabel}  ${wood}: ${this.inventory.getItemCount("Wood")}   ` +
+      `${bamboo}: ${this.inventory.getItemCount("Bamboo")}   ` +
+      `${herbs}: ${this.inventory.getItemCount("Herbs")}   ${coconut}: ${this.inventory.getItemCount("Coconut")}\n` +
+      `${craftedLabel}  ${fencesLabel}: ${this.crafted.woodenFence}/5   ${plantersLabel}: ${this.crafted.bambooPlanter}/3   ${signsLabel}: ${this.crafted.villageSign}/1`
     );
 
     for (const text of [
       this.titleText,
-      this.recipesText,
       this.materialText,
       this.resultText,
       this.closeText,
@@ -286,7 +295,7 @@ export class CraftingSystem {
   private createFence(x: number, y: number): void {
     const fence = this.scene.add.image(x, y, "bamboo_fence_asset")
       .setOrigin(0.5, 1)
-      .setDisplaySize(42, 28)
+      .setScale(2)
       .setDepth(y);
     this.craftedObjects.push(fence);
   }
@@ -309,7 +318,7 @@ export class CraftingSystem {
 
   private createPlanter(x: number, y: number): void {
     const planter = this.scene.add.image(x, y, "bamboo_planter_asset")
-      .setDisplaySize(34, 34)
+      .setScale(2)
       .setDepth(y);
     this.craftedObjects.push(planter);
   }
@@ -333,7 +342,7 @@ export class CraftingSystem {
   private createVillageSign(x: number, y: number): void {
     const sign = this.scene.add.image(x, y, "village_sign_asset")
       .setOrigin(0.5, 1)
-      .setDisplaySize(44, 42)
+      .setScale(2)
       .setDepth(y);
 
     const label = this.scene.add.text(
@@ -383,6 +392,22 @@ export class CraftingSystem {
 
   isCraftingOpen(): boolean {
     return this.isOpen;
+  }
+
+  mobileInteract(playerX: number, playerY: number): boolean {
+    if (this.isOpen) {
+      this.closeCrafting();
+      return true;
+    }
+
+    if (this.ui.hasActiveModal()) return false;
+    const distance = Phaser.Math.Distance.Between(playerX, playerY, this.benchX, this.benchY);
+    if (distance < 90) {
+      this.openCrafting();
+      return true;
+    }
+
+    return false;
   }
 
   update(playerX: number, playerY: number): void {

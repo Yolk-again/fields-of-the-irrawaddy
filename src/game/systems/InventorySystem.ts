@@ -3,6 +3,7 @@ import Phaser from "phaser";
 import { FarmingSystem } from "./FarmingSystem";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
+import { pixelPanel } from "../ui/PixelUI";
 
 export type ItemType = "Wood" | "Bamboo" | "Herbs" | "Coconut";
 
@@ -115,7 +116,7 @@ export class InventorySystem {
     for (const resource of resources) {
       const shadow = this.scene.add.ellipse(0, 12, 27, 8, 0x34271d, 0.2);
       const image = this.scene.add.image(0, 0, resource.texture)
-        .setDisplaySize(31, 31);
+        .setScale(2);
 
       const container = this.scene.add.container(resource.x, resource.y, [shadow, image]);
       container.setDepth(resource.y);
@@ -163,8 +164,7 @@ export class InventorySystem {
     this.inventoryPanel = this.scene.add.container(0, 0);
     this.inventoryPanel.setScrollFactor(0);
 
-    const background = this.scene.add.rectangle(320, 180, 540, 310, 0x34271d, 0.99);
-    background.setStrokeStyle(3, 0xd6b36b);
+    const background = pixelPanel(this.scene, 320, 180, 540, 310, { fill: 0x34271d, alpha: 1 });
 
     const border = this.scene.add.graphics();
     border.lineStyle(2, 0x79382e, 1);
@@ -184,19 +184,19 @@ export class InventorySystem {
 
     this.inventoryPanel.add([background, border, this.titleText, this.resourceTitleText]);
 
-    for (const slot of this.itemDefinitions) {
+    this.itemDefinitions.forEach((slot, index) => {
       const slotBackground = this.scene.add.rectangle(
         slot.x,
         slot.y,
         150,
         53,
-        0x493629,
+        index % 2 === 0 ? 0x40513a : 0x493629,
         1
       );
       slotBackground.setStrokeStyle(1, 0x9b7047);
 
       const icon = this.scene.add.image(slot.x - 51, slot.y, slot.texture)
-        .setDisplaySize(30, 30);
+        .setScale(2);
 
       const name = this.scene.add.text(slot.x - 29, slot.y - 9, "", {
         fontFamily: this.language.getFontFamily(),
@@ -213,7 +213,7 @@ export class InventorySystem {
       this.itemNameTexts.push(name);
       this.itemValueTexts.push(quantity);
       this.inventoryPanel.add([slotBackground, icon, name, quantity]);
-    }
+    });
 
     this.equipmentTitleText = this.scene.add.text(320, 225, "", {
       fontFamily: this.language.getFontFamily(),
@@ -233,9 +233,14 @@ export class InventorySystem {
         1
       );
       backgroundSlot.setStrokeStyle(1, 0x9b7047);
+      backgroundSlot.setInteractive({ useHandCursor: true });
+      backgroundSlot.on("pointerdown", () => {
+        this.farming.mobileSelectTool(index);
+        this.updateEquipmentDisplay();
+      });
 
       const icon = this.scene.add.image(toolPositions[index] - 31, 260, tool.texture)
-        .setDisplaySize(22, 22);
+        .setScale(1);
 
       const label = this.scene.add.text(
         toolPositions[index] + 5,
@@ -256,7 +261,9 @@ export class InventorySystem {
     this.instructionText = this.scene.add.text(320, 295, "", {
       fontFamily: this.language.getFontFamily(),
       fontSize: "8px",
-      color: "#d6e6c2"
+      color: "#d6e6c2",
+      align: "center",
+      wordWrap: { width: 490 }
     }).setOrigin(0.5);
 
     this.closeText = this.scene.add.text(320, 319, "", {
@@ -265,7 +272,11 @@ export class InventorySystem {
       color: "#e6c47e"
     }).setOrigin(0.5);
 
-    this.inventoryPanel.add([this.instructionText, this.closeText]);
+    const closeHitArea = this.scene.add.rectangle(320, 319, 190, 25, 0x79382e, 0.01)
+      .setInteractive({ useHandCursor: true });
+    closeHitArea.on("pointerdown", this.closeInventory);
+
+    this.inventoryPanel.add([this.instructionText, this.closeText, closeHitArea]);
     this.updateInventoryDisplay();
   }
 
@@ -276,9 +287,7 @@ export class InventorySystem {
     this.resourceTitleText.setText(this.language.t("inventory.resources"));
     this.equipmentTitleText.setText(this.language.t("inventory.equipment"));
     this.instructionText.setText(
-      this.language.getLanguage() === "my"
-        ? "အနီးရှိ ပစ္စည်းများကို ကောက်ယူရန် F နှိပ်ပါ။"
-        : "Collect nearby resources by pressing F."
+      this.language.t("inventory.instructions")
     );
     this.closeText.setText(this.language.t("inventory.close"));
 
@@ -425,6 +434,17 @@ export class InventorySystem {
 
   isInventoryOpen(): boolean {
     return this.isOpen;
+  }
+
+  mobileToggle(): void {
+    if (this.isOpen) this.closeInventory();
+    else if (!this.ui.hasActiveModal()) this.openInventory();
+  }
+
+  mobilePickup(playerX: number, playerY: number): void {
+    if (this.ui.hasActiveModal()) return;
+    const nearest = this.findNearestCollectible(playerX, playerY);
+    if (nearest) this.collectItem(nearest);
   }
 
   update(playerX: number, playerY: number): void {

@@ -1,4 +1,6 @@
 
+import { PIXEL_FONT } from "../ui/PixelUI";
+
 export type Language = "en" | "my";
 
 type TranslationTable = Record<string, string>;
@@ -15,12 +17,23 @@ const translations: Record<Language, TranslationTable> = {
     "common.saveFailed": "SAVE FAILED!",
     "common.loadFailed": "LOAD FAILED!",
 
+    "help.title": "HOW TO PLAY",
+    "help.subtitle": "A quick guide to farming, exploring and using the village.",
+    "help.moveTitle": "MOVEMENT & TOOLS",
+    "help.moveBody": "Move: WASD / arrow keys\nChoose a tool: 1–4\nUse selected tool: SPACE\nAdvance the day: N",
+    "help.villageTitle": "VILLAGE ACTIONS",
+    "help.villageBody": "Talk / market: E\nBackpack: I\nCollect nearby items: F\nWorkbench: C\nFarmer profile: P",
+    "help.farmTitle": "YOUR FARMING ROUTINE",
+    "help.farmBody": "Farming: prepare soil → plant seeds → water crops → press N for a new day → harvest ripe rice. Sell rice at the market.\nPhone: use the joystick to move, tap BAG / PICK / TALK / CRAFT / PROFILE / USE / DAY for actions, and tap a bottom tool slot to change tools.",
+    "help.close": "H  ·  CLOSE",
+
     "profile.title": "FARMER PROFILE",
     "profile.name": "PLAYER NAME: {name}",
     "profile.rename": "RENAME",
     "profile.outfit": "CHOOSE YOUR SHIRT",
-    "profile.close": "P OR ESC TO CLOSE",
+    "profile.close": "Choose an outfit or rename your farmer. Press P to close.",
     "profile.defaultName": "Farmer",
+    "profile.languageHint": "TAP TO SWITCH",
     "profile.outfit.green": "VILLAGE GREEN",
     "profile.outfit.blue": "RIVER BLUE",
     "profile.outfit.red": "SUNSET RED",
@@ -35,7 +48,7 @@ const translations: Record<Language, TranslationTable> = {
     "market.noRice": "You have no rice to sell!",
     "market.bought": "You bought 5 rice seeds!",
     "market.sold": "Sold {rice} rice for {coins} coins!",
-    "market.close": "E OR ESC TO CLOSE",
+    "market.close": "E OR TAP CLOSE",
     "market.prompt": "PRESS E TO VISIT MARKET",
 
     "inventory.title": "PLAYER BACKPACK",
@@ -47,8 +60,9 @@ const translations: Record<Language, TranslationTable> = {
     "inventory.seeds": "Rice Seeds",
     "inventory.rice": "Harvested Rice",
     "inventory.equipment": "FARMING TOOLS",
+    "inventory.instructions": "Tap a tool or press 1–4 to equip it. Press F near a resource to collect it.",
     "inventory.quantity": "Qty: {amount}",
-    "inventory.close": "I OR ESC TO CLOSE",
+    "inventory.close": "I OR TAP CLOSE",
     "inventory.prompt": "I - OPEN BACKPACK",
     "inventory.collect": "PRESS F TO COLLECT {item}",
     "inventory.collected": "COLLECTED {amount} {item}!",
@@ -59,7 +73,12 @@ const translations: Record<Language, TranslationTable> = {
     "craft.recipe1": "1 WOODEN FENCE - 3 WOOD",
     "craft.recipe2": "2 BAMBOO PLANTER - 2 BAMBOO + 1 HERB",
     "craft.recipe3": "3 VILLAGE SIGN - 2 WOOD + 1 BAMBOO",
-    "craft.choose": "Choose a recipe using 1, 2, or 3.",
+    "craft.choose": "Tap a recipe or press 1, 2, or 3 to craft it.",
+    "craft.materials": "MATERIALS",
+    "craft.built": "BUILT:",
+    "craft.fences": "fences",
+    "craft.planters": "planters",
+    "craft.signs": "signs",
     "craft.noWood": "You need 3 wood.",
     "craft.noPlanter": "You need 2 bamboo and 1 herb.",
     "craft.noSign": "You need 2 wood and 1 bamboo.",
@@ -69,12 +88,12 @@ const translations: Record<Language, TranslationTable> = {
     "craft.fenceFull": "All fence spaces are full!",
     "craft.planterFull": "All planter spaces are full!",
     "craft.signFull": "You already built the village sign!",
-    "craft.close": "C OR ESC TO CLOSE",
+    "craft.close": "C OR TAP CLOSE",
 
     "farm.day": "DAY {day} - FARM",
     "farm.seeds": "RICE SEEDS: {seeds}   RICE: {rice}",
     "farm.tools": "1 HOE  2 SEEDS  3 WATER  4 HARVEST",
-    "farm.findPlot": "Find a farm plot and press SPACE.",
+    "farm.findPlot": "Choose a tool, stand by a plot, then press SPACE.",
     "farm.prepared": "Soil prepared! Plant rice now.",
     "farm.alreadyPrepared": "This soil is already prepared!",
     "farm.needSoil": "Prepare the soil with your hoe first!",
@@ -142,12 +161,23 @@ const translations: Record<Language, TranslationTable> = {
     "common.saveFailed": "သိမ်းဆည်းမှု မအောင်မြင်ပါ!",
     "common.loadFailed": "ပြန်ဖွင့်မှု မအောင်မြင်ပါ!",
 
+    "help.title": "ကစားနည်း လမ်းညွှန်",
+    "help.subtitle": "လယ်ယာလုပ်ခြင်း၊ ရွာအတွင်း လှည့်လည်ခြင်းနှင့် ခလုတ်များ အသုံးပြုပုံ။",
+    "help.moveTitle": "လှုပ်ရှားမှုနှင့် ကိရိယာများ",
+    "help.moveBody": "ရွှေ့ရန်: WASD / မြှားခလုတ်များ\nကိရိယာရွေးရန်: 1–4\nကိရိယာအသုံးပြုရန်: SPACE\nနေ့သစ်စရန်: N",
+    "help.villageTitle": "ရွာအတွင်း လုပ်ဆောင်ချက်များ",
+    "help.villageBody": "စကားပြော / ဈေး: E\nကျောပိုးအိတ်: I\nပစ္စည်းကောက်ရန်: F\nအလုပ်ရုံ: C\nကစားသမားအချက်အလက်: P",
+    "help.farmTitle": "စိုက်ပျိုးနည်း အဆင့်များ",
+    "help.farmBody": "စိုက်ပျိုးရန် မြေပြင်ပါ → မျိုးစေ့စိုက်ပါ → ရေလောင်းပါ → N နှိပ်၍ နေ့သစ်စပါ → စပါးရိတ်ပါ။ စပါးကို ဈေးတွင် ရောင်းပါ။\nဖုန်းတွင် Joystick ဖြင့် ရွှေ့ပါ။ BAG / PICK / TALK / CRAFT / PROFILE / USE / DAY ခလုတ်များကို အသုံးပြုပြီး အောက်ဘက်ကိရိယာများကို နှိပ်၍ ရွေးပါ။",
+    "help.close": "H  ·  ပိတ်မည်",
+
     "profile.title": "ကစားသမား အချက်အလက်",
     "profile.name": "ကစားသမားအမည်: {name}",
     "profile.rename": "အမည်ပြောင်းရန်",
     "profile.outfit": "အင်္ကျီအရောင် ရွေးချယ်ပါ",
-    "profile.close": "P သို့မဟုတ် ESC နှိပ်၍ ပိတ်ပါ",
+    "profile.close": "အင်္ကျီရွေးပါ သို့မဟုတ် အမည်ပြောင်းပါ။ ပိတ်ရန် P နှိပ်ပါ။",
     "profile.defaultName": "လယ်သမား",
+    "profile.languageHint": "ပြောင်းရန် နှိပ်ပါ",
     "profile.outfit.green": "စိမ်းလန်းသောရွာ",
     "profile.outfit.blue": "မြစ်ပြာရောင်",
     "profile.outfit.red": "နေဝင်ချိန်အနီ",
@@ -162,7 +192,7 @@ const translations: Record<Language, TranslationTable> = {
     "market.noRice": "ရောင်းရန် စပါးမရှိပါ!",
     "market.bought": "စပါးမျိုးစေ့ ၅ ထုပ် ဝယ်ယူပြီးပါပြီ!",
     "market.sold": "စပါး {rice} ခုကို ဒင်္ဂါး {coins} ဖြင့် ရောင်းပြီးပါပြီ!",
-    "market.close": "E သို့မဟုတ် ESC နှိပ်၍ ပိတ်ပါ",
+    "market.close": "E သို့မဟုတ် ပိတ်ရန် နှိပ်ပါ",
     "market.prompt": "E နှိပ်၍ ဈေးသို့ သွားပါ",
 
     "inventory.title": "ကျောပိုးအိတ်",
@@ -174,8 +204,9 @@ const translations: Record<Language, TranslationTable> = {
     "inventory.seeds": "စပါးမျိုးစေ့",
     "inventory.rice": "ရိတ်သိမ်းထားသော စပါး",
     "inventory.equipment": "လယ်ယာသုံး ကိရိယာများ",
+    "inventory.instructions": "ကိရိယာရွေးရန် နှိပ်ပါ သို့မဟုတ် 1–4 နှိပ်ပါ။ ပစ္စည်းအနီးတွင် F နှိပ်၍ ကောက်ယူပါ။",
     "inventory.quantity": "အရေအတွက်: {amount}",
-    "inventory.close": "I သို့မဟုတ် ESC နှိပ်၍ ပိတ်ပါ",
+    "inventory.close": "I သို့မဟုတ် ပိတ်ရန် နှိပ်ပါ",
     "inventory.prompt": "I - ကျောပိုးအိတ် ဖွင့်ရန်",
     "inventory.collect": "F နှိပ်၍ {item} ကောက်ယူပါ",
     "inventory.collected": "{amount} ခု ကောက်ယူပြီးပါပြီ: {item}",
@@ -186,7 +217,12 @@ const translations: Record<Language, TranslationTable> = {
     "craft.recipe1": "1 သစ်သားခြံစည်းရိုး - သစ်သား ၃ ခု",
     "craft.recipe2": "2 ဝါးပန်းအိုး - ဝါး ၂ ခု + အပင် ၁ ခု",
     "craft.recipe3": "3 ရွာဆိုင်းဘုတ် - သစ်သား ၂ ခု + ဝါး ၁ ခု",
-    "craft.choose": "1၊ 2 သို့မဟုတ် 3 ကို နှိပ်၍ ရွေးချယ်ပါ။",
+    "craft.choose": "ချက်လုပ်ရန် ချက်နည်းကို နှိပ်ပါ သို့မဟုတ် 1၊ 2၊ 3 နှိပ်ပါ။",
+    "craft.materials": "ပစ္စည်းများ",
+    "craft.built": "ပြုလုပ်ပြီး:",
+    "craft.fences": "ခြံစည်းရိုး",
+    "craft.planters": "ပန်းအိုး",
+    "craft.signs": "ဆိုင်းဘုတ်",
     "craft.noWood": "သစ်သား ၃ ခု လိုအပ်ပါတယ်။",
     "craft.noPlanter": "ဝါး ၂ ခုနှင့် အပင် ၁ ခု လိုအပ်ပါတယ်။",
     "craft.noSign": "သစ်သား ၂ ခုနှင့် ဝါး ၁ ခု လိုအပ်ပါတယ်။",
@@ -196,12 +232,12 @@ const translations: Record<Language, TranslationTable> = {
     "craft.fenceFull": "ခြံစည်းရိုး နေရာပြည့်နေပါပြီ!",
     "craft.planterFull": "ပန်းအိုး နေရာပြည့်နေပါပြီ!",
     "craft.signFull": "ရွာဆိုင်းဘုတ် ရှိပြီးသားပါ!",
-    "craft.close": "C သို့မဟုတ် ESC နှိပ်၍ ပိတ်ပါ",
+    "craft.close": "C သို့မဟုတ် ပိတ်ရန် နှိပ်ပါ",
 
     "farm.day": "နေ့ {day} - လယ်ယာ",
     "farm.seeds": "စပါးမျိုးစေ့: {seeds}   စပါး: {rice}",
     "farm.tools": "1 ပေါက်တူး  2 မျိုးစေ့  3 ရေလောင်း  4 ရိတ်သိမ်း",
-    "farm.findPlot": "စိုက်ခင်းနားသို့ သွားပြီး SPACE နှိပ်ပါ။",
+    "farm.findPlot": "ကိရိယာရွေးပြီး စိုက်ခင်းအနီးတွင် SPACE နှိပ်ပါ။",
     "farm.prepared": "မြေဆီလွှာ ပြင်ဆင်ပြီးပါပြီ။ မျိုးစေ့ စိုက်နိုင်ပါပြီ။",
     "farm.alreadyPrepared": "ဒီမြေကို ပြင်ဆင်ပြီးသားပါ!",
     "farm.needSoil": "မျိုးစေ့မစိုက်ခင် မြေကို ပေါက်တူးဖြင့် ပြင်ဆင်ပါ!",
@@ -284,7 +320,7 @@ export class LanguageSystem {
   getFontFamily(): string {
     return this.language === "my"
       ? '"Noto Sans Myanmar", "Myanmar Text", sans-serif'
-      : "monospace";
+      : PIXEL_FONT;
   }
 
   t(

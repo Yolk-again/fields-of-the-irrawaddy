@@ -1,4 +1,4 @@
-
 #game-container canvas {
-  image-rendering: auto !important;
+  image-rendering: pixelated !important;
+  image-rendering: crisp-edges;
 }

@@ -2,6 +2,7 @@
 import Phaser from "phaser";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
+import { pixelPanel, PIXEL_FONT } from "../ui/PixelUI";
 
 interface PlayerProfileData {
   name: string;
@@ -30,7 +31,7 @@ export class PlayerProfileSystem {
     { nameKey: "profile.outfit.purple", texture: "farmer_purple_asset", color: 0x79559c }
   ];
 
-  private playerSprite!: Phaser.GameObjects.Image;
+  private playerSprite!: Phaser.GameObjects.Sprite;
   private nameLabel!: Phaser.GameObjects.Text;
   private profilePanel!: Phaser.GameObjects.Container;
   private nameText!: Phaser.GameObjects.Text;
@@ -40,9 +41,11 @@ export class PlayerProfileSystem {
   private renameLabel!: Phaser.GameObjects.Text;
   private outfitLabel!: Phaser.GameObjects.Text;
   private instructionText!: Phaser.GameObjects.Text;
-  private closeText!: Phaser.GameObjects.Text;
+  private languageText!: Phaser.GameObjects.Text;
   private isOpen = false;
   private profileKey!: Phaser.Input.Keyboard.Key;
+  private renameOverlay?: HTMLDivElement;
+  private renameInput?: HTMLInputElement;
 
   constructor(
     scene: Phaser.Scene,
@@ -55,13 +58,14 @@ export class PlayerProfileSystem {
     this.ui = ui;
     this.language = language;
 
-    this.playerSprite = this.player.getByName("farmerSprite") as Phaser.GameObjects.Image;
+    this.playerSprite = this.player.getByName("farmerSprite") as Phaser.GameObjects.Sprite;
     this.createPlayerDetails();
     this.createControls();
     this.createProfileInterface();
 
     this.ui.registerPanel("profile", this.profilePanel, 350, () => {
       this.isOpen = false;
+      if (this.renameOverlay) this.renameOverlay.style.display = "none";
       this.profileKey.reset();
     });
 
@@ -84,7 +88,7 @@ export class PlayerProfileSystem {
 
   private applyOutfit(): void {
     const outfit = this.outfits[this.outfitIndex];
-    this.playerSprite.setTexture(outfit.texture);
+    this.playerSprite.setTexture(outfit.texture.replace("_asset", "_sheet"), 0);
     this.playerSprite.clearTint();
   }
 
@@ -92,21 +96,12 @@ export class PlayerProfileSystem {
     this.profileKey = this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.P);
 
     this.scene.input.on("pointerdown", this.handleProfilePointer, this);
-    window.addEventListener("keydown", this.handleWindowKeyDown, true);
 
     this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scene.input.off("pointerdown", this.handleProfilePointer, this);
-      window.removeEventListener("keydown", this.handleWindowKeyDown, true);
+      this.renameOverlay?.remove();
     });
   }
-
-  private handleWindowKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === "Escape" && this.isOpen) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.closeProfile();
-    }
-  };
 
   private handleProfilePointer = (pointer: Phaser.Input.Pointer): void => {
     if (!this.isOpen || this.ui.getActiveModal() !== "profile") return;
@@ -114,12 +109,17 @@ export class PlayerProfileSystem {
     const x = pointer.x;
     const y = pointer.y;
 
-    if (x >= 260 && x <= 380 && y >= 168 && y <= 193) {
+    if (x >= 503 && x <= 535 && y >= 49 && y <= 80) {
+      this.closeProfile();
+      return;
+    }
+
+    if (x >= 235 && x <= 405 && y >= 139 && y <= 175) {
       this.renamePlayer();
       return;
     }
 
-    if (y >= 222 && y <= 252) {
+    if (y >= 195 && y <= 237) {
       const positions = [215, 285, 355, 425];
       for (let i = 0; i < positions.length; i++) {
         if (Math.abs(x - positions[i]) <= 25) {
@@ -129,8 +129,8 @@ export class PlayerProfileSystem {
       }
     }
 
-    if (x >= 260 && x <= 380 && y >= 289 && y <= 312) {
-      this.closeProfile();
+    if (x >= 195 && x <= 445 && y >= 275 && y <= 313) {
+      this.language.toggleLanguage();
     }
   };
 
@@ -138,33 +138,42 @@ export class PlayerProfileSystem {
     this.profilePanel = this.scene.add.container(0, 0);
     this.profilePanel.setScrollFactor(0);
 
-    const background = this.scene.add.rectangle(320, 180, 430, 250, 0x34271d, 0.99);
-    background.setStrokeStyle(3, 0xd6b36b);
+    const background = pixelPanel(this.scene, 320, 180, 430, 270, { fill: 0x34271d, alpha: 1 });
 
-    this.titleText = this.scene.add.text(320, 70, "", {
+    this.titleText = this.scene.add.text(320, 67, "", {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "18px",
+      fontSize: "17px",
       color: "#e6c47e"
     }).setOrigin(0.5);
 
-    this.previewSprite = this.scene.add.image(320, 120, this.outfits[this.outfitIndex].texture)
-      .setDisplaySize(42, 56);
+    const closeButton = this.scene.add.rectangle(520, 63, 25, 25, 0x79382e, 1);
+    closeButton.setStrokeStyle(1, 0xd6b36b);
+    const closeX = this.scene.add.text(520, 62, "×", {
+      fontFamily: "sans-serif",
+      fontSize: "19px",
+      color: "#fff1cf",
+      fontStyle: "bold"
+    }).setOrigin(0.5);
 
-    this.nameText = this.scene.add.text(320, 157, "", {
+    this.previewSprite = this.scene.add.image(320, 102, this.outfits[this.outfitIndex].texture)
+      .setScale(2);
+
+    this.nameText = this.scene.add.text(320, 132, "", {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "11px",
+      fontSize: "10px",
       color: "#ffffff"
     }).setOrigin(0.5);
 
-    const renameButton = this.scene.add.rectangle(320, 180, 115, 24, 0x477caf);
+    const renameButton = this.scene.add.rectangle(320, 157, 170, 36, 0x477caf);
     renameButton.setStrokeStyle(1, 0xd6b36b);
-    this.renameLabel = this.scene.add.text(320, 180, "", {
+    this.renameLabel = this.scene.add.text(320, 157, "", {
       fontFamily: this.language.getFontFamily(),
       fontSize: "9px",
-      color: "#ffffff"
+      color: "#ffffff",
+      fontStyle: "bold"
     }).setOrigin(0.5);
 
-    this.outfitLabel = this.scene.add.text(320, 210, "", {
+    this.outfitLabel = this.scene.add.text(320, 183, "", {
       fontFamily: this.language.getFontFamily(),
       fontSize: "9px",
       color: "#f0d69e"
@@ -173,37 +182,44 @@ export class PlayerProfileSystem {
     const colorButtons: Phaser.GameObjects.GameObject[] = [];
     this.outfits.forEach((outfit, index) => {
       const x = 215 + index * 70;
-      const button = this.scene.add.rectangle(x, 237, 42, 26, outfit.color);
+      const button = this.scene.add.rectangle(x, 216, 42, 26, outfit.color);
       button.setStrokeStyle(2, 0xffffff);
-      const number = this.scene.add.text(x, 237, String(index + 1), {
-        fontFamily: "monospace",
+      const number = this.scene.add.text(x, 216, String(index + 1), {
+        fontFamily: PIXEL_FONT,
         fontSize: "10px",
         color: "#ffffff"
       }).setOrigin(0.5);
       colorButtons.push(button, number);
     });
 
-    this.outfitText = this.scene.add.text(320, 264, "", {
+    this.outfitText = this.scene.add.text(320, 245, "", {
       fontFamily: this.language.getFontFamily(),
       fontSize: "9px",
       color: "#d6e6c2"
     }).setOrigin(0.5);
 
-    this.instructionText = this.scene.add.text(320, 283, "", {
+    this.instructionText = this.scene.add.text(320, 266, "", {
       fontFamily: this.language.getFontFamily(),
       fontSize: "8px",
-      color: "#b9dca3"
+      color: "#b9dca3",
+      align: "center",
+      wordWrap: { width: 380 }
     }).setOrigin(0.5);
 
-    this.closeText = this.scene.add.text(320, 300, "", {
+    const languageButton = this.scene.add.rectangle(320, 294, 250, 30, 0x40513a, 1);
+    languageButton.setStrokeStyle(1, 0xd6b36b);
+    this.languageText = this.scene.add.text(320, 294, "", {
       fontFamily: this.language.getFontFamily(),
       fontSize: "9px",
-      color: "#f0d69e"
+      color: "#fff1cf",
+      fontStyle: "bold"
     }).setOrigin(0.5);
 
     this.profilePanel.add([
       background,
       this.titleText,
+      closeButton,
+      closeX,
       this.previewSprite,
       this.nameText,
       renameButton,
@@ -212,7 +228,8 @@ export class PlayerProfileSystem {
       ...colorButtons,
       this.outfitText,
       this.instructionText,
-      this.closeText
+      languageButton,
+      this.languageText
     ]);
 
     this.updateProfileDisplay();
@@ -226,7 +243,9 @@ export class PlayerProfileSystem {
     this.outfitLabel.setText(this.language.t("profile.outfit"));
     this.outfitText.setText(this.language.t(this.outfits[this.outfitIndex].nameKey));
     this.instructionText.setText(this.language.t("profile.close"));
-    this.closeText.setText(this.language.t("common.close"));
+    this.languageText.setText(
+      `${this.language.t("common.language")}: ${this.language.getLanguage() === "en" ? this.language.t("common.english") : this.language.t("common.myanmar")} · ${this.language.t("profile.languageHint")}`
+    );
     this.previewSprite.setTexture(this.outfits[this.outfitIndex].texture);
     this.nameLabel.setText(this.playerName);
 
@@ -237,25 +256,127 @@ export class PlayerProfileSystem {
       this.outfitLabel,
       this.outfitText,
       this.instructionText,
-      this.closeText,
+      this.languageText,
       this.nameLabel
     ]) {
       text.setFontFamily(font);
     }
   }
 
+  private createRenameOverlay(): void {
+    if (this.renameOverlay) return;
+
+    const host = document.getElementById("game-container");
+    if (!host) return;
+
+    const overlay = document.createElement("div");
+    overlay.style.position = "absolute";
+    overlay.style.inset = "0";
+    overlay.style.zIndex = "30";
+    overlay.style.display = "none";
+    overlay.style.alignItems = "center";
+    overlay.style.justifyContent = "center";
+    overlay.style.padding = "16px";
+    overlay.style.background = "rgba(18, 27, 19, 0.78)";
+    overlay.style.fontFamily = "Segoe UI, Arial, sans-serif";
+
+    const form = document.createElement("form");
+    form.style.width = "min(320px, 100%)";
+    form.style.padding = "20px";
+    form.style.border = "2px solid #d6b36b";
+    form.style.borderRadius = "12px";
+    form.style.background = "#2d3829";
+    form.style.boxShadow = "0 14px 40px rgba(0,0,0,.4)";
+    form.style.display = "flex";
+    form.style.flexDirection = "column";
+    form.style.gap = "12px";
+
+    const title = document.createElement("strong");
+    title.style.color = "#e6c47e";
+    title.style.fontSize = "15px";
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.maxLength = 16;
+    input.required = true;
+    input.autocomplete = "off";
+    input.value = this.playerName;
+    input.style.width = "100%";
+    input.style.padding = "11px";
+    input.style.border = "1px solid #9b7047";
+    input.style.borderRadius = "7px";
+    input.style.background = "#f5e8c6";
+    input.style.color = "#34271d";
+    input.style.fontSize = "16px";
+    input.style.boxSizing = "border-box";
+
+    const buttons = document.createElement("div");
+    buttons.style.display = "flex";
+    buttons.style.gap = "10px";
+
+    const saveButton = document.createElement("button");
+    saveButton.type = "submit";
+    saveButton.style.flex = "1";
+    saveButton.style.padding = "10px";
+    saveButton.style.border = "1px solid #d6b36b";
+    saveButton.style.borderRadius = "7px";
+    saveButton.style.background = "#47734b";
+    saveButton.style.color = "white";
+    saveButton.style.fontWeight = "700";
+    saveButton.style.cursor = "pointer";
+
+    const cancelButton = document.createElement("button");
+    cancelButton.type = "button";
+    cancelButton.style.flex = "1";
+    cancelButton.style.padding = "10px";
+    cancelButton.style.border = "1px solid #9b7047";
+    cancelButton.style.borderRadius = "7px";
+    cancelButton.style.background = "#493629";
+    cancelButton.style.color = "#fff1cf";
+    cancelButton.style.fontWeight = "700";
+    cancelButton.style.cursor = "pointer";
+
+    const updateLabels = (): void => {
+      const myanmar = this.language.getLanguage() === "my";
+      title.textContent = myanmar ? "လယ်သမားအမည် ပြောင်းရန်" : "Rename your farmer";
+      saveButton.textContent = myanmar ? "သိမ်းရန်" : "SAVE NAME";
+      cancelButton.textContent = myanmar ? "မလုပ်တော့ပါ" : "CANCEL";
+    };
+
+    cancelButton.addEventListener("click", () => {
+      overlay.style.display = "none";
+    });
+
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      const cleanedName = input.value.trim().replace(/[<>]/g, "").slice(0, 16);
+      if (!cleanedName) {
+        input.focus();
+        return;
+      }
+      this.playerName = cleanedName;
+      overlay.style.display = "none";
+      this.updateProfileDisplay();
+    });
+
+    buttons.append(saveButton, cancelButton);
+    form.append(title, input, buttons);
+    overlay.append(form);
+    host.append(overlay);
+
+    this.renameOverlay = overlay;
+    this.renameInput = input;
+    updateLabels();
+    this.language.onChange(updateLabels);
+  }
+
   private renamePlayer = (): void => {
-    const name = window.prompt(
-      this.language.getLanguage() === "my" ? "လယ်သမားအမည် ထည့်ပါ:" : "Enter your farmer's name:",
-      this.playerName
-    );
-    if (name === null) return;
-
-    const cleanedName = name.trim().replace(/[<>]/g, "").slice(0, 16);
-    if (!cleanedName) return;
-
-    this.playerName = cleanedName;
-    this.updateProfileDisplay();
+    this.createRenameOverlay();
+    if (!this.renameOverlay || !this.renameInput) return;
+    this.renameInput.value = this.playerName;
+    this.renameOverlay.style.display = "flex";
+    this.renameInput.focus();
+    this.renameInput.select();
   };
 
   private selectOutfit(index: number): void {
@@ -273,12 +394,18 @@ export class PlayerProfileSystem {
 
   private closeProfile = (): void => {
     this.isOpen = false;
+    if (this.renameOverlay) this.renameOverlay.style.display = "none";
     this.ui.close("profile");
     this.profileKey.reset();
   };
 
   isProfileOpen(): boolean {
     return this.isOpen;
+  }
+
+  mobileToggle(): void {
+    if (this.isOpen) this.closeProfile();
+    else if (!this.ui.hasActiveModal()) this.openProfile();
   }
 
   getSaveData(): PlayerProfileData {
@@ -305,6 +432,8 @@ export class PlayerProfileSystem {
   }
 
   update(): void {
+    if (this.renameOverlay?.style.display === "flex") return;
+
     if (Phaser.Input.Keyboard.JustDown(this.profileKey)) {
       if (this.isOpen) this.closeProfile();
       else this.openProfile();

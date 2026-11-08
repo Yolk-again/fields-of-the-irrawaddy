@@ -1,492 +1,730 @@
 [
   {
     "path": "agriculture/chili_basket.png",
-    "width": 72,
-    "height": 60,
+    "width": 36,
+    "height": 30,
     "mode": "RGBA",
-    "bytes": 11344
+    "bytes": 770
   },
   {
     "path": "agriculture/green_bean_basket.png",
-    "width": 78,
-    "height": 55,
+    "width": 36,
+    "height": 30,
     "mode": "RGBA",
-    "bytes": 11223
+    "bytes": 729
   },
   {
     "path": "agriculture/haystack.png",
-    "width": 90,
-    "height": 72,
+    "width": 36,
+    "height": 30,
     "mode": "RGBA",
-    "bytes": 16826
+    "bytes": 647
   },
   {
     "path": "agriculture/rice_bowl.png",
-    "width": 67,
-    "height": 58,
+    "width": 16,
+    "height": 16,
     "mode": "RGBA",
-    "bytes": 10296
+    "bytes": 269
   },
   {
     "path": "agriculture/rice_bundle.png",
-    "width": 78,
-    "height": 69,
+    "width": 20,
+    "height": 18,
     "mode": "RGBA",
-    "bytes": 13875
+    "bytes": 412
+  },
+  {
+    "path": "agriculture/rice_grain.png",
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 387
+  },
+  {
+    "path": "agriculture/rice_stage_0.png",
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 213
+  },
+  {
+    "path": "agriculture/rice_stage_1.png",
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 191
+  },
+  {
+    "path": "agriculture/rice_stage_2.png",
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 349
+  },
+  {
+    "path": "agriculture/rice_stage_3.png",
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 407
   },
   {
     "path": "agriculture/scarecrow.png",
-    "width": 540,
-    "height": 660,
+    "width": 30,
+    "height": 38,
     "mode": "RGBA",
-    "bytes": 51878
+    "bytes": 738
   },
   {
     "path": "agriculture/tomato_basket.png",
-    "width": 86,
-    "height": 61,
+    "width": 36,
+    "height": 30,
     "mode": "RGBA",
-    "bytes": 13549
+    "bytes": 818
   },
   {
     "path": "agriculture/young_rice_plant_01.png",
-    "width": 50,
-    "height": 59,
+    "width": 14,
+    "height": 14,
     "mode": "RGBA",
-    "bytes": 7203
+    "bytes": 264
   },
   {
     "path": "agriculture/young_rice_plant_02.png",
-    "width": 39,
-    "height": 51,
+    "width": 14,
+    "height": 14,
     "mode": "RGBA",
-    "bytes": 4984
+    "bytes": 302
   },
   {
     "path": "agriculture/young_rice_plant_03.png",
-    "width": 30,
-    "height": 48,
+    "width": 14,
+    "height": 14,
     "mode": "RGBA",
-    "bytes": 3733
+    "bytes": 271
   },
   {
     "path": "animals/chicken.png",
-    "width": 384,
-    "height": 336,
+    "width": 16,
+    "height": 16,
     "mode": "RGBA",
-    "bytes": 18352
+    "bytes": 291
+  },
+  {
+    "path": "animals/chicken_sheet.png",
+    "width": 48,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 446
   },
   {
     "path": "animals/duck.png",
-    "width": 420,
-    "height": 336,
+    "width": 16,
+    "height": 16,
     "mode": "RGBA",
-    "bytes": 18125
+    "bytes": 329
+  },
+  {
+    "path": "animals/duck_sheet.png",
+    "width": 48,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 440
   },
   {
     "path": "animals/water_buffalo.png",
-    "width": 570,
-    "height": 390,
+    "width": 44,
+    "height": 30,
     "mode": "RGBA",
-    "bytes": 28092
+    "bytes": 668
+  },
+  {
+    "path": "animals/water_buffalo_sheet.png",
+    "width": 176,
+    "height": 30,
+    "mode": "RGBA",
+    "bytes": 882
   },
   {
     "path": "buildings/crafting_workbench.png",
-    "width": 840,
-    "height": 570,
+    "width": 60,
+    "height": 42,
     "mode": "RGBA",
-    "bytes": 27698
+    "bytes": 892
+  },
+  {
+    "path": "buildings/golden_pagoda.png",
+    "width": 40,
+    "height": 76,
+    "mode": "RGBA",
+    "bytes": 1016
   },
   {
     "path": "buildings/ko_aung_home.png",
-    "width": 151,
-    "height": 136,
+    "width": 64,
+    "height": 64,
     "mode": "RGBA",
-    "bytes": 44927
+    "bytes": 1962
   },
   {
     "path": "buildings/ma_thiri_home.png",
-    "width": 158,
-    "height": 132,
+    "width": 66,
+    "height": 66,
     "mode": "RGBA",
-    "bytes": 45751
+    "bytes": 1280
   },
   {
     "path": "buildings/market_stall.png",
-    "width": 900,
-    "height": 720,
+    "width": 72,
+    "height": 62,
     "mode": "RGBA",
-    "bytes": 60124
+    "bytes": 1386
   },
   {
     "path": "buildings/open_barn_01.png",
-    "width": 142,
-    "height": 120,
+    "width": 56,
+    "height": 52,
     "mode": "RGBA",
-    "bytes": 39131
+    "bytes": 1402
   },
   {
     "path": "buildings/open_barn_02.png",
-    "width": 111,
-    "height": 114,
+    "width": 46,
+    "height": 52,
     "mode": "RGBA",
-    "bytes": 28606
+    "bytes": 1044
   },
   {
     "path": "buildings/player_home.png",
-    "width": 151,
-    "height": 136,
+    "width": 88,
+    "height": 80,
     "mode": "RGBA",
-    "bytes": 44927
+    "bytes": 2665
   },
   {
     "path": "buildings/rice_granary.png",
-    "width": 134,
-    "height": 113,
+    "width": 52,
+    "height": 48,
     "mode": "RGBA",
-    "bytes": 34474
+    "bytes": 1455
   },
   {
     "path": "buildings/small_shrine.png",
-    "width": 76,
-    "height": 85,
+    "width": 38,
+    "height": 44,
     "mode": "RGBA",
-    "bytes": 15768
+    "bytes": 679
   },
   {
     "path": "buildings/still_house_01.png",
-    "width": 151,
-    "height": 136,
+    "width": 64,
+    "height": 64,
     "mode": "RGBA",
-    "bytes": 44927
+    "bytes": 1959
   },
   {
     "path": "buildings/stilt_house_01.png",
-    "width": 151,
-    "height": 136,
+    "width": 64,
+    "height": 64,
     "mode": "RGBA",
-    "bytes": 44927
+    "bytes": 2064
   },
   {
     "path": "buildings/stilt_house_02.png",
-    "width": 158,
-    "height": 132,
+    "width": 66,
+    "height": 66,
     "mode": "RGBA",
-    "bytes": 45751
+    "bytes": 1288
   },
   {
     "path": "buildings/village_monastery.png",
-    "width": 101,
-    "height": 127,
+    "width": 72,
+    "height": 78,
     "mode": "RGBA",
-    "bytes": 28077
+    "bytes": 1756
   },
   {
     "path": "characters/farmer_blue.png",
-    "width": 288,
-    "height": 384,
+    "width": 16,
+    "height": 26,
     "mode": "RGBA",
-    "bytes": 17572
+    "bytes": 554
+  },
+  {
+    "path": "characters/farmer_blue_sheet.png",
+    "width": 64,
+    "height": 78,
+    "mode": "RGBA",
+    "bytes": 1645
   },
   {
     "path": "characters/farmer_green.png",
-    "width": 288,
-    "height": 384,
+    "width": 16,
+    "height": 26,
     "mode": "RGBA",
-    "bytes": 17497
+    "bytes": 556
+  },
+  {
+    "path": "characters/farmer_green_sheet.png",
+    "width": 64,
+    "height": 78,
+    "mode": "RGBA",
+    "bytes": 1647
   },
   {
     "path": "characters/farmer_purple.png",
-    "width": 288,
-    "height": 384,
+    "width": 16,
+    "height": 26,
     "mode": "RGBA",
-    "bytes": 17831
+    "bytes": 552
+  },
+  {
+    "path": "characters/farmer_purple_sheet.png",
+    "width": 64,
+    "height": 78,
+    "mode": "RGBA",
+    "bytes": 1639
   },
   {
     "path": "characters/farmer_red.png",
-    "width": 288,
-    "height": 384,
+    "width": 16,
+    "height": 26,
     "mode": "RGBA",
-    "bytes": 17674
+    "bytes": 553
+  },
+  {
+    "path": "characters/farmer_red_sheet.png",
+    "width": 64,
+    "height": 78,
+    "mode": "RGBA",
+    "bytes": 1638
   },
   {
     "path": "characters/ko_aung.png",
-    "width": 288,
-    "height": 384,
+    "width": 16,
+    "height": 26,
     "mode": "RGBA",
-    "bytes": 14138
+    "bytes": 517
+  },
+  {
+    "path": "characters/ko_aung_sheet.png",
+    "width": 64,
+    "height": 78,
+    "mode": "RGBA",
+    "bytes": 1662
   },
   {
     "path": "characters/ma_thiri.png",
-    "width": 288,
-    "height": 384,
+    "width": 16,
+    "height": 26,
     "mode": "RGBA",
-    "bytes": 15884
+    "bytes": 529
+  },
+  {
+    "path": "characters/ma_thiri_sheet.png",
+    "width": 64,
+    "height": 78,
+    "mode": "RGBA",
+    "bytes": 1650
   },
   {
     "path": "decorations/bamboo_fence_segment.png",
-    "width": 540,
-    "height": 300,
+    "width": 28,
+    "height": 16,
     "mode": "RGBA",
-    "bytes": 22326
+    "bytes": 240
   },
   {
     "path": "decorations/bamboo_planter.png",
-    "width": 384,
-    "height": 384,
+    "width": 18,
+    "height": 18,
     "mode": "RGBA",
-    "bytes": 27380
+    "bytes": 389
+  },
+  {
+    "path": "decorations/fence_h.png",
+    "width": 8,
+    "height": 14,
+    "mode": "RGBA",
+    "bytes": 199
+  },
+  {
+    "path": "decorations/fence_v.png",
+    "width": 8,
+    "height": 10,
+    "mode": "RGBA",
+    "bytes": 165
   },
   {
     "path": "decorations/flower_bed.png",
-    "width": 122,
-    "height": 63,
+    "width": 56,
+    "height": 30,
     "mode": "RGBA",
-    "bytes": 20098
+    "bytes": 669
   },
   {
     "path": "decorations/irrigation_channel.png",
-    "width": 302,
-    "height": 32,
+    "width": 84,
+    "height": 12,
     "mode": "RGBA",
-    "bytes": 20286
+    "bytes": 237
   },
   {
     "path": "decorations/potted_plants_row.png",
-    "width": 146,
-    "height": 40,
+    "width": 36,
+    "height": 16,
     "mode": "RGBA",
-    "bytes": 15743
+    "bytes": 442
   },
   {
     "path": "decorations/raised_vegetable_bed.png",
-    "width": 92,
-    "height": 38,
+    "width": 76,
+    "height": 32,
     "mode": "RGBA",
-    "bytes": 8291
+    "bytes": 610
+  },
+  {
+    "path": "decorations/rice_drying_mat.png",
+    "width": 30,
+    "height": 10,
+    "mode": "RGBA",
+    "bytes": 295
   },
   {
     "path": "decorations/village_sign.png",
-    "width": 480,
-    "height": 450,
+    "width": 24,
+    "height": 24,
     "mode": "RGBA",
-    "bytes": 24996
+    "bytes": 385
+  },
+  {
+    "path": "decorations/water_jar.png",
+    "width": 12,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 274
+  },
+  {
+    "path": "fx/butterfly_white.png",
+    "width": 16,
+    "height": 8,
+    "mode": "RGBA",
+    "bytes": 119
+  },
+  {
+    "path": "fx/butterfly_yellow.png",
+    "width": 16,
+    "height": 8,
+    "mode": "RGBA",
+    "bytes": 132
+  },
+  {
+    "path": "fx/dust.png",
+    "width": 64,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 304
+  },
+  {
+    "path": "fx/sparkle.png",
+    "width": 64,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 205
+  },
+  {
+    "path": "fx/splash.png",
+    "width": 64,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 214
+  },
+  {
+    "path": "fx/water_glint.png",
+    "width": 32,
+    "height": 8,
+    "mode": "RGBA",
+    "bytes": 99
   },
   {
     "path": "resources/bamboo_bundle.png",
-    "width": 384,
-    "height": 384,
+    "width": 16,
+    "height": 16,
     "mode": "RGBA",
-    "bytes": 29293
+    "bytes": 241
   },
   {
     "path": "resources/coconut.png",
-    "width": 384,
-    "height": 384,
+    "width": 16,
+    "height": 16,
     "mode": "RGBA",
-    "bytes": 23167
+    "bytes": 288
   },
   {
     "path": "resources/herb_bunch.png",
-    "width": 384,
-    "height": 384,
+    "width": 16,
+    "height": 16,
     "mode": "RGBA",
-    "bytes": 34805
+    "bytes": 358
   },
   {
     "path": "resources/wood_bundle.png",
-    "width": 384,
-    "height": 384,
+    "width": 16,
+    "height": 16,
     "mode": "RGBA",
-    "bytes": 20596
+    "bytes": 290
   },
   {
     "path": "terrain/cracked_soil.png",
-    "width": 94,
-    "height": 92,
-    "mode": "RGB",
-    "bytes": 15354
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 333
   },
   {
     "path": "terrain/dry_soil.png",
-    "width": 94,
-    "height": 91,
-    "mode": "RGB",
-    "bytes": 13600
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 254
+  },
+  {
+    "path": "terrain/farm_plot.png",
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 250
   },
   {
     "path": "terrain/field_grass.png",
-    "width": 93,
-    "height": 92,
-    "mode": "RGB",
-    "bytes": 17269
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 260
   },
   {
     "path": "terrain/harvested_straw.png",
-    "width": 93,
-    "height": 91,
-    "mode": "RGB",
-    "bytes": 19560
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 315
   },
   {
     "path": "terrain/lush_grass.png",
-    "width": 92,
-    "height": 91,
-    "mode": "RGB",
-    "bytes": 15988
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 253
   },
   {
     "path": "terrain/muddy_grass.png",
-    "width": 93,
-    "height": 91,
-    "mode": "RGB",
-    "bytes": 15967
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 307
   },
   {
     "path": "terrain/plain_grass.png",
-    "width": 92,
-    "height": 91,
-    "mode": "RGB",
-    "bytes": 14281
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 233
   },
   {
     "path": "terrain/rice_seedlings.png",
-    "width": 92,
-    "height": 92,
-    "mode": "RGB",
-    "bytes": 16436
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 304
   },
   {
     "path": "terrain/riverbank.png",
-    "width": 91,
-    "height": 91,
-    "mode": "RGB",
-    "bytes": 14625
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 271
   },
   {
     "path": "terrain/stone_ground.png",
-    "width": 94,
-    "height": 91,
-    "mode": "RGB",
-    "bytes": 21789
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 140
+  },
+  {
+    "path": "terrain/tilled_soil.png",
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 250
+  },
+  {
+    "path": "terrain/tilled_soil_wet.png",
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 268
   },
   {
     "path": "terrain/village_ground_base.png",
-    "width": 1440,
-    "height": 640,
-    "mode": "RGB",
-    "bytes": 630265
+    "width": 720,
+    "height": 320,
+    "mode": "RGBA",
+    "bytes": 54030
   },
   {
     "path": "terrain/wet_rice_paddy.png",
-    "width": 91,
-    "height": 91,
-    "mode": "RGB",
-    "bytes": 16047
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 259
   },
   {
     "path": "terrain/young_crops.png",
-    "width": 91,
-    "height": 92,
-    "mode": "RGB",
-    "bytes": 16223
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 257
   },
   {
     "path": "tools/hoe.png",
-    "width": 384,
-    "height": 384,
+    "width": 16,
+    "height": 16,
     "mode": "RGBA",
-    "bytes": 14343
+    "bytes": 250
   },
   {
     "path": "tools/rice_seed_bag.png",
-    "width": 384,
-    "height": 384,
+    "width": 16,
+    "height": 16,
     "mode": "RGBA",
-    "bytes": 17161
+    "bytes": 317
   },
   {
     "path": "tools/sickle.png",
-    "width": 384,
-    "height": 384,
+    "width": 16,
+    "height": 16,
     "mode": "RGBA",
-    "bytes": 18057
+    "bytes": 297
   },
   {
     "path": "tools/watering_can.png",
-    "width": 384,
-    "height": 384,
+    "width": 16,
+    "height": 16,
     "mode": "RGBA",
-    "bytes": 19280
+    "bytes": 296
   },
   {
     "path": "ui/coin.png",
-    "width": 384,
-    "height": 384,
+    "width": 16,
+    "height": 16,
     "mode": "RGBA",
-    "bytes": 29975
+    "bytes": 269
+  },
+  {
+    "path": "ui/panel.png",
+    "width": 24,
+    "height": 24,
+    "mode": "RGBA",
+    "bytes": 193
+  },
+  {
+    "path": "ui/slot.png",
+    "width": 20,
+    "height": 20,
+    "mode": "RGBA",
+    "bytes": 174
+  },
+  {
+    "path": "ui/slot_selected.png",
+    "width": 20,
+    "height": 20,
+    "mode": "RGBA",
+    "bytes": 178
+  },
+  {
+    "path": "vegetation/bamboo_clump.png",
+    "width": 30,
+    "height": 48,
+    "mode": "RGBA",
+    "bytes": 989
+  },
+  {
+    "path": "vegetation/banana_plant.png",
+    "width": 44,
+    "height": 44,
+    "mode": "RGBA",
+    "bytes": 928
   },
   {
     "path": "vegetation/fruit_tree_large.png",
-    "width": 129,
-    "height": 157,
+    "width": 58,
+    "height": 64,
     "mode": "RGBA",
-    "bytes": 43329
+    "bytes": 1526
   },
   {
     "path": "vegetation/fruit_tree_round.png",
-    "width": 106,
-    "height": 154,
+    "width": 50,
+    "height": 62,
     "mode": "RGBA",
-    "bytes": 37160
+    "bytes": 1392
   },
   {
     "path": "vegetation/palm_tree_small.png",
-    "width": 74,
-    "height": 80,
+    "width": 32,
+    "height": 40,
     "mode": "RGBA",
-    "bytes": 14799
+    "bytes": 758
   },
   {
     "path": "vegetation/palm_tree_tall.png",
-    "width": 98,
-    "height": 160,
+    "width": 40,
+    "height": 70,
     "mode": "RGBA",
-    "bytes": 32642
+    "bytes": 958
   },
   {
     "path": "water/canal_vertical.png",
-    "width": 119,
-    "height": 260,
+    "width": 60,
+    "height": 130,
     "mode": "RGBA",
-    "bytes": 53203
+    "bytes": 627
   },
   {
     "path": "water/lotus_pond.png",
-    "width": 135,
-    "height": 105,
+    "width": 86,
+    "height": 66,
     "mode": "RGBA",
-    "bytes": 27375
+    "bytes": 1459
   },
   {
     "path": "water/river_bend.png",
-    "width": 124,
-    "height": 126,
+    "width": 62,
+    "height": 63,
     "mode": "RGBA",
-    "bytes": 31423
+    "bytes": 683
   },
   {
     "path": "water/stream_section.png",
-    "width": 58,
-    "height": 69,
+    "width": 30,
+    "height": 36,
     "mode": "RGBA",
-    "bytes": 10662
+    "bytes": 174
+  },
+  {
+    "path": "water/water_tile_sheet.png",
+    "width": 64,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 253
   },
   {
     "path": "water/wooden_bridge_asset.png",
-    "width": 105,
-    "height": 67,
+    "width": 56,
+    "height": 38,
     "mode": "RGBA",
-    "bytes": 14824
+    "bytes": 689
   }
 ]

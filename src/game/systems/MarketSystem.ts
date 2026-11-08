@@ -3,6 +3,7 @@ import Phaser from "phaser";
 import { FarmingSystem } from "./FarmingSystem";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
+import { pixelPanel } from "../ui/PixelUI";
 
 export class MarketSystem {
   private scene: Phaser.Scene;
@@ -22,7 +23,8 @@ export class MarketSystem {
 
   private marketPanel!: Phaser.GameObjects.Container;
   private titleText!: Phaser.GameObjects.Text;
-  private instructionsText!: Phaser.GameObjects.Text;
+  private buyText!: Phaser.GameObjects.Text;
+  private sellText!: Phaser.GameObjects.Text;
   private moneyText!: Phaser.GameObjects.Text;
   private messageText!: Phaser.GameObjects.Text;
   private closeText!: Phaser.GameObjects.Text;
@@ -57,7 +59,7 @@ export class MarketSystem {
   private createMarketStall(): void {
     this.scene.add.image(this.marketX, 260, "market_stall_asset")
       .setOrigin(0.5, 1)
-      .setDisplaySize(142, 114)
+      .setScale(2)
       .setDepth(260);
 
     this.stallLabel = this.scene.add.text(
@@ -112,65 +114,93 @@ export class MarketSystem {
     this.marketPanel = this.scene.add.container(0, 0);
     this.marketPanel.setScrollFactor(0);
 
-    const background = this.scene.add.rectangle(
-      320, 180, 480, 260, 0x34271d, 0.99
-    );
-    background.setStrokeStyle(3, 0xd6b36b);
+    const background = pixelPanel(this.scene, 320, 180, 500, 286, { fill: 0x2d3829, alpha: 1 });
 
-    const border = this.scene.add.graphics();
-    border.lineStyle(2, 0x79382e, 1);
-    border.strokeRect(80, 50, 480, 260);
+    const divider = this.scene.add.rectangle(320, 83, 450, 2, 0x9b7047, 0.8);
 
-    this.titleText = this.scene.add.text(320, 70, "", {
+    this.titleText = this.scene.add.text(320, 55, "", {
       fontFamily: this.language.getFontFamily(),
       fontSize: "18px",
-      color: "#e6c47e"
+      color: "#e6c47e",
+      fontStyle: "bold"
     }).setOrigin(0.5);
 
-    const stallImage = this.scene.add.image(320, 125, "market_stall_asset")
-      .setDisplaySize(104, 78);
+    const stallImage = this.scene.add.image(320, 119, "market_stall_asset")
+      .setScale(1);
 
-    this.instructionsText = this.scene.add.text(320, 188, "", {
+    const buyCard = this.scene.add.rectangle(320, 169, 420, 34, 0x40513a, 1);
+    buyCard.setStrokeStyle(1, 0xa0ad78);
+    buyCard.setInteractive({ useHandCursor: true });
+    buyCard.on("pointerdown", () => this.buySeeds());
+    buyCard.on("pointerover", () => buyCard.setFillStyle(0x58734b, 1));
+    buyCard.on("pointerout", () => buyCard.setFillStyle(0x40513a, 1));
+
+    this.buyText = this.scene.add.text(320, 169, "", {
+      fontFamily: this.language.getFontFamily(),
+      fontSize: "9px",
+      color: "#fff1cf",
+      fontStyle: "bold",
+      align: "center",
+      wordWrap: { width: 390 }
+    }).setOrigin(0.5);
+
+    const sellCard = this.scene.add.rectangle(320, 210, 420, 34, 0x493629, 1);
+    sellCard.setStrokeStyle(1, 0x9b7047);
+    sellCard.setInteractive({ useHandCursor: true });
+    sellCard.on("pointerdown", () => this.sellRice());
+    sellCard.on("pointerover", () => sellCard.setFillStyle(0x704638, 1));
+    sellCard.on("pointerout", () => sellCard.setFillStyle(0x493629, 1));
+
+    this.sellText = this.scene.add.text(320, 210, "", {
+      fontFamily: this.language.getFontFamily(),
+      fontSize: "9px",
+      color: "#fff1cf",
+      fontStyle: "bold",
+      align: "center",
+      wordWrap: { width: 390 }
+    }).setOrigin(0.5);
+
+    const coinIcon = this.scene.add.image(150, 252, "coin_asset").setScale(2);
+
+    this.moneyText = this.scene.add.text(320, 252, "", {
       fontFamily: this.language.getFontFamily(),
       fontSize: "10px",
-      color: "#f5e8c6",
-      align: "center",
-      lineSpacing: 9,
-      wordWrap: { width: 420 }
-    }).setOrigin(0.5);
-
-    const coinIcon = this.scene.add.image(155, 250, "coin_asset")
-      .setDisplaySize(25, 25);
-
-    this.moneyText = this.scene.add.text(320, 250, "", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "12px",
       color: "#f0d69e"
     }).setOrigin(0.5);
 
     this.messageText = this.scene.add.text(320, 278, "", {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
+      fontSize: "9px",
       color: "#d7e6c5",
       align: "center",
       wordWrap: { width: 420 }
     }).setOrigin(0.5);
 
-    this.closeText = this.scene.add.text(320, 300, "", {
+    const closeBackground = this.scene.add.rectangle(320, 309, 145, 23, 0x79382e, 1);
+    closeBackground.setStrokeStyle(1, 0xd6b36b);
+    closeBackground.setInteractive({ useHandCursor: true });
+    closeBackground.on("pointerdown", this.closeMarket);
+
+    this.closeText = this.scene.add.text(320, 309, "", {
       fontFamily: this.language.getFontFamily(),
       fontSize: "9px",
-      color: "#e6c47e"
+      color: "#fff1cf",
+      fontStyle: "bold"
     }).setOrigin(0.5);
 
     this.marketPanel.add([
       background,
-      border,
+      divider,
       this.titleText,
       stallImage,
-      this.instructionsText,
+      buyCard,
+      this.buyText,
+      sellCard,
+      this.sellText,
       coinIcon,
       this.moneyText,
       this.messageText,
+      closeBackground,
       this.closeText
     ]);
 
@@ -181,16 +211,16 @@ export class MarketSystem {
     const font = this.language.getFontFamily();
 
     this.titleText.setText(this.language.t("market.title"));
-    this.instructionsText.setText(
-      `${this.language.t("market.buy")}\n\n${this.language.t("market.sell")}`
-    );
+    this.buyText.setText(this.language.t("market.buy"));
+    this.sellText.setText(this.language.t("market.sell"));
     this.closeText.setText(this.language.t("market.close"));
     this.stallLabel.setText(this.language.t("market.stallName"));
     this.promptText.setText(this.language.t("market.prompt"));
 
     for (const text of [
       this.titleText,
-      this.instructionsText,
+      this.buyText,
+      this.sellText,
       this.moneyText,
       this.messageText,
       this.closeText,
@@ -264,6 +294,28 @@ export class MarketSystem {
   loadSaveData(data: { coins: number }): void {
     this.coins = Math.max(0, Math.floor(Number(data.coins) || 0));
     this.updateMoney();
+  }
+
+  mobileInteract(playerX: number, playerY: number): boolean {
+    if (this.isOpen) {
+      this.closeMarket();
+      return true;
+    }
+
+    if (this.ui.hasActiveModal()) return false;
+    const distance = Phaser.Math.Distance.Between(
+      playerX,
+      playerY,
+      this.marketX,
+      this.marketY
+    );
+
+    if (distance < 90) {
+      this.openMarket();
+      return true;
+    }
+
+    return false;
   }
 
   update(playerX: number, playerY: number): void {

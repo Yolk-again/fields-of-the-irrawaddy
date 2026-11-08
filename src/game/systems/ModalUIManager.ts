@@ -6,7 +6,8 @@ export type ModalId =
   | "inventory"
   | "crafting"
   | "dialogue"
-  | "profile";
+  | "profile"
+  | "help";
 
 interface DisplayAccess {
   visible: boolean;
