@@ -117,8 +117,16 @@ export class FarmScene extends Phaser.Scene {
   private mobileContextPointerId: number | null = null;
   private chickenCluckTimer = Phaser.Math.Between(8, 15);
 
+  private canUseMobileContextAction(): boolean {
+    if (!this.isTouchDevice) return false;
+    if (this.house?.isInside()) {
+      return this.ui?.isOpen("house") === true && this.house.getMobileActionLabel() !== null;
+    }
+    return !this.ui?.hasActiveModal();
+  }
+
   private handleMobileContextPointerDown = (event: PointerEvent): void => {
-    if (!this.isTouchDevice || this.ui?.hasActiveModal()) return;
+    if (!this.canUseMobileContextAction()) return;
     event.stopPropagation();
     event.preventDefault();
     const button = event.currentTarget as HTMLButtonElement | null;
@@ -147,7 +155,7 @@ export class FarmScene extends Phaser.Scene {
   private handleMobileContextKeyboardClick = (event: MouseEvent): void => {
     event.stopPropagation();
     // Pointer taps are handled on pointerup. A click with detail 0 is keyboard/screen-reader activation.
-    if (event.detail === 0 && this.isTouchDevice && !this.ui?.hasActiveModal()) this.handleMobileTalk();
+    if (event.detail === 0 && this.canUseMobileContextAction()) this.handleMobileTalk();
   };
 
   private handleGameMenuRequest = (): void => {
@@ -1370,7 +1378,16 @@ export class FarmScene extends Phaser.Scene {
   ): Phaser.GameObjects.Image {
     const frameSize = this.isTouchDevice ? 32 : 28;
     const hitSize = this.isTouchDevice ? 38 : 28;
-    const frame = pixelPanel(this, x, y, frameSize, frameSize, { fill: 0x4a3324 }).setDepth(8500);
+    const frame = this.add.graphics().setScrollFactor(0).setDepth(8500);
+    const left = Math.round(x - frameSize / 2);
+    const top = Math.round(y - frameSize / 2);
+    frame.fillStyle(0x21150f, 1).fillRect(left + 2, top + 2, frameSize, frameSize);
+    frame.fillStyle(0x2a1a14, 1).fillRect(left, top, frameSize, frameSize);
+    frame.fillStyle(0x4a3324, 1).fillRect(left + 3, top + 3, frameSize - 6, frameSize - 6);
+    frame.fillStyle(0x8a5a34, 1).fillRect(left + 3, top + 3, frameSize - 6, 2);
+    frame.fillStyle(0x8a5a34, 1).fillRect(left + 3, top + 3, 2, frameSize - 6);
+    frame.fillStyle(0x2a1a14, 1).fillRect(left + 3, top + frameSize - 5, frameSize - 6, 2);
+    frame.fillStyle(0x2a1a14, 1).fillRect(left + frameSize - 5, top + 3, 2, frameSize - 6);
     const image = this.add.image(x, y, icon)
       .setScale(this.isTouchDevice ? 1.45 : 1)
       .setScrollFactor(0).setDepth(8501);
@@ -1600,6 +1617,12 @@ export class FarmScene extends Phaser.Scene {
   }
 
   private handleMobileTalk(): void {
+    // Indoors, the same native contextual button activates the room's current
+    // target (bed, chest, cooker or door), just as it activates the market outdoors.
+    if (this.house?.isInside()) {
+      this.house.mobileInteractPrompt();
+      return;
+    }
     if (this.ui.hasActiveModal()) return;
     const x = this.player.x;
     const y = this.player.y;
@@ -1623,6 +1646,17 @@ export class FarmScene extends Phaser.Scene {
   private updateMobileContextAction(): void {
     const button = document.getElementById("mobile-context-action") as HTMLButtonElement | null;
     if (!button || !this.isTouchDevice) return;
+
+    if (this.house?.isInside()) {
+      const roomLabel = this.house.getMobileActionLabel();
+      button.hidden = roomLabel === null;
+      if (roomLabel) {
+        button.textContent = roomLabel;
+        button.setAttribute("aria-label", roomLabel);
+      }
+      return;
+    }
+
     if (this.ui.hasActiveModal()) {
       button.hidden = true;
       return;

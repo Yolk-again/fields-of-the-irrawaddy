@@ -170,15 +170,10 @@ export class HouseInteriorSystem {
     this.statusText = this.scene.add.text(320, 310, "", { fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#f0d69e", backgroundColor: "#39271e", padding: { x: 4, y: 2 } }).setOrigin(0.5).setVisible(false);
     this.roomPromptHitArea = this.scene.add.rectangle(320, 245, 250, 42, 0x527044, 0.98)
       .setStrokeStyle(2, 0xd6b36b, 1)
-      .setInteractive({ useHandCursor: true })
       .setVisible(false);
-    this.roomPromptHitArea.on("pointerdown", () => {
-      const target = this.promptTarget;
-      if (!target || !this.inside || !this.ui.isOpen("house") || this.sleeping) return;
-      this.roomPrompt.setVisible(false);
-      this.roomPromptHitArea.setVisible(false);
-      this.interact(target);
-    });
+    // Touch users activate room actions through the shared native HTML
+    // contextual button, matching the market and request-board interaction.
+    // Desktop continues to use the E key; this canvas hit-area is never used.
     this.roomPrompt = this.scene.add.text(320, 245, "", {
       fontFamily: this.language.getFontFamily(),
       fontSize: "9px",
@@ -407,8 +402,9 @@ export class HouseInteriorSystem {
         this.avatarY = targetPoint.y;
         this.avatar.setPosition(this.avatarX, this.avatarY);
         this.promptTarget = found.target;
-        this.roomPrompt.setText(this.promptTextFor(found.target)).setPosition(320, 245).setVisible(true);
-        this.roomPromptHitArea.setPosition(320, 245).setVisible(true);
+        // The green native HTML action button is the only touch action prompt.
+        this.roomPrompt.setVisible(false);
+        this.roomPromptHitArea.setVisible(false);
         return;
       }
       if (Phaser.Math.Distance.Between(this.avatarX, this.avatarY, targetPoint.x, targetPoint.y) < 92) {
@@ -442,15 +438,17 @@ export class HouseInteriorSystem {
     this.moveAvatar(delta, mobileVector);
     this.promptTarget = this.closestTarget();
     if (this.promptTarget) {
-      this.roomPrompt.setText(this.promptTextFor(this.promptTarget));
       if (this.touchMode) {
-        this.roomPrompt.setPosition(320, 245);
-        this.roomPromptHitArea.setPosition(320, 245).setVisible(true);
+        // Touch devices use the same dedicated HTML action button as the
+        // market and request board. Keep canvas prompt graphics out of the way.
+        this.roomPrompt.setVisible(false);
+        this.roomPromptHitArea.setVisible(false);
       } else {
+        this.roomPrompt.setText(this.promptTextFor(this.promptTarget));
         this.roomPrompt.setPosition(this.avatarX, Math.max(94, this.avatarY - 48));
+        this.roomPrompt.setVisible(true);
         this.roomPromptHitArea.setVisible(false);
       }
-      this.roomPrompt.setVisible(true);
     } else {
       this.roomPrompt.setVisible(false);
       this.roomPromptHitArea.setVisible(false);
@@ -463,6 +461,32 @@ export class HouseInteriorSystem {
   }
 
   isInside(): boolean { return this.inside; }
+
+  /** Current touch action label for the shared native contextual button. */
+  getMobileActionLabel(): string | null {
+    if (!this.touchMode || !this.inside || !this.ui.isOpen("house") || this.sleeping || !this.promptTarget) {
+      return null;
+    }
+    if (this.ui.isOpen("chest") || this.ui.isOpen("cooking")) return null;
+
+    const mobileKeys: Record<RoomTarget, string> = {
+      bed: "mobile.clickSleepBed",
+      chest: "mobile.clickOpenChest",
+      cooker: "mobile.clickCook",
+      door: "mobile.clickExitHouse"
+    };
+    return this.language.t(mobileKeys[this.promptTarget]);
+  }
+
+  /** Activate the currently selected room target from the shared HTML button. */
+  mobileInteractPrompt(): boolean {
+    if (!this.getMobileActionLabel() || !this.promptTarget) return false;
+    const target = this.promptTarget;
+    this.roomPrompt.setVisible(false);
+    this.roomPromptHitArea.setVisible(false);
+    this.interact(target);
+    return true;
+  }
 
   /** Touch equivalent of the E key for entering the home from the world. */
   mobileInteract(playerX: number, playerY: number): boolean {
