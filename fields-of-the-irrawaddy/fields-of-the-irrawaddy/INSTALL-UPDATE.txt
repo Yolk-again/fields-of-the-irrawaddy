@@ -1,0 +1,31 @@
+FIELDS OF THE IRRAWADDY — CLEAN VILLAGE LAYOUT UPDATE
+
+WHAT CHANGED
+- Removed the added village path overlay. Every road shown in the game now comes from the original village_ground_base.png artwork.
+- The original village_ground_base.png has not been modified (it is byte-for-byte identical to the uploaded project copy).
+- Kept the existing 1440 x 640 world size because the map has enough space for the reorganized village.
+- Grouped the homestead, granary, workshop, market, Ko Aung's home, Ma Thiri's home and monastery along the original road.
+- Separated the chicken yard, player field, rice paddy, canal washing area, rice drying area and monastery courtyard.
+- Reduced nearby NPC/service labels to a single compact prompt at a time.
+- Corrected chicken-yard gate openings and fence collision boundaries.
+- Removed extra props clustered around the well.
+
+INSTALL THE FULL SOURCE PROJECT
+1. Back up your existing project.
+2. Extract this ZIP to a new folder.
+3. Open that folder in Command Prompt or VS Code.
+4. Run: npm.cmd install
+5. Run: npm.cmd run build
+6. Run: npm.cmd run dev
+
+APPLY ONLY THE REPLACEMENT FILES
+1. Back up your existing project.
+2. Extract the replacement-files ZIP into the project root, preserving folders.
+3. If public/assets/terrain/village_paths_overlay.png exists in the old project, delete it. The updated scene no longer uses it.
+4. Run: npm.cmd run build
+5. Run: npm.cmd run dev
+
+NOTES
+- The full source ZIP intentionally excludes node_modules and dist. npm.cmd install installs the correct dependencies for your Windows machine.
+- The Python asset generator is tools/pixel_art/build_village_decorations.py.
+- The scene continues to use the original ground/road artwork and the original canal/bridge logic.
