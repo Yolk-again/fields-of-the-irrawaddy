@@ -1,3 +1,0 @@
-AUDIO DIRECTION CHANGE
-
-The previous generated audio did not match the intended classic farming-RPG sound. This revision replaces it with longer, sampled-instrument tracks and physical foley-style effects. The reference is the general musical approach of classic Harvest Moon titles: catchy looping phrases, seasonal/time-area mood changes, simple memorable melodies and gentle accompaniment. No protected Harvest Moon soundtrack audio or melodies are included.

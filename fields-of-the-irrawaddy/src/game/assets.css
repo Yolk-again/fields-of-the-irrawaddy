@@ -1,4 +1,0 @@
-#game-container canvas {
-  /* Do not force pixelated CSS scaling on text rendered inside the canvas. */
-  image-rendering: auto !important;
-}
