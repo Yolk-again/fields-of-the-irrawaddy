@@ -35,7 +35,6 @@ export class ChestStorageSystem {
     fishRice: 0, mohinga: 0, fishCurry: 0
   };
   private isOpen = false;
-  private escapeKey!: Phaser.Input.Keyboard.Key;
   private panel!: Phaser.GameObjects.Container;
   private closeButton!: Phaser.GameObjects.Container;
   private title!: Phaser.GameObjects.Text;
@@ -69,7 +68,6 @@ export class ChestStorageSystem {
     this.cooking = cooking;
     this.ui = ui;
     this.language = language;
-    this.escapeKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.createInterface();
     this.scene.input.on("pointerup", this.handlePointerUp, this);
     this.scene.input.on("pointermove", this.handlePointerMove, this);
@@ -80,7 +78,6 @@ export class ChestStorageSystem {
     });
     this.ui.registerPanel("chest", this.panel, 260, () => {
       this.isOpen = false;
-      this.escapeKey.reset();
     }, this.closeButton);
     this.language.onChange(() => this.updateInterface());
   }
@@ -244,7 +241,6 @@ export class ChestStorageSystem {
   openFromHouse(): void {
     if (!this.ui.isOpen("house")) return;
     this.isOpen = true;
-    this.escapeKey.reset();
     this.messageValue = "";
     this.updateInterface();
     this.ui.openOver("chest");
@@ -253,11 +249,6 @@ export class ChestStorageSystem {
   update(): void {
     if (!this.isOpen) return;
     this.updateInterface();
-    if (Phaser.Input.Keyboard.JustDown(this.escapeKey)) {
-      this.isOpen = false;
-      this.ui.close("chest");
-      this.escapeKey.reset();
-    }
   }
 
   getSaveData(): ChestSaveData { return { stored: { ...this.stored } }; }

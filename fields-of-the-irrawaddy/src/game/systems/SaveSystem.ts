@@ -60,6 +60,7 @@ export class SaveSystem {
   private storageKey = "fields_of_irrawaddy_save_v3";
 
   private statusText!: Phaser.GameObjects.Text;
+  private controls: Array<Phaser.GameObjects.Rectangle | Phaser.GameObjects.Text> = [];
 
   constructor(
     scene: Phaser.Scene,
@@ -108,9 +109,7 @@ export class SaveSystem {
       delay: 10000,
       loop: true,
       callback: () => {
-        this.saveGame(
-          this.language.t("save.auto")
-        );
+        this.saveGame(undefined, true);
       }
     });
 
@@ -213,6 +212,7 @@ export class SaveSystem {
       background,
       buttonText
     );
+    this.controls.push(background, buttonText);
 
     this.updateButtonLabel(buttonText);
   }
@@ -246,9 +246,18 @@ export class SaveSystem {
     }
   }
 
+  /** Save/load remain available from the mobile action grid without crowding it with desktop buttons. */
+  setMobileControlsHidden(hidden: boolean): void {
+    for (const control of this.controls) control.setVisible(!hidden);
+  }
+
+  mobileSave(): void { this.saveGame(); }
+
+  mobileLoad(): void { this.loadGame(); }
+
   private createSaveData(): GameSaveData {
     return {
-      version: 10,
+      version: 13,
       savedAt: new Date().toISOString(),
 
       player: {
@@ -273,7 +282,7 @@ export class SaveSystem {
     this.saveGame(this.language.t("common.saved"));
   }
 
-  private saveGame(message?: string): void {
+  private saveGame(message?: string, silent = false): void {
     try {
       const saveData = this.createSaveData();
 
@@ -282,9 +291,11 @@ export class SaveSystem {
         JSON.stringify(saveData)
       );
 
-      this.statusText.setText(
-        message ?? this.language.t("common.saved")
-      );
+      if (!silent) {
+        this.statusText.setText(
+          message ?? this.language.t("common.saved")
+        );
+      }
     } catch (error) {
       this.statusText.setText(
         this.language.t("common.saveFailed")
@@ -327,7 +338,7 @@ export class SaveSystem {
       const data = parsed as GameSaveData;
 
       if (
-        ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(data.version) ||
+        ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(data.version) ||
         !data.player ||
         !Number.isFinite(data.player.x) ||
         !Number.isFinite(data.player.y) ||
@@ -359,6 +370,9 @@ export class SaveSystem {
 
       this.player.setPosition(x, y);
 
+      // Restore the world clock before crop timestamps so saved watering times
+      // are compared against the correct elapsed in-game minute.
+      this.village.loadSaveData(data.village);
       this.farming.loadSaveData(data.farming, data.version < 5);
       this.market.loadSaveData(data.market);
       this.fishing.loadSaveData(data.fishing);
@@ -366,7 +380,6 @@ export class SaveSystem {
       this.chest.loadSaveData(data.chest);
       this.inventory.loadSaveData(data.inventory);
       if (data.board) this.board.loadSaveData(data.board);
-      this.village.loadSaveData(data.village);
 
       if (data.profile) {
         this.profile.loadSaveData(data.profile);
@@ -392,8 +405,6 @@ export class SaveSystem {
   }
 
   private handleBeforeUnload = (): void => {
-    this.saveGame(
-      this.language.t("save.auto")
-    );
+    this.saveGame(undefined, true);
   };
 }

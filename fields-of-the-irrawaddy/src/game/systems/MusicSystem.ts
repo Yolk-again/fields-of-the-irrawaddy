@@ -1,94 +1,104 @@
 import Phaser from "phaser";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
-import { pixelPanel } from "../ui/PixelUI";
+import { createRedCloseButton, modalClosePosition, modalPanel, pixelPanel } from "../ui/PixelUI";
 
 /**
- * Original, procedurally generated background music (Web Audio API).
- * No audio files and no third-party material, so there is nothing to license:
- * original, time-of-day-aware village music and ambience. Dawn and daytime
- * use brighter plucked pentatonic melodies and birds; dusk softens the music
- * and introduces evening insects; night uses lower sustained chords, breeze,
- * and cricket calls. Water, music, ambience, and effects share one mute control.
+ * Original Fields of the Irrawaddy audio system.
+ * Background tracks are original, long-form farming-sim themes rendered with
+ * sampled General MIDI instrument timbres: acoustic guitar arpeggios, flute,
+ * violin, music box, soft bass and restrained accompaniment. The arrangement
+ * takes broad inspiration from classic Harvest Moon-era cozy game music, but
+ * uses newly composed melodies. Sound effects combine custom foley textures
+ * and sampled-instrument accents. Separate buses preserve independent volume
+ * controls for music and sound effects.
  */
-
-const STORAGE_KEY = "irrawaddy-music-muted";
-const BPM = 76;
-const BEAT = 60 / BPM;
-const hz = (midi: number): number => 440 * Math.pow(2, (midi - 69) / 12);
-
-// C major pentatonic (C D E G A) across two octaves, MIDI numbers
-const SCALE = [60, 62, 64, 67, 69, 72, 74, 76, 79, 81];
-
-// C – Am – F – G, pad voicings
-const DAY_CHORDS: number[][] = [
-  [48, 55, 64],
-  [45, 52, 60],
-  [41, 48, 57],
-  [43, 50, 59]
-];
-
-const DAWN_CHORDS: number[][] = [
-  [50, 57, 64],
-  [52, 59, 67],
-  [55, 62, 69],
-  [52, 59, 67]
-];
-
-const DUSK_CHORDS: number[][] = [
-  [45, 52, 60],
-  [43, 50, 59],
-  [41, 48, 57],
-  [43, 50, 59]
-];
-
-const NIGHT_CHORDS: number[][] = [
-  [45, 52, 57],
-  [41, 48, 55],
-  [43, 50, 57],
-  [38, 45, 53]
-];
+const LEGACY_MUTE_KEY = "irrawaddy-music-muted";
+const MUSIC_VOLUME_KEY = "irrawaddy-background-music-volume";
+const EFFECTS_VOLUME_KEY = "irrawaddy-sound-effects-volume";
 
 type DayPhase = "dawn" | "day" | "dusk" | "night";
+interface SoundEffectEvent { name: string; x?: number; y?: number; maxDistance?: number; }
+const MUSIC_PHASES: DayPhase[] = ["dawn", "day", "dusk", "night"];
+const EFFECT_NAMES = [
+  "hoe", "plant", "water", "harvest", "dead", "request", "buy", "sell",
+  "talk", "error", "cast", "bite", "catch", "miss", "cook", "eat", "sleep", "footstep"
+];
+
+const EFFECT_BASE_GAIN: Record<string, number> = {
+  hoe: 0.72, plant: 0.62, water: 0.72, harvest: 0.70, dead: 0.62,
+  request: 0.55, buy: 0.62, sell: 0.65, talk: 0.40, error: 0.62,
+  cast: 0.70, bite: 0.62, catch: 0.70, miss: 0.63,
+  cook: 0.62, eat: 0.45, sleep: 0.48, footstep: 0.34
+};
 
 export class MusicSystem {
   private scene: Phaser.Scene;
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
-  private timer: number | null = null;
-  private nextBarTime = 0;
-  private bar = 0;
-  private melodyIndex = 4;
-  private nextBirdTime = 0;
-  private nextCricketTime = 0;
-  private muted = false;
+  private musicBus: GainNode | null = null;
+  private effectsBus: GainNode | null = null;
+  private musicVolume = 1;
+  private effectsVolume = 1;
   private started = false;
+  private audioReady = false;
+  private audioLoadPromise: Promise<void> | null = null;
+  private pendingEffects: SoundEffectEvent[] = [];
+  private listenerX = 320;
+  private listenerY = 330;
+  private musicBuffers = new Map<DayPhase, AudioBuffer>();
+  private effectBuffers = new Map<string, AudioBuffer>();
+  private currentMusicSource: AudioBufferSourceNode | null = null;
+  private currentMusicGain: GainNode | null = null;
+  private currentMusicPhase: DayPhase | null = null;
+  private ui: ModalUIManager;
+  private settingsPanel!: Phaser.GameObjects.Container;
+  private settingsCloseButton!: Phaser.GameObjects.Container;
+  private settingsTitle!: Phaser.GameObjects.Text;
+  private musicLabel!: Phaser.GameObjects.Text;
+  private effectsLabel!: Phaser.GameObjects.Text;
+  private musicValueText!: Phaser.GameObjects.Text;
+  private effectsValueText!: Phaser.GameObjects.Text;
+  private settingsFooter!: Phaser.GameObjects.Text;
+  private musicFill!: Phaser.GameObjects.Rectangle;
+  private effectsFill!: Phaser.GameObjects.Rectangle;
+  private musicKnob!: Phaser.GameObjects.Arc;
+  private effectsKnob!: Phaser.GameObjects.Arc;
+  private activeSlider: "music" | "effects" | null = null;
   private phase: DayPhase = "day";
-  private timeOfDayHours = 8;
-  private waterGain: GainNode | null = null;
-  private breezeGain: GainNode | null = null;
-
   private button!: Phaser.GameObjects.Rectangle;
   private icon!: Phaser.GameObjects.Image;
   private tip!: Phaser.GameObjects.Text;
   private language: LanguageSystem;
+  private headerControls: Phaser.GameObjects.GameObject[] = [];
 
   constructor(scene: Phaser.Scene, ui: ModalUIManager, language: LanguageSystem) {
     this.scene = scene;
+    this.ui = ui;
     this.language = language;
     try {
-      this.muted = window.localStorage.getItem(STORAGE_KEY) === "1";
+      const legacyMuted = window.localStorage.getItem(LEGACY_MUTE_KEY) === "1";
+      this.musicVolume = legacyMuted ? 0 : this.readStoredVolume(MUSIC_VOLUME_KEY, 1);
+      this.effectsVolume = legacyMuted ? 0 : this.readStoredVolume(EFFECTS_VOLUME_KEY, 1);
+      if (legacyMuted) {
+        window.localStorage.setItem(MUSIC_VOLUME_KEY, "0");
+        window.localStorage.setItem(EFFECTS_VOLUME_KEY, "0");
+        window.localStorage.removeItem(LEGACY_MUTE_KEY);
+      }
     } catch {
-      this.muted = false;
+      this.musicVolume = 1;
+      this.effectsVolume = 1;
     }
 
     this.createButton(ui);
+    this.createSettingsPanel(ui);
     this.scene.events.on("sound-effect", this.handleSoundEffect, this);
+    this.scene.input.on("pointerdown", this.handleSliderPointerDown, this);
+    this.scene.input.on("pointermove", this.handleSliderPointerMove, this);
+    this.scene.input.on("pointerup", this.handleSliderPointerUp, this);
 
-    // Browsers only allow audio after a user gesture.
     const unlock = (): void => {
-      // Do not create or resume an audio graph while the user's saved setting is muted.
-      if (!this.muted) this.start();
+      if (this.musicVolume > 0 || this.effectsVolume > 0) this.start();
       window.removeEventListener("pointerdown", unlock, true);
       window.removeEventListener("keydown", unlock, true);
     };
@@ -97,9 +107,16 @@ export class MusicSystem {
 
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scene.events.off("sound-effect", this.handleSoundEffect, this);
+      this.scene.input.off("pointerdown", this.handleSliderPointerDown, this);
+      this.scene.input.off("pointermove", this.handleSliderPointerMove, this);
+      this.scene.input.off("pointerup", this.handleSliderPointerUp, this);
       window.removeEventListener("pointerdown", unlock, true);
       window.removeEventListener("keydown", unlock, true);
-      if (this.timer !== null) window.clearInterval(this.timer);
+      try {
+        this.currentMusicSource?.stop();
+      } catch {
+        // The source may already have finished during a crossfade.
+      }
       void this.ctx?.close();
     });
   }
@@ -119,467 +136,361 @@ export class MusicSystem {
 
     this.button.on("pointerover", () => this.tip.setVisible(true));
     this.button.on("pointerout", () => this.tip.setVisible(false));
-    this.button.on("pointerup", () => this.toggle());
+    this.button.on("pointerup", () => this.openSettings());
     ui.registerHud(frame, this.icon, this.button, this.tip);
+    this.headerControls = [frame, this.icon, this.button, this.tip];
     this.refreshButton();
   }
 
   private refreshButton(): void {
-    this.icon.setTexture(this.muted ? "ui_icon_note_off" : "ui_icon_note");
-    this.tip.setText(this.language.t("hud.tip.music"));
+    this.icon.setTexture("ui_icon_note");
+    this.tip.setText(this.language.getLanguage() === "my" ? "အသံချိန်ညှိရန်" : "AUDIO SETTINGS");
     this.tip.setFontFamily(this.language.getFontFamily());
   }
 
+  private readStoredVolume(key: string, fallback: number): number {
+    const stored = window.localStorage.getItem(key);
+    if (stored === null) return fallback;
+    const value = Number(stored);
+    return Number.isFinite(value) ? Phaser.Math.Clamp(value, 0, 1) : fallback;
+  }
 
-  toggle(): void {
-    this.muted = !this.muted;
+  private saveVolume(key: string, value: number): void {
     try {
-      window.localStorage.setItem(STORAGE_KEY, this.muted ? "1" : "0");
+      window.localStorage.setItem(key, value.toFixed(2));
     } catch {
-      // ignore storage problems
+      // Keep the in-session setting even when browser storage is unavailable.
     }
-    this.refreshButton();
-    this.applyVolume();
+  }
 
-    if (this.muted) {
-      // Suspend the whole Web Audio context as a hard mute. This stops already
-      // scheduled birds/crickets and any one-shot effects, not just future music.
-      if (this.ctx?.state === "running") void this.ctx.suspend().catch(() => undefined);
+  private createSettingsPanel(ui: ModalUIManager): void {
+    this.settingsPanel = this.scene.add.container(0, 0).setScrollFactor(0);
+    const background = modalPanel(this.scene, 320, 180, 390, 220);
+    const divider = this.scene.add.rectangle(320, 117, 350, 2, 0x9b7047, 0.9);
+    this.settingsTitle = this.scene.add.text(320, 96, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "17px", color: "#e6c47e", fontStyle: "bold"
+    }).setOrigin(0.5);
+
+    this.musicLabel = this.scene.add.text(170, 143, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf", fontStyle: "bold"
+    }).setOrigin(0, 0.5);
+    this.musicValueText = this.scene.add.text(475, 143, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#e6c47e", fontStyle: "bold"
+    }).setOrigin(1, 0.5);
+    this.effectsLabel = this.scene.add.text(170, 205, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf", fontStyle: "bold"
+    }).setOrigin(0, 0.5);
+    this.effectsValueText = this.scene.add.text(475, 205, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#e6c47e", fontStyle: "bold"
+    }).setOrigin(1, 0.5);
+
+    const musicTrack = this.scene.add.rectangle(320, 164, 230, 8, 0x241a14, 1);
+    const effectsTrack = this.scene.add.rectangle(320, 226, 230, 8, 0x241a14, 1);
+    this.musicFill = this.scene.add.rectangle(205, 164, 230, 8, 0x88a85f, 1).setOrigin(0, 0.5);
+    this.effectsFill = this.scene.add.rectangle(205, 226, 230, 8, 0x88a85f, 1).setOrigin(0, 0.5);
+    this.musicKnob = this.scene.add.circle(435, 164, 7, 0xe6c47e, 1).setStrokeStyle(2, 0x2a1a14);
+    this.effectsKnob = this.scene.add.circle(435, 226, 7, 0xe6c47e, 1).setStrokeStyle(2, 0x2a1a14);
+
+    this.settingsFooter = this.scene.add.text(320, 269, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d7e6c5", align: "center"
+    }).setOrigin(0.5);
+    const closePosition = modalClosePosition(320, 180, 390, 220);
+    this.settingsCloseButton = createRedCloseButton(this.scene, closePosition.x, closePosition.y);
+
+    this.settingsPanel.add([
+      background, divider, this.settingsTitle, this.musicLabel, this.musicValueText,
+      musicTrack, this.musicFill, this.musicKnob,
+      this.effectsLabel, this.effectsValueText, effectsTrack,
+      this.effectsFill, this.effectsKnob, this.settingsFooter, this.settingsCloseButton
+    ]);
+    ui.registerPanel("audio", this.settingsPanel, 420, () => {
+      this.activeSlider = null;
+    }, this.settingsCloseButton);
+    this.language.onChange(() => this.updateSettingsText());
+    this.updateSettingsText();
+    this.updateSliderVisuals();
+  }
+
+  private updateSettingsText(): void {
+    const myanmar = this.language.getLanguage() === "my";
+    const font = this.language.getFontFamily();
+    this.settingsTitle.setText(myanmar ? "အသံချိန်ညှိမှု" : "AUDIO SETTINGS");
+    this.musicLabel.setText(myanmar ? "နောက်ခံတေးဂီတ" : "BACKGROUND MUSIC");
+    this.effectsLabel.setText(myanmar ? "အသံအကျိုးသက်ရောက်မှု" : "SOUND EFFECTS");
+    this.settingsFooter.setText(myanmar ? "ဘားကို နှိပ်ပါ သို့မဟုတ် ဆွဲရွှေ့၍ အသံချိန်ညှိပါ" : "CLICK OR DRAG A BAR TO ADJUST VOLUME");
+    for (const text of [this.settingsTitle, this.musicLabel, this.effectsLabel, this.musicValueText, this.effectsValueText, this.settingsFooter]) {
+      text.setFontFamily(font);
+    }
+  }
+
+  private updateSliderVisuals(): void {
+    const musicWidth = 230 * this.musicVolume;
+    const effectsWidth = 230 * this.effectsVolume;
+    this.musicFill.setSize(Math.max(0.01, musicWidth), 8).setVisible(this.musicVolume > 0);
+    this.effectsFill.setSize(Math.max(0.01, effectsWidth), 8).setVisible(this.effectsVolume > 0);
+    this.musicKnob.setX(205 + musicWidth);
+    this.effectsKnob.setX(205 + effectsWidth);
+    this.musicValueText.setText(`${Math.round(this.musicVolume * 100)}%`);
+    this.effectsValueText.setText(`${Math.round(this.effectsVolume * 100)}%`);
+  }
+
+  private setMusicVolume(value: number): void {
+    this.musicVolume = Phaser.Math.Clamp(value, 0, 1);
+    this.saveVolume(MUSIC_VOLUME_KEY, this.musicVolume);
+    this.updateSliderVisuals();
+    this.applyVolume();
+    if (this.musicVolume > 0) {
+      if (!this.started) this.start();
+      else if (this.audioReady && (!this.currentMusicSource || this.currentMusicPhase !== this.phase)) this.playMusicTrack(this.phase);
+    }
+  }
+
+  private setEffectsVolume(value: number): void {
+    this.effectsVolume = Phaser.Math.Clamp(value, 0, 1);
+    this.saveVolume(EFFECTS_VOLUME_KEY, this.effectsVolume);
+    this.updateSliderVisuals();
+    this.applyVolume();
+    if (this.effectsVolume > 0 && !this.started) this.start();
+  }
+
+  private handleSliderPointerDown = (pointer: Phaser.Input.Pointer): void => {
+    if (!this.ui.isOpen("audio")) return;
+
+    const x = pointer.x;
+    const y = pointer.y;
+    const onTrack = x >= 188 && x <= 452;
+
+    if (onTrack && y >= 150 && y <= 178) {
+      this.activeSlider = "music";
+      this.updateSliderFromPointer(pointer);
+    } else if (onTrack && y >= 212 && y <= 240) {
+      this.activeSlider = "effects";
+      this.updateSliderFromPointer(pointer);
+    } else {
+      this.activeSlider = null;
+    }
+  };
+
+  private updateSliderFromPointer(pointer: Phaser.Input.Pointer): void {
+    const value = Phaser.Math.Clamp((pointer.x - 205) / 230, 0, 1);
+    if (this.activeSlider === "music") this.setMusicVolume(value);
+    else if (this.activeSlider === "effects") this.setEffectsVolume(value);
+  }
+
+  private handleSliderPointerMove = (pointer: Phaser.Input.Pointer): void => {
+    if (!this.activeSlider || !pointer.isDown || !this.ui.isOpen("audio")) return;
+    this.updateSliderFromPointer(pointer);
+  };
+
+  private handleSliderPointerUp = (): void => {
+    this.activeSlider = null;
+  };
+
+  private openSettings(): void {
+    if (this.ui.isOpen("audio")) {
+      this.ui.close("audio");
       return;
     }
+    if (this.ui.hasActiveModal()) return;
+    this.updateSettingsText();
+    this.updateSliderVisuals();
+    this.ui.open("audio");
+  }
 
-    this.start();
+  /** Opens audio settings from the touch action grid. */
+  mobileToggle(): void { this.openSettings(); }
+
+  /** The touch grid owns this function, so the desktop header control is hidden. */
+  setMobileHeaderHidden(hidden: boolean): void {
+    for (const control of this.headerControls) {
+      (control as unknown as { setVisible: (visible: boolean) => void }).setVisible(!hidden);
+    }
   }
 
   private applyVolume(): void {
-    // Also mute Phaser's own sound manager. This keeps the button global if a
-    // later feature uses Phaser audio rather than this class's Web Audio bus.
-    const phaserSound = (this.scene as unknown as { sound?: { mute: boolean } }).sound;
-    if (phaserSound) phaserSound.mute = this.muted;
-
-    if (!this.ctx || !this.master) return;
-    const now = this.ctx.currentTime;
-    this.master.gain.cancelScheduledValues(now);
-    // Set the bus directly to zero; setTargetAtTime can leave a short audible tail.
-    this.master.gain.setValueAtTime(this.muted ? 0 : 0.55, now);
-  }
-
-  private resetSchedulers(): void {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
-    this.nextBarTime = now + 0.3;
-    this.nextBirdTime = now + this.birdInterval();
-    this.nextCricketTime = now + 1.5;
-    this.applyAmbienceLevels();
+    if (this.musicBus) {
+      this.musicBus.gain.cancelScheduledValues(now);
+      this.musicBus.gain.setTargetAtTime(this.musicVolume, now, 0.025);
+    }
+    if (this.effectsBus) {
+      this.effectsBus.gain.cancelScheduledValues(now);
+      this.effectsBus.gain.setTargetAtTime(this.effectsVolume, now, 0.025);
+    }
   }
 
   private start(): void {
-    if (this.muted) return;
     if (this.started) {
-      const context = this.ctx;
-      if (!context) return;
-      void context.resume().then(() => {
-        if (!this.muted) this.resetSchedulers();
-      }).catch(() => undefined);
+      if (this.ctx?.state === "suspended") {
+        void this.ctx.resume().catch(() => undefined);
+      }
       this.applyVolume();
+      if (!this.audioLoadPromise) this.audioLoadPromise = this.loadAudioAssets();
+      if (this.audioReady && this.musicVolume > 0 && (!this.currentMusicSource || this.currentMusicPhase !== this.phase)) {
+        this.playMusicTrack(this.phase);
+      }
       return;
     }
+
     const AudioCtor = window.AudioContext ??
       (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtor) return;
 
+    this.ctx = new AudioCtor({ latencyHint: "interactive" });
     this.started = true;
-    this.ctx = new AudioCtor();
-    void this.ctx.resume();
     this.master = this.ctx.createGain();
-    this.master.gain.value = 0;
+    this.musicBus = this.ctx.createGain();
+    this.effectsBus = this.ctx.createGain();
+    this.master.gain.value = 0.84;
+    this.musicBus.gain.value = this.musicVolume;
+    this.effectsBus.gain.value = this.effectsVolume;
+    this.musicBus.connect(this.master);
+    this.effectsBus.connect(this.master);
     this.master.connect(this.ctx.destination);
-    this.applyVolume();
-
-    this.startWater();
-    this.startBreeze();
-    this.applyAmbienceLevels();
-    this.nextBarTime = this.ctx.currentTime + 0.3;
-    this.nextBirdTime = this.ctx.currentTime + this.birdInterval();
-    this.nextCricketTime = this.ctx.currentTime + 1.5;
-    this.timer = window.setInterval(() => this.schedule(), 120);
+    void this.ctx.resume().catch(() => undefined);
+    this.audioLoadPromise = this.loadAudioAssets();
   }
 
-  /**
-   * Change the original procedural soundtrack and village ambience to match
-   * the shared in-game clock. Transitions are crossfaded rather than restarted.
-   */
+  private async loadAudioAssets(): Promise<void> {
+    const context = this.ctx;
+    if (!context) return;
+
+    const decode = async (relativePath: string): Promise<AudioBuffer | null> => {
+      try {
+        const base = import.meta.env.BASE_URL;
+        const response = await fetch(`${base}audio/${relativePath}`);
+        if (!response.ok) return null;
+        const bytes = await response.arrayBuffer();
+        if (this.ctx !== context || context.state === "closed") return null;
+        return await context.decodeAudioData(bytes);
+      } catch {
+        return null;
+      }
+    };
+
+    const musicResults = await Promise.all(MUSIC_PHASES.map(async (phase) => {
+      const buffer = await decode(`music/${phase}.ogg`);
+      return [phase, buffer] as const;
+    }));
+    const effectResults = await Promise.all(EFFECT_NAMES.map(async (name) => {
+      const buffer = await decode(`effects/${name}.ogg`);
+      return [name, buffer] as const;
+    }));
+
+    if (this.ctx !== context || context.state === "closed") return;
+    for (const [phase, buffer] of musicResults) {
+      if (buffer) this.musicBuffers.set(phase, buffer);
+    }
+    for (const [name, buffer] of effectResults) {
+      if (buffer) this.effectBuffers.set(name, buffer);
+    }
+    this.audioReady = true;
+
+    if (this.musicVolume > 0) this.playMusicTrack(this.phase);
+    const queued = this.pendingEffects.splice(0);
+    for (const effect of queued) this.playSoundEffect(effect);
+  }
+
+  private playMusicTrack(phase: DayPhase): void {
+    if (!this.ctx || !this.musicBus || this.ctx.state === "closed") return;
+    const buffer = this.musicBuffers.get(phase);
+    if (!buffer) return;
+    if (this.currentMusicPhase === phase && this.currentMusicSource) return;
+
+    const now = this.ctx.currentTime;
+    const source = this.ctx.createBufferSource();
+    const trackGain = this.ctx.createGain();
+    source.buffer = buffer;
+    source.loop = true;
+    source.connect(trackGain).connect(this.musicBus);
+    trackGain.gain.setValueAtTime(0.0001, now);
+    trackGain.gain.linearRampToValueAtTime(0.82, now + 2.6);
+
+    const oldSource = this.currentMusicSource;
+    const oldGain = this.currentMusicGain;
+    if (oldSource && oldGain) {
+      oldGain.gain.cancelScheduledValues(now);
+      oldGain.gain.setValueAtTime(Math.max(0.0001, oldGain.gain.value), now);
+      oldGain.gain.linearRampToValueAtTime(0.0001, now + 2.6);
+      try {
+        oldSource.stop(now + 2.72);
+      } catch {
+        // Ignore a source that has already been stopped by a previous fade.
+      }
+    }
+
+    this.currentMusicSource = source;
+    this.currentMusicGain = trackGain;
+    this.currentMusicPhase = phase;
+    source.start(now);
+  }
+
+  /** Called by the village clock; phase changes crossfade over a few seconds. */
   setTimeOfDayHours(hour: number): void {
-    this.timeOfDayHours = ((hour % 24) + 24) % 24;
-    const nextPhase: DayPhase = this.timeOfDayHours < 5.5
+    const timeOfDayHours = ((hour % 24) + 24) % 24;
+    const nextPhase: DayPhase = timeOfDayHours < 5.5
       ? "night"
-      : this.timeOfDayHours < 7
+      : timeOfDayHours < 7
         ? "dawn"
-        : this.timeOfDayHours < 17
+        : timeOfDayHours < 17
           ? "day"
-          : this.timeOfDayHours < 19
+          : timeOfDayHours < 19
             ? "dusk"
             : "night";
 
     if (nextPhase === this.phase) return;
     this.phase = nextPhase;
-    if (this.ctx) {
-      this.applyAmbienceLevels();
-      this.nextBirdTime = this.ctx.currentTime + this.birdInterval();
-      this.nextCricketTime = this.ctx.currentTime + 1.2;
-    }
+    if (this.musicVolume > 0 && this.audioReady) this.playMusicTrack(nextPhase);
   }
 
-  private applyAmbienceLevels(): void {
-    if (!this.ctx) return;
-    const now = this.ctx.currentTime;
-    const levels: Record<DayPhase, { water: number; breeze: number }> = {
-      dawn: { water: 0.030, breeze: 0.006 },
-      day: { water: 0.034, breeze: 0.004 },
-      dusk: { water: 0.019, breeze: 0.016 },
-      night: { water: 0.012, breeze: 0.011 }
-    };
-    const target = levels[this.phase];
-    this.waterGain?.gain.setTargetAtTime(target.water, now, 2.8);
-    this.breezeGain?.gain.setTargetAtTime(target.breeze, now, 3.5);
+  /** Update the listener anchor every frame so world sounds fade with player distance. */
+  setListenerPosition(x: number, y: number): void {
+    if (Number.isFinite(x)) this.listenerX = x;
+    if (Number.isFinite(y)) this.listenerY = y;
   }
 
-  private birdInterval(): number {
-    if (this.phase === "dawn") return 4 + Math.random() * 3;
-    if (this.phase === "day") return 6 + Math.random() * 7;
-    if (this.phase === "dusk") return 14 + Math.random() * 8;
-    return 90;
-  }
-
-  private schedule(): void {
-    if (!this.ctx || this.muted || this.ctx.state !== "running") return;
-    while (this.nextBarTime < this.ctx.currentTime + 0.6) {
-      this.playBar(this.nextBarTime, this.bar % 4);
-      this.nextBarTime += BEAT * 4;
-      this.bar++;
-    }
-
-    const now = this.ctx.currentTime;
-    if (now >= this.nextBirdTime) {
-      if (this.timeOfDayHours >= 5.0 && this.timeOfDayHours < 19) {
-        this.bird(now + 0.02);
-        this.nextBirdTime = now + this.birdInterval();
-      } else {
-        this.nextBirdTime = now + 3;
-      }
-    }
-
-    if (now >= this.nextCricketTime) {
-      if (this.timeOfDayHours >= 18.2 || this.timeOfDayHours < 5.5) {
-        this.cricket(now + 0.02);
-        this.nextCricketTime = now + 2.2 + Math.random() * 2.8;
-      } else if (this.phase === "dusk") {
-        this.cricket(now + 0.02, 0.35);
-        this.nextCricketTime = now + 7 + Math.random() * 4;
-      } else {
-        this.nextCricketTime = now + 1.5;
-      }
-    }
-  }
-
-  private playBar(t: number, chordIndex: number): void {
-    const chords = this.phase === "dawn"
-      ? DAWN_CHORDS
-      : this.phase === "dusk"
-        ? DUSK_CHORDS
-        : this.phase === "night"
-          ? NIGHT_CHORDS
-          : DAY_CHORDS;
-    const chord = chords[chordIndex];
-    const padVolume = this.phase === "night" ? 0.021 : this.phase === "dusk" ? 0.026 : 0.035;
-    const padDuration = this.phase === "night" ? BEAT * 5.8 : BEAT * 4.2;
-    for (const note of chord) this.pad(hz(note), t, padDuration, padVolume);
-
-    if (this.phase === "night") {
-      // Sparse, low bell-like notes and long warm pads for a quieter night mood.
-      this.pluck(hz(chord[0] - 12), t, 0.065, 2.1);
-      if (chordIndex % 2 === 0) {
-        const nightNotes = [72, 74, 76, 79];
-        this.pluck(hz(nightNotes[(this.bar + chordIndex) % nightNotes.length]), t + BEAT * 2, 0.035, 2.5);
-      }
-      return;
-    }
-
-    if (this.phase === "dusk") {
-      this.pluck(hz(chord[0] - 12), t, 0.085, 1.9);
-      const duskNotes = [0, 3, 5, 7];
-      for (const stepIndex of duskNotes) {
-        if (Math.random() < 0.28) continue;
-        const step = [-1, 0, 0, 1, 1][Math.floor(Math.random() * 5)];
-        this.melodyIndex = Phaser.Math.Clamp(this.melodyIndex + step, 0, SCALE.length - 1);
-        this.pluck(hz(SCALE[this.melodyIndex] - 12), t + stepIndex * BEAT * 0.5, 0.065, 1.7);
-      }
-      return;
-    }
-
-    // Dawn and daytime use the brighter, lightly plucked pentatonic theme.
-    this.pluck(hz(chord[0] - 12), t, 0.14, 1.6);
-    this.pluck(hz(chord[1] - 12), t + BEAT * 2, 0.09, 1.4);
-    for (let i = 0; i < 8; i++) {
-      if (this.phase === "day" && [1, 3, 6].includes(i) && Math.random() < 0.7) continue;
-      const step = this.phase === "dawn"
-        ? [0, 1, 1, 2, 1, 2, 2, 3][i]
-        : [-2, -1, -1, 0, 1, 1, 2][Math.floor(Math.random() * 7)];
-      this.melodyIndex = Phaser.Math.Clamp(this.melodyIndex + step, 0, SCALE.length - 1);
-      this.pluck(hz(SCALE[this.melodyIndex]), t + i * BEAT * 0.5, 0.095, 1.15);
-    }
-  }
-
-  private pluck(freq: number, time: number, volume: number, decay: number): void {
-    if (this.muted || !this.ctx || !this.master) return;
-    const gain = this.ctx.createGain();
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(3200, time);
-    filter.frequency.exponentialRampToValueAtTime(700, time + decay);
-    gain.gain.setValueAtTime(0.0001, time);
-    gain.gain.exponentialRampToValueAtTime(volume, time + 0.008);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + decay);
-
-    const a = this.ctx.createOscillator();
-    a.type = this.phase === "night" ? "sine" : "triangle";
-    a.frequency.value = freq;
-    const b = this.ctx.createOscillator();
-    b.type = "sine";
-    b.frequency.value = freq * 2;
-    const bGain = this.ctx.createGain();
-    bGain.gain.value = 0.25;
-
-    a.connect(filter);
-    b.connect(bGain).connect(filter);
-    filter.connect(gain).connect(this.master);
-    a.start(time);
-    b.start(time);
-    a.stop(time + decay + 0.1);
-    b.stop(time + decay + 0.1);
-  }
-
-  private pad(freq: number, time: number, duration: number, peak = 0.035): void {
-    if (this.muted || !this.ctx || !this.master) return;
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.0001, time);
-    gain.gain.linearRampToValueAtTime(peak, time + (this.phase === "night" ? 2.0 : 1.2));
-    gain.gain.linearRampToValueAtTime(0.0001, time + duration);
-    for (const detune of [-5, 5]) {
-      const osc = this.ctx.createOscillator();
-      osc.type = "sine";
-      osc.frequency.value = freq;
-      osc.detune.value = detune;
-      osc.connect(gain);
-      osc.start(time);
-      osc.stop(time + duration + 0.1);
-    }
-    gain.connect(this.master);
-  }
-
-  private bird(time: number): void {
-    if (this.muted || !this.ctx || !this.master) return;
-    const base = 2400 + Math.random() * 900;
-    for (let i = 0; i < 3; i++) {
-      const t = time + i * 0.13;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(base, t);
-      osc.frequency.exponentialRampToValueAtTime(base * 1.35, t + 0.08);
-      gain.gain.setValueAtTime(0.0001, t);
-      gain.gain.exponentialRampToValueAtTime(0.025, t + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
-      osc.connect(gain).connect(this.master);
-      osc.start(t);
-      osc.stop(t + 0.12);
-    }
-  }
-
-  private handleSoundEffect = (effect: string): void => {
-    this.playSoundEffect(effect);
+  private handleSoundEffect = (payload: string | SoundEffectEvent): void => {
+    const event = typeof payload === "string" ? { name: payload } : payload;
+    if (!event || typeof event.name !== "string") return;
+    this.playSoundEffect(event);
   };
 
-  /** Small, original Web Audio effects for farming, dialogue and rewards. */
-  private playSoundEffect(effect: string): void {
-    if (this.muted) return;
-    if (!this.ctx || !this.master) this.start();
-    if (!this.ctx || !this.master) return;
+  private playSoundEffect(event: SoundEffectEvent): void {
+    if (this.effectsVolume <= 0) return;
+    if (!this.started) this.start();
+    if (!this.ctx || !this.effectsBus || this.ctx.state === "closed") return;
 
-    const tone = (
-      frequency: number,
-      duration: number,
-      volume: number,
-      wave: OscillatorType = "sine",
-      offset = 0,
-      endFrequency?: number
-    ): void => {
-      if (!this.ctx || !this.master) return;
-      const startAt = this.ctx.currentTime + offset;
-      const oscillator = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      oscillator.type = wave;
-      oscillator.frequency.setValueAtTime(frequency, startAt);
-      if (endFrequency && endFrequency > 0) {
-        oscillator.frequency.exponentialRampToValueAtTime(endFrequency, startAt + duration);
-      }
-      gain.gain.setValueAtTime(0.0001, startAt);
-      gain.gain.exponentialRampToValueAtTime(volume, startAt + Math.min(0.012, duration * 0.25));
-      gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
-      oscillator.connect(gain).connect(this.master);
-      oscillator.start(startAt);
-      oscillator.stop(startAt + duration + 0.02);
-    };
-
-    const noise = (duration: number, volume: number, cutoff: number): void => {
-      if (!this.ctx || !this.master) return;
-      const length = Math.max(1, Math.floor(this.ctx.sampleRate * duration));
-      const buffer = this.ctx.createBuffer(1, length, this.ctx.sampleRate);
-      const samples = buffer.getChannelData(0);
-      for (let i = 0; i < length; i++) samples[i] = Math.random() * 2 - 1;
-      const source = this.ctx.createBufferSource();
-      const filter = this.ctx.createBiquadFilter();
-      const gain = this.ctx.createGain();
-      filter.type = "lowpass";
-      filter.frequency.value = cutoff;
-      gain.gain.setValueAtTime(volume, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
-      source.buffer = buffer;
-      source.connect(filter).connect(gain).connect(this.master);
-      source.start();
-      source.stop(this.ctx.currentTime + duration + 0.01);
-    };
-
-    switch (effect) {
-      case "hoe":
-        tone(150, 0.16, 0.15, "triangle", 0, 72);
-        noise(0.09, 0.045, 850);
-        break;
-      case "plant":
-        tone(520, 0.11, 0.075, "sine");
-        tone(690, 0.14, 0.065, "sine", 0.08);
-        break;
-      case "water":
-        noise(0.26, 0.085, 1500);
-        tone(540, 0.2, 0.035, "sine", 0.02, 390);
-        break;
-      case "harvest":
-        tone(660, 0.14, 0.095, "triangle");
-        tone(880, 0.16, 0.095, "triangle", 0.09);
-        tone(1100, 0.2, 0.09, "sine", 0.18);
-        break;
-      case "dead":
-        tone(190, 0.24, 0.11, "triangle", 0, 86);
-        break;
-      case "request":
-        tone(523, 0.18, 0.1, "sine");
-        tone(659, 0.2, 0.095, "sine", 0.1);
-        tone(784, 0.24, 0.09, "sine", 0.2);
-        break;
-      case "buy":
-        tone(790, 0.1, 0.08, "triangle");
-        tone(1180, 0.15, 0.075, "sine", 0.07);
-        break;
-      case "sell":
-        tone(960, 0.09, 0.08, "triangle");
-        tone(1320, 0.17, 0.09, "sine", 0.08);
-        break;
-      case "talk":
-        tone(440, 0.1, 0.055, "sine");
-        tone(587, 0.13, 0.05, "sine", 0.07);
-        break;
-      case "error":
-        tone(210, 0.17, 0.075, "triangle", 0, 150);
-        break;
-      case "cast":
-        noise(0.22, 0.055, 1050);
-        tone(360, 0.16, 0.045, "sine", 0.04, 520);
-        break;
-      case "bite":
-        tone(720, 0.10, 0.08, "sine");
-        tone(980, 0.13, 0.08, "sine", 0.09);
-        break;
-      case "catch":
-        tone(660, 0.10, 0.09, "triangle");
-        tone(880, 0.13, 0.09, "triangle", 0.08);
-        tone(1175, 0.17, 0.08, "sine", 0.16);
-        break;
-      case "miss":
-        tone(330, 0.22, 0.07, "sine", 0, 190);
-        break;
-      case "cook":
-        noise(0.15, 0.04, 900);
-        tone(520, 0.12, 0.065, "triangle");
-        tone(780, 0.16, 0.07, "sine", 0.09);
-        break;
-      case "eat":
-        tone(523, 0.12, 0.06, "sine");
-        tone(659, 0.14, 0.07, "sine", 0.08);
-        tone(784, 0.18, 0.07, "triangle", 0.16);
-        break;
+    const effect = event.name;
+    const buffer = this.effectBuffers.get(effect);
+    if (!buffer) {
+      if (!this.audioReady && this.pendingEffects.length < 5) this.pendingEffects.push({ ...event });
+      return;
     }
-  }
 
-  private startWater(): void {
-    if (!this.ctx || !this.master) return;
-    const length = this.ctx.sampleRate * 3;
-    const buffer = this.ctx.createBuffer(1, length, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
-    const source = this.ctx.createBufferSource();
-    source.buffer = buffer;
-    source.loop = true;
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = 520;
-    this.waterGain = this.ctx.createGain();
-    this.waterGain.gain.value = 0.001;
-    source.connect(filter).connect(this.waterGain).connect(this.master);
-    source.start();
-  }
-
-  /** A soft wind bed becomes more noticeable around sunset and at night. */
-  private startBreeze(): void {
-    if (!this.ctx || !this.master) return;
-    const length = this.ctx.sampleRate * 4;
-    const buffer = this.ctx.createBuffer(1, length, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
-    const source = this.ctx.createBufferSource();
-    source.buffer = buffer;
-    source.loop = true;
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = 720;
-    const slowFilter = this.ctx.createBiquadFilter();
-    slowFilter.type = "highpass";
-    slowFilter.frequency.value = 90;
-    this.breezeGain = this.ctx.createGain();
-    this.breezeGain.gain.value = 0.001;
-    source.connect(filter).connect(slowFilter).connect(this.breezeGain).connect(this.master);
-    source.start();
-  }
-
-  /** Short, gentle cricket chirps make nighttime ambience distinct from day. */
-  private cricket(time: number, volume = 1): void {
-    if (this.muted || !this.ctx || !this.master) return;
-    for (let i = 0; i < 3; i++) {
-      const startAt = time + i * 0.16;
-      const oscillator = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      const filter = this.ctx.createBiquadFilter();
-      oscillator.type = "sine";
-      oscillator.frequency.setValueAtTime(4100 + Math.random() * 380, startAt);
-      oscillator.frequency.exponentialRampToValueAtTime(3650 + Math.random() * 250, startAt + 0.095);
-      filter.type = "bandpass";
-      filter.frequency.value = 3900;
-      filter.Q.value = 3.2;
-      gain.gain.setValueAtTime(0.0001, startAt);
-      gain.gain.exponentialRampToValueAtTime(0.012 * volume, startAt + 0.018);
-      gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.11);
-      oscillator.connect(filter).connect(gain).connect(this.master);
-      oscillator.start(startAt);
-      oscillator.stop(startAt + 0.13);
+    let attenuation = 1;
+    let pan = (Math.random() - 0.5) * 0.06;
+    if (Number.isFinite(event.x) && Number.isFinite(event.y)) {
+      const dx = (event.x as number) - this.listenerX;
+      const dy = (event.y as number) - this.listenerY;
+      const distance = Math.hypot(dx, dy);
+      const maxDistance = Math.max(48, event.maxDistance ?? 220);
+      if (distance >= maxDistance) return;
+      const proximity = Phaser.Math.Clamp(1 - distance / maxDistance, 0, 1);
+      // A gentle exponential roll-off keeps nearby foley clear and distant sounds unobtrusive.
+      attenuation = Math.pow(proximity, 1.25);
+      pan = Phaser.Math.Clamp(dx / maxDistance, -1, 1) * 0.82 + pan;
     }
+
+    const source = this.ctx.createBufferSource();
+    const gain = this.ctx.createGain();
+    const panner = this.ctx.createStereoPanner();
+    const baseGain = EFFECT_BASE_GAIN[effect] ?? 0.58;
+    source.buffer = buffer;
+    source.playbackRate.value = 0.975 + Math.random() * 0.05;
+    gain.gain.value = baseGain * attenuation * (0.94 + Math.random() * 0.12);
+    panner.pan.value = Phaser.Math.Clamp(pan, -1, 1);
+    source.connect(gain).connect(panner).connect(this.effectsBus);
+    source.start();
   }
 }

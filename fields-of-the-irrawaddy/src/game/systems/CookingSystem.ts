@@ -8,7 +8,6 @@ import { createRedCloseButton, modalClosePosition, modalPanel } from "../ui/Pixe
 export type MealKind = "fishRice" | "mohinga" | "fishCurry";
 export interface CookingSaveData {
   meals: Record<MealKind, number>;
-  wellFedUntilDay?: number;
 }
 
 interface Recipe {
@@ -41,7 +40,6 @@ export class CookingSystem {
   private twoKey!: Phaser.Input.Keyboard.Key;
   private threeKey!: Phaser.Input.Keyboard.Key;
   private eatKey!: Phaser.Input.Keyboard.Key;
-  private escapeKey!: Phaser.Input.Keyboard.Key;
 
   private panel!: Phaser.GameObjects.Container;
   private closeButton!: Phaser.GameObjects.Container;
@@ -51,7 +49,6 @@ export class CookingSystem {
   private exitText!: Phaser.GameObjects.Text;
   private eatBackground!: Phaser.GameObjects.Rectangle;
   private eatText!: Phaser.GameObjects.Text;
-  private wellFedUntilDay = 0;
   private cardBackgrounds: Phaser.GameObjects.Rectangle[] = [];
   private cardTexts: Phaser.GameObjects.Text[] = [];
   private message = "";
@@ -74,7 +71,6 @@ export class CookingSystem {
     this.twoKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.TWO);
     this.threeKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.THREE);
     this.eatKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
-    this.escapeKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
 
     this.createInterface();
     this.scene.input.on("pointerup", this.handlePointerUp, this);
@@ -88,7 +84,6 @@ export class CookingSystem {
     this.ui.registerPanel("cooking", this.panel, 230, () => {
       this.isOpen = false;
       this.interactKey.reset();
-      this.escapeKey.reset();
     }, this.closeButton);
     this.language.onChange(() => this.updateInterface());
   }
@@ -102,10 +97,11 @@ export class CookingSystem {
     }).setOrigin(0.5);
     const divider = this.scene.add.rectangle(320, 67, 470, 2, 0x9b7047, 0.8);
     this.subtitleText = this.scene.add.text(320, 83, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d7e6c5", align: "center"
+      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d7e6c5", align: "center",
+      wordWrap: { width: 430 }
     }).setOrigin(0.5);
 
-    const ys = [132, 186, 240];
+    const ys = [125, 173, 221];
     RECIPES.forEach((recipe, index) => {
       const y = ys[index];
       const card = this.scene.add.rectangle(320, y, 446, 46, 0x40513a, 1).setStrokeStyle(2, 0x9b7047);
@@ -121,15 +117,16 @@ export class CookingSystem {
       this.panel.add([card, icon, title, description]);
     });
 
-    this.statusText = this.scene.add.text(320, 264, "", {
+    this.statusText = this.scene.add.text(320, 254, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#f0d69e", align: "center", wordWrap: { width: 460 }
     }).setOrigin(0.5);
-    this.eatBackground = this.scene.add.rectangle(320, 290, 238, 24, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
-    this.eatText = this.scene.add.text(320, 290, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf", fontStyle: "bold"
+    this.eatBackground = this.scene.add.rectangle(320, 281, 340, 24, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
+    this.eatText = this.scene.add.text(320, 281, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "7px", color: "#fff1cf", fontStyle: "bold",
+      wordWrap: { width: 315 }
     }).setOrigin(0.5);
-    this.exitText = this.scene.add.text(320, 324, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#d7e6c5", align: "center"
+    this.exitText = this.scene.add.text(320, 313, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d7e6c5", align: "center"
     }).setOrigin(0.5);
 
     const closePosition = modalClosePosition(320, 180, 530, 310);
@@ -212,13 +209,13 @@ export class CookingSystem {
   private handlePointerUp = (pointer: Phaser.Input.Pointer): void => {
     if (!this.isOpen || !this.ui.isOpen("cooking")) return;
     if (pointer.x < 97 || pointer.x > 543) return;
-    const ys = [132, 186, 240];
+    const ys = [125, 173, 221];
     const index = ys.findIndex(y => pointer.y >= y - 23 && pointer.y <= y + 23);
     if (index >= 0) {
       this.cook(index);
       return;
     }
-    if (pointer.x >= 201 && pointer.x <= 439 && pointer.y >= 278 && pointer.y <= 302) this.eatMeal();
+    if (pointer.x >= 150 && pointer.x <= 490 && pointer.y >= 269 && pointer.y <= 293) this.eatMeal();
   };
 
   private handlePointerMove = (pointer: Phaser.Input.Pointer): void => {
@@ -227,10 +224,10 @@ export class CookingSystem {
       this.scene.game.canvas.style.cursor = "default";
       return;
     }
-    const ys = [132, 186, 240];
+    const ys = [125, 173, 221];
     let over = -1;
     if (pointer.x >= 97 && pointer.x <= 543) over = ys.findIndex(y => pointer.y >= y - 23 && pointer.y <= y + 23);
-    const overEat = pointer.x >= 201 && pointer.x <= 439 && pointer.y >= 278 && pointer.y <= 302;
+    const overEat = pointer.x >= 150 && pointer.x <= 490 && pointer.y >= 269 && pointer.y <= 293;
     this.cardBackgrounds.forEach((card, index) => card.setFillStyle(index === over ? 0x58734b : 0x40513a, 1));
     this.eatBackground.setFillStyle(overEat ? 0x98713d : 0x70532f, 1);
     this.scene.game.canvas.style.cursor = over >= 0 || overEat ? "pointer" : "default";
@@ -249,18 +246,16 @@ export class CookingSystem {
     this.isOpen = false;
     this.ui.close("cooking");
     this.interactKey.reset();
-    this.escapeKey.reset();
   };
 
   /** Called by the scene in world updates and while the cooking modal is open. */
   update(_playerX: number, _playerY: number): void {
-    this.refreshWellFed();
     if (this.isOpen) {
       if (Phaser.Input.Keyboard.JustDown(this.oneKey)) this.cook(0);
       if (Phaser.Input.Keyboard.JustDown(this.twoKey)) this.cook(1);
       if (Phaser.Input.Keyboard.JustDown(this.threeKey)) this.cook(2);
       if (Phaser.Input.Keyboard.JustDown(this.eatKey)) this.eatMeal();
-      if (Phaser.Input.Keyboard.JustDown(this.interactKey) || Phaser.Input.Keyboard.JustDown(this.escapeKey)) this.close();
+      if (Phaser.Input.Keyboard.JustDown(this.interactKey)) this.close();
       return;
     }
 
@@ -276,18 +271,11 @@ export class CookingSystem {
       return;
     }
     this.meals[kind]--;
-    this.wellFedUntilDay = this.farming.getDay() + 1;
-    this.fishing.setWellFed(true);
+    this.farming.applyMealBlessing();
     this.message = this.language.t("cooking.wellFed");
     this.scene.events.emit("player-action", "eat");
     this.scene.events.emit("sound-effect", "eat");
     this.updateInterface();
-  }
-
-  private refreshWellFed(): void {
-    const active = this.wellFedUntilDay > 0 && this.farming.getDay() < this.wellFedUntilDay;
-    this.fishing.setWellFed(active);
-    if (!active && this.wellFedUntilDay > 0) this.wellFedUntilDay = 0;
   }
 
   getTotalMeals(): number {
@@ -323,7 +311,7 @@ export class CookingSystem {
   }
 
   getSaveData(): CookingSaveData {
-    return { meals: { ...this.meals }, wellFedUntilDay: this.wellFedUntilDay };
+    return { meals: { ...this.meals } };
   }
 
   loadSaveData(data?: CookingSaveData): void {
@@ -331,8 +319,6 @@ export class CookingSystem {
     for (const key of ["fishRice", "mohinga", "fishCurry"] as MealKind[]) {
       this.meals[key] = Math.max(0, Math.floor(Number(data.meals?.[key]) || 0));
     }
-    this.wellFedUntilDay = Math.max(0, Math.floor(Number(data.wellFedUntilDay) || 0));
-    this.refreshWellFed();
     this.updateInterface();
   }
 }

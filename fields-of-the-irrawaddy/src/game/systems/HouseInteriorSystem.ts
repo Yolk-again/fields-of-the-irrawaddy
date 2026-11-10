@@ -31,18 +31,18 @@ export class HouseInteriorSystem {
   private panel!: Phaser.GameObjects.Container;
   private closeButton!: Phaser.GameObjects.Container;
   private outsidePrompt!: Phaser.GameObjects.Text;
-  private roomHint!: Phaser.GameObjects.Text;
   private title!: Phaser.GameObjects.Text;
   private statusText!: Phaser.GameObjects.Text;
+  private roomPrompt!: Phaser.GameObjects.Text;
   private sleepOverlay!: Phaser.GameObjects.Rectangle;
   private enterKey!: Phaser.Input.Keyboard.Key;
-  private escapeKey!: Phaser.Input.Keyboard.Key;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: { W: Phaser.Input.Keyboard.Key; A: Phaser.Input.Keyboard.Key; S: Phaser.Input.Keyboard.Key; D: Phaser.Input.Keyboard.Key };
   private avatarX = 320;
   private avatarY = 278;
   private sleeping = false;
   private promptTarget: RoomTarget | null = null;
+  private readonly touchMode = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
   private avatarTexture = "farmer_green_sheet";
   private readonly entrance = { x: 190, y: 267 };
   private readonly targets: Record<RoomTarget, { x: number; y: number }> = {
@@ -79,7 +79,6 @@ export class HouseInteriorSystem {
 
     const keyboard = scene.input.keyboard!;
     this.enterKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
-    this.escapeKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.cursors = keyboard.createCursorKeys();
     this.wasd = {
       W: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
@@ -100,7 +99,7 @@ export class HouseInteriorSystem {
   }
 
   private createOutsidePrompt(): void {
-    this.outsidePrompt = this.scene.add.text(320, 305, "", {
+    this.outsidePrompt = this.scene.add.text(320, 288, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf",
       backgroundColor: "#2a1a14", padding: { x: 7, y: 4 }, stroke: "#2a1a14", strokeThickness: 2
     }).setOrigin(0.5).setScrollFactor(0).setDepth(7200).setVisible(false);
@@ -129,7 +128,34 @@ export class HouseInteriorSystem {
     room.fillStyle(0x815336, 1).fillRect(316, 18, 6, 36);
     room.fillStyle(0x815336, 1).fillRect(273, 52, 94, 5);
     room.fillStyle(0x9c6840, 1).fillRect(20, 23, 8, 45).fillRect(612, 23, 8, 45);
-    // Original Burmese household furniture is rendered as separate pixel-art props below.
+    // Woven rug in the middle of the room.
+    room.fillStyle(0x7d4932, 1).fillRect(210, 226, 220, 82);
+    room.fillStyle(0xd5ad70, 1).fillRect(216, 232, 208, 70);
+    room.fillStyle(0x8d5035, 1).fillRect(224, 240, 192, 54);
+    for (let x = 232; x < 412; x += 16) room.fillStyle(0xd5ad70, 0.75).fillRect(x, 246, 2, 42);
+    // Bed frame and bedding (left side).
+    room.fillStyle(0x4b2d1d, 1).fillRect(86, 108, 118, 83);
+    room.fillStyle(0x8e5b35, 1).fillRect(91, 112, 108, 74);
+    room.fillStyle(0xe1d5b6, 1).fillRect(97, 117, 96, 63);
+    room.fillStyle(0xeee6d2, 1).fillRect(101, 121, 34, 23);
+    room.fillStyle(0x4d7590, 1).fillRect(138, 121, 52, 56);
+    room.fillStyle(0x668ba0, 1).fillRect(143, 126, 42, 46);
+    room.fillStyle(0x56331f, 1).fillRect(84, 188, 12, 8).fillRect(190, 188, 12, 8);
+    // Storage chest (centre).
+    room.fillStyle(0x3e2719, 1).fillRect(273, 119, 94, 65);
+    room.fillStyle(0x986039, 1).fillRect(278, 122, 84, 56);
+    room.fillStyle(0xb77e49, 1).fillRect(282, 125, 76, 8);
+    room.fillStyle(0x704326, 1).fillRect(282, 139, 76, 3).fillRect(282, 163, 76, 3);
+    room.fillStyle(0xe0bb65, 1).fillRect(315, 145, 14, 18);
+    room.fillStyle(0x4b2f1e, 1).fillRect(319, 149, 6, 8);
+    // Cooking hearth at right.
+    room.fillStyle(0x493126, 1).fillRect(451, 134, 102, 62);
+    room.fillStyle(0x77746a, 1).fillRect(458, 140, 88, 50);
+    room.fillStyle(0x4b4036, 1).fillRect(465, 146, 74, 37);
+    room.fillStyle(0xc07b3d, 1).fillRect(483, 172, 38, 11);
+    room.fillStyle(0xf0a34a, 1).fillRect(490, 159, 24, 18);
+    room.fillStyle(0xe2c68e, 1).fillRect(487, 146, 30, 7);
+    room.fillStyle(0x3d3026, 1).fillRect(493, 138, 18, 9);
     // Exit doorway at bottom centre.
     room.fillStyle(0x3b271c, 1).fillRect(286, 318, 68, 30);
     room.fillStyle(0xb88450, 1).fillRect(291, 322, 58, 26);
@@ -137,54 +163,44 @@ export class HouseInteriorSystem {
     room.fillStyle(0xd6b36b, 1).fillRect(333, 335, 4, 4);
 
     this.title = this.scene.add.text(28, 18, "", { fontFamily: this.language.getFontFamily(), fontSize: "15px", color: "#fff0cf", fontStyle: "bold" });
-    const bedLabel = this.scene.add.text(145, 94, "", { fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf", backgroundColor: "#39271e", padding: { x: 4, y: 2 } }).setOrigin(0.5);
-    const chestLabel = this.scene.add.text(320, 100, "", { fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf", backgroundColor: "#39271e", padding: { x: 4, y: 2 } }).setOrigin(0.5);
-    const cookerLabel = this.scene.add.text(502, 112, "", { fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf", backgroundColor: "#39271e", padding: { x: 4, y: 2 } }).setOrigin(0.5);
-    const wallTextile = this.scene.add.image(145, 91, "house_wall_textile_asset").setScale(2);
-    const bedArt = this.scene.add.image(145, 151, "house_bed_asset").setScale(1.8);
-    const wovenMat = this.scene.add.image(320, 267, "house_woven_mat_asset").setScale(2);
-    const chestArt = this.scene.add.image(320, 151, "house_chest_asset").setScale(1.9);
     const cookerArt = this.scene.add.image(502, 166, "cooking_hearth_asset").setScale(1.8);
-    const waterJar = this.scene.add.image(576, 240, "house_clay_jar_asset").setScale(1.8);
-    const oilLamp = this.scene.add.image(575, 90, "house_oil_lamp_asset").setScale(2);
     this.avatar = this.scene.add.sprite(this.avatarX, this.avatarY, "farmer_green_sheet", 0).setOrigin(0.5, 1).setScale(2);
-    this.roomHint = this.scene.add.text(320, 337, "", { fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf", backgroundColor: "#39271e", padding: { x: 5, y: 3 } }).setOrigin(0.5);
-    this.statusText = this.scene.add.text(320, 310, "", { fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#f0d69e", backgroundColor: "#39271e", padding: { x: 4, y: 2 } }).setOrigin(0.5);
+    this.statusText = this.scene.add.text(320, 310, "", { fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#f0d69e", backgroundColor: "#39271e", padding: { x: 4, y: 2 } }).setOrigin(0.5).setVisible(false);
+    this.roomPrompt = this.scene.add.text(320, 230, "", { fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf", backgroundColor: "#2a1a14", padding: { x: 7, y: 4 }, stroke: "#2a1a14", strokeThickness: 2 }).setOrigin(0.5).setVisible(false);
+    if (this.touchMode) {
+      this.roomPrompt.setInteractive(new Phaser.Geom.Rectangle(-88, -18, 176, 36), Phaser.Geom.Rectangle.Contains);
+      this.roomPrompt.on("pointerup", () => {
+        const target = this.promptTarget;
+        if (!target || !this.inside || !this.ui.isOpen("house") || this.sleeping) return;
+        this.roomPrompt.setVisible(false);
+        this.interact(target);
+      });
+    }
     this.sleepOverlay = this.scene.add.rectangle(320, 180, 640, 360, 0x101827, 1).setAlpha(0);
     const closePos = modalClosePosition(320, 180, 640, 360);
     this.closeButton = createRedCloseButton(this.scene, closePos.x, closePos.y);
-    this.panel.add([
-      room, wovenMat, wallTextile, bedArt, chestArt, cookerArt, waterJar, oilLamp,
-      this.title, bedLabel, chestLabel, cookerLabel, this.avatar, this.statusText,
-      this.roomHint, this.sleepOverlay, this.closeButton
-    ]);
+    this.panel.add([room, this.title, cookerArt, this.avatar, this.statusText, this.roomPrompt, this.sleepOverlay, this.closeButton]);
     this.panel.setVisible(false);
     this.updateLanguage();
   }
 
   private updateLanguage(): void {
     this.outsidePrompt.setText(this.language.t("house.enterPrompt"));
-    if (!this.roomHint) return;
+    if (!this.title) return;
     this.title.setText(this.language.t("house.title"));
-    this.roomHint.setText(this.language.t("house.controls"));
-    this.statusText.setText(this.statusText.text || this.language.t("house.welcome"));
     const font = this.language.getFontFamily();
     for (const child of this.panel.list) {
       if (child instanceof Phaser.GameObjects.Text) child.setFontFamily(font);
     }
-    // Static labels are localized by their data keys on every language change.
-    const labels = this.panel.list.filter(child => child instanceof Phaser.GameObjects.Text) as Phaser.GameObjects.Text[];
-    if (labels.length >= 4) {
-      labels[1].setText(this.language.t("house.bed"));
-      labels[2].setText(this.language.t("house.chest"));
-      labels[3].setText(this.language.t("house.cooker"));
-    }
+    if (this.roomPrompt && this.promptTarget) this.roomPrompt.setText(this.promptTextFor(this.promptTarget));
   }
 
   private enterHouse(): void {
     this.outsidePosition = { x: this.player.x, y: this.player.y };
     this.inside = true;
     this.sleeping = false;
+    this.statusText.setText("").setVisible(false);
+    this.roomPrompt.setVisible(false);
     this.avatarX = 320;
     this.avatarY = 278;
     this.avatar.setPosition(this.avatarX, this.avatarY);
@@ -194,16 +210,16 @@ export class HouseInteriorSystem {
     this.player.setVisible(false);
     this.ui.open("house");
     this.enterKey.reset();
-    this.escapeKey.reset();
   }
 
   private restoreOutside(): void {
     if (!this.inside) return;
     this.inside = false;
     this.sleeping = false;
+    this.promptTarget = null;
+    this.roomPrompt.setVisible(false);
     this.player.setPosition(this.outsidePosition.x, this.outsidePosition.y).setVisible(true);
     this.enterKey.reset();
-    this.escapeKey.reset();
   }
 
   private exitHouse(): void {
@@ -222,6 +238,25 @@ export class HouseInteriorSystem {
     return chosen;
   }
 
+  private promptTextFor(target: RoomTarget): string {
+    if (this.touchMode) {
+      const mobileKeys: Record<RoomTarget, string> = {
+        bed: "mobile.clickToSleep",
+        chest: "mobile.clickToOpen",
+        cooker: "mobile.clickToCook",
+        door: "mobile.clickToExit"
+      };
+      return this.language.t(mobileKeys[target]);
+    }
+    const keys: Record<RoomTarget, string> = {
+      bed: "house.promptBed",
+      chest: "house.promptChest",
+      cooker: "house.promptCooker",
+      door: "house.promptDoor"
+    };
+    return this.language.t(keys[target]);
+  }
+
   private interact(target: RoomTarget): void {
     if (target === "door") { this.exitHouse(); return; }
     if (target === "chest") { this.chest.openFromHouse(); return; }
@@ -233,7 +268,8 @@ export class HouseInteriorSystem {
     if (this.sleeping) return;
     this.sleeping = true;
     this.closeButton.setVisible(false);
-    this.statusText.setText(this.language.t("house.sleeping"));
+    this.statusText.setText(this.language.t("house.sleeping")).setVisible(true);
+    this.roomPrompt.setVisible(false);
     this.avatar.anims.play(`${this.avatarTexture}-task-sleep`, true);
     this.scene.events.emit("sound-effect", "sleep");
     this.scene.tweens.add({
@@ -243,10 +279,11 @@ export class HouseInteriorSystem {
       ease: "Sine.easeInOut",
       onComplete: () => {
         const result = this.village.sleepUntilNextPeriod();
-        this.farming.syncGameDay(result.day);
+        this.farming.syncGameDay(result.day, this.village.getElapsedGameMinutes());
         this.board.update(-10000, -10000);
         const timeText = `${String(result.hour % 12 || 12).padStart(2, "0")}:00 ${result.hour >= 12 ? "PM" : "AM"}`;
-        this.statusText.setText(this.language.t("house.woke", { time: timeText, day: result.day }));
+        this.statusText.setText(this.language.t("house.woke", { time: timeText, day: result.day })).setVisible(true);
+        this.scene.time.delayedCall(3200, () => { if (!this.sleeping) this.statusText.setVisible(false); });
         this.save.saveNow();
         this.scene.events.emit("time-skipped");
         this.scene.tweens.add({
@@ -300,32 +337,67 @@ export class HouseInteriorSystem {
     const found = hitAreas.find(area => pointer.x >= area.left && pointer.x <= area.right && pointer.y >= area.top && pointer.y <= area.bottom);
     if (found) {
       const targetPoint = this.targets[found.target];
-      if (Phaser.Math.Distance.Between(this.avatarX, this.avatarY, targetPoint.x, targetPoint.y) < 92) this.interact(found.target);
+      // Touch players select indoor furniture by tapping it, then use the
+      // matching action prompt on the right side of the room.
+      if (this.touchMode) {
+        this.avatarX = targetPoint.x;
+        this.avatarY = targetPoint.y;
+        this.avatar.setPosition(this.avatarX, this.avatarY);
+        this.promptTarget = found.target;
+        this.roomPrompt.setText(this.promptTextFor(found.target)).setPosition(536, 300).setVisible(true);
+        return;
+      }
+      if (Phaser.Math.Distance.Between(this.avatarX, this.avatarY, targetPoint.x, targetPoint.y) < 92) {
+        this.roomPrompt.setVisible(false);
+        this.interact(found.target);
+      }
     }
   };
 
   update(playerX: number, playerY: number, delta = this.scene.game.loop.delta): void {
     if (!this.inside) {
       const near = Phaser.Math.Distance.Between(playerX, playerY, this.entrance.x, this.entrance.y) < 76;
-      this.outsidePrompt.setVisible(near && !this.ui.hasActiveModal());
+      this.outsidePrompt.setVisible(near && !this.ui.hasActiveModal() && !this.touchMode);
       if (near && Phaser.Input.Keyboard.JustDown(this.enterKey) && !this.ui.hasActiveModal()) this.enterHouse();
       return;
     }
     this.outsidePrompt.setVisible(false);
     if (!this.ui.isOpen("house") || this.sleeping) return;
 
+    if (this.ui.isOpen("chest") || this.ui.isOpen("cooking")) {
+      this.roomPrompt.setVisible(false);
+      return;
+    }
+
     this.moveAvatar(delta);
     this.promptTarget = this.closestTarget();
     if (this.promptTarget) {
-      const promptKey: Record<RoomTarget, string> = {
-        bed: "house.useBed", chest: "house.openChest", cooker: "house.useCooker", door: "house.exitDoor"
-      };
-      this.roomHint.setText(`${this.language.t(promptKey[this.promptTarget])} · E`);
-    } else this.roomHint.setText(this.language.t("house.controls"));
-
-    if (Phaser.Input.Keyboard.JustDown(this.enterKey) && this.promptTarget) this.interact(this.promptTarget);
-    if (Phaser.Input.Keyboard.JustDown(this.escapeKey)) this.exitHouse();
+      this.roomPrompt.setText(this.promptTextFor(this.promptTarget));
+      if (this.touchMode) this.roomPrompt.setPosition(536, 300);
+      else this.roomPrompt.setPosition(this.avatarX, Math.max(94, this.avatarY - 48));
+      this.roomPrompt.setVisible(true);
+    } else {
+      this.roomPrompt.setVisible(false);
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.enterKey) && this.promptTarget) {
+      const target = this.promptTarget;
+      this.roomPrompt.setVisible(false);
+      this.interact(target);
+    }
   }
 
   isInside(): boolean { return this.inside; }
+
+  /** Touch equivalent of the E key for entering the home from the world. */
+  mobileInteract(playerX: number, playerY: number): boolean {
+    if (this.inside || this.ui.hasActiveModal()) return false;
+    if (Phaser.Math.Distance.Between(playerX, playerY, this.entrance.x, this.entrance.y) >= 76) return false;
+    this.enterHouse();
+    return true;
+  }
+
+  canMobileInteract(playerX: number, playerY: number): boolean {
+    return !this.inside && !this.ui.hasActiveModal() &&
+      Phaser.Math.Distance.Between(playerX, playerY, this.entrance.x, this.entrance.y) < 76;
+  }
 }

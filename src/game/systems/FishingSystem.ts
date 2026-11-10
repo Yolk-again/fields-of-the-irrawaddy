@@ -262,6 +262,24 @@ export class FishingSystem {
     });
   }
 
+  /** Touch equivalent of cast/reel. Returns false when the player is not at water. */
+  mobileAction(playerX: number, playerY: number): boolean {
+    if (this.state === "bite") {
+      this.catchFish();
+      return true;
+    }
+    if (this.state === "waiting") return true;
+
+    const spot = this.nearestSpot(playerX, playerY);
+    if (!spot) return false;
+    if (!this.rodOwned) {
+      this.prompt.setText(this.language.t("fishing.needRod")).setVisible(true);
+      return true;
+    }
+    this.beginCast(playerX, playerY, spot);
+    return true;
+  }
+
   /** Returns true while fishing consumes SPACE so farming cannot use the tool. */
   update(playerX: number, playerY: number, delta: number, modalOpen = false): boolean {
     if (modalOpen) {

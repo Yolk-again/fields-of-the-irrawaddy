@@ -29,8 +29,8 @@ type InventorySaveData = {
 };
 
 const HOTBAR_DEFAULT: Array<InventoryItemId | null> = ["hoe", "seeds", "water", "harvest"];
-const BACKPACK_DEFAULT: Array<InventoryItemId | null> = ["rice", "fish", "meals", "rod", "goldenWheat", ...Array(10).fill(null)];
-const ALL_ITEMS: InventoryItemId[] = ["hoe", "seeds", "water", "harvest", "rice", "fish", "meals", "rod", "goldenWheat"];
+const BACKPACK_DEFAULT: Array<InventoryItemId | null> = Array(15).fill(null);
+const ALL_ITEMS: InventoryItemId[] = ["hoe", "seeds", "water", "harvest", "rice", "silverBarb", "catfish", "goldenCarp", "meals", "rod", "goldenWheat"];
 
 /** Minecraft-inspired movable backpack and four-slot quick toolbar. */
 export class InventorySystem {
@@ -88,13 +88,11 @@ export class InventorySystem {
   }
 
   private createControls(): void {
-    window.addEventListener("keydown", this.handleWindowKeyDown, true);
     this.scene.input.on("pointerdown", this.handlePointerDown, this);
     this.scene.input.on("pointerup", this.handlePointerUp, this);
     this.scene.input.on("pointermove", this.handlePointerMove, this);
     this.scene.input.on("gameout", this.handleGameOut, this);
     this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      window.removeEventListener("keydown", this.handleWindowKeyDown, true);
       this.scene.input.off("pointerdown", this.handlePointerDown, this);
       this.scene.input.off("pointerup", this.handlePointerUp, this);
       this.scene.input.off("pointermove", this.handlePointerMove, this);
@@ -102,14 +100,6 @@ export class InventorySystem {
       this.setCanvasCursor(this.defaultCanvasCursor);
     });
   }
-
-  private handleWindowKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === "Escape" && this.isOpen) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.closeInventory();
-    }
-  };
 
   private createInterface(): void {
     this.inventoryPanel = this.scene.add.container(0, 0).setScrollFactor(0);
@@ -198,16 +188,26 @@ export class InventorySystem {
       case "hoe": case "water": case "harvest": case "rod": return item === "rod" ? (this.fishing.getHasRod() ? 1 : 0) : 1;
       case "seeds": return this.farming.getSeeds();
       case "rice": return this.farming.getRice();
-      case "fish": return this.fishing.getFishTotal();
+      case "silverBarb": case "catfish": case "goldenCarp": return this.fishing.getFishCount(item);
       case "meals": return this.cooking.getTotalMeals();
       case "goldenWheat": return this.farming.getGoldenWheat();
     }
   }
 
   private ensureNewItemsHaveSlots(): void {
+    let hotbarChanged = false;
     for (const item of ALL_ITEMS) {
       const count = this.countFor(item);
       const previous = this.lastCounts.get(item) ?? 0;
+      const isTool = INVENTORY_ITEM_DEFINITIONS[item].tool !== undefined;
+      // Consumables disappear when depleted, then return in a free backpack
+      // slot as soon as the player obtains one again.
+      if (!isTool && count <= 0) {
+        const nextHotbar = this.hotbarSlots.map(slot => slot === item ? null : slot);
+        hotbarChanged ||= nextHotbar.some((slot, index) => slot !== this.hotbarSlots[index]);
+        this.hotbarSlots = nextHotbar;
+        this.backpackSlots = this.backpackSlots.map(slot => slot === item ? null : slot);
+      }
       const alreadyPlaced = this.hotbarSlots.includes(item) || this.backpackSlots.includes(item);
       if (count > 0 && !alreadyPlaced && count >= previous) {
         const emptyIndex = this.backpackSlots.findIndex(slot => slot === null);
@@ -215,6 +215,7 @@ export class InventorySystem {
       }
       this.lastCounts.set(item, count);
     }
+    if (hotbarChanged) this.farming.setHotbarItems(this.hotbarSlots);
   }
 
   private labelFor(item: InventoryItemId): string {
@@ -244,7 +245,7 @@ export class InventorySystem {
       cell.background.setStrokeStyle(isTarget && !isSource ? 3 : selected ? 2 : 1, isTarget ? 0xffd978 : selected ? 0xd6b36b : 0x9b7047);
       cell.name.setFontFamily(font);
       cell.amount.setFontFamily(font);
-      if (!item) {
+      if (!item || (!INVENTORY_ITEM_DEFINITIONS[item].tool && this.countFor(item) <= 0)) {
         cell.icon.setVisible(false);
         cell.name.setVisible(false);
         cell.amount.setVisible(false);
@@ -255,10 +256,7 @@ export class InventorySystem {
       cell.name.setText(this.labelFor(item)).setVisible(true);
       const count = this.countFor(item);
       let quantityText = String(count);
-      if (item === "fish") {
-        const counts = this.fishing.getFishCounts();
-        quantityText = `B${counts.silverBarb} C${counts.catfish} G${counts.goldenCarp}`;
-      } else if (item === "rod") {
+      if (item === "rod") {
         quantityText = count > 0 ? "1" : "0";
       }
       cell.amount.setText(quantityText).setVisible(true);
@@ -402,13 +400,18 @@ export class InventorySystem {
 
   loadSaveData(data: InventorySaveData): void {
     const valid = (value: unknown): value is InventoryItemId => typeof value === "string" && ALL_ITEMS.includes(value as InventoryItemId);
+    const migrateLegacyFish = (item: unknown): InventoryItemId | null => {
+      if (item !== "fish") return item === null || valid(item) ? item : null;
+      const counts = this.fishing.getFishCounts();
+      return counts.silverBarb > 0 ? "silverBarb" : counts.catfish > 0 ? "catfish" : counts.goldenCarp > 0 ? "goldenCarp" : null;
+    };
     if (Array.isArray(data.hotbarSlots) && data.hotbarSlots.length === 4) {
-      this.hotbarSlots = data.hotbarSlots.map(item => item === null || valid(item) ? item : null);
+      this.hotbarSlots = data.hotbarSlots.map(migrateLegacyFish);
     } else {
       this.hotbarSlots = [...HOTBAR_DEFAULT];
     }
     if (Array.isArray(data.backpackSlots) && data.backpackSlots.length === 15) {
-      this.backpackSlots = data.backpackSlots.map(item => item === null || valid(item) ? item : null);
+      this.backpackSlots = data.backpackSlots.map(migrateLegacyFish);
     } else {
       this.backpackSlots = [...BACKPACK_DEFAULT];
     }

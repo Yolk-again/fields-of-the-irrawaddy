@@ -196,132 +196,6 @@ def sit_frame(f, pal):
     o.outline(-.72); return o
 
 
-def task_frame(f, pal, kind):
-    """Burmese-village action pose (16x26): each four-frame row is a distinct task."""
-    lo, up = _parts(f, "side", pal, pose="work")
-    shirt, skin = pal["shirt"], pal["skin"]
-    wood = WOOD.m
-    iron = METAL.m
-    shift = (0, 0)
-    shoulder = (8, 12)
-
-    if kind == "plant":
-        # A low bend to place rice grains, with a small paper seed pouch at the waist.
-        shift = (1, 2)
-        hand = (12 + (f % 2), 18 + (1 if f in (1, 2) else 0))
-        up.line(shoulder[0], shoulder[1], hand[0], hand[1], shirt.m)
-        up.line(shoulder[0] + 1, shoulder[1], hand[0], hand[1], shirt.d1)
-        up.rect(hand[0] - 1, hand[1], 2, 2, skin.m)
-        up.rect(3, 14, 3, 5, hx("#8d5b32")); up.rect(4, 13, 2, 2, hx("#d8b879"))
-        up.p(14, 22, hx("#e5c66c") if f in (0, 2) else hx("#9ac85a"))
-        up.p(13, 23, hx("#e5c66c") if f == 1 else hx("#9ac85a"))
-    elif kind == "water":
-        # Side-on water-can pour; droplets move across the four frames.
-        hand = (11, 13 + (f % 2))
-        up.line(shoulder[0], shoulder[1], hand[0], hand[1], shirt.m)
-        up.rect(hand[0], hand[1], 2, 2, skin.m)
-        up.rect(11, 15, 4, 4, hx("#477fa5")); up.hline(11, 15, 4, hx("#9ed2e1"))
-        up.line(13, 15, 15, 12, hx("#6d8790")); up.p(15, 11, hx("#c5e7f2"))
-        drops = [(14, 19), (15, 20), (13, 21), (15, 22)]
-        for dx, dy in drops[:1 + (f % 4)]: up.p(dx, dy, hx("#91d5ef"))
-    elif kind == "harvest":
-        # Bend low and cut rice with a crescent sickle.
-        shift = (1, 2)
-        hand = (11 + (f % 2), 17)
-        up.line(shoulder[0], shoulder[1], hand[0], hand[1], shirt.m)
-        up.rect(hand[0], hand[1], 2, 2, skin.m)
-        up.line(hand[0], hand[1] + 1, 14, 20 - (f % 2), wood)
-        up.line(13, 19 - (f % 2), 15, 17 - (f % 2), iron)
-        up.line(15, 17 - (f % 2), 15, 20 - (f % 2), iron)
-        up.p(14, 18 - (f % 2), hx("#dbe2dc"))
-        up.p(14, 22, hx("#e7c84e") if f in (1, 2) else hx("#78b34b"))
-    elif kind == "fish":
-        # Relaxed cast/reel pose with a bamboo pole, fine line, and hook.
-        hand = (9, 12 + (1 if f in (1, 2) else 0))
-        up.line(shoulder[0], shoulder[1], hand[0], hand[1], shirt.m)
-        up.rect(hand[0], hand[1], 2, 2, skin.m)
-        up.line(10, 12, 14, 2 + (f % 2), hx("#9b6937"))
-        up.line(11, 11, 15, 2 + (f % 2), hx("#d8b879"))
-        up.line(14, 3 + (f % 2), 15, 9, hx("#cfe0d7"))
-        up.p(15, 10, iron)
-    elif kind == "cook":
-        # Stir a clay pot above a small hearth; steam shifts to imply motion.
-        hand = (12, 14 + (f % 2))
-        up.line(shoulder[0], shoulder[1], hand[0], hand[1], shirt.m)
-        up.rect(hand[0], hand[1], 2, 2, skin.m)
-        up.rect(11, 17, 4, 4, hx("#8b5031")); up.hline(11, 17, 4, hx("#d29b5c"))
-        up.hline(10, 20, 6, hx("#513427"))
-        up.line(13, 14, 14 + (f % 2), 18, hx("#d8b879"))
-        up.p(12 + (f % 3), 14 - (f % 2), hx("#f0e2bd"))
-        up.p(14, 12 + (f % 3), hx("#f0e2bd"))
-    elif kind == "gesture":
-        # Friendly wave / offering gesture. The hand rises and settles.
-        hand = (12, 7 - (1 if f in (1, 2) else 0))
-        up.line(shoulder[0], shoulder[1], hand[0], hand[1], shirt.m)
-        up.rect(hand[0], hand[1] - 1, 2, 3, skin.m)
-        up.p(hand[0] + 1, hand[1] - 2, skin.l1)
-        up.p(13, 7, skin.m)
-    elif kind == "bow":
-        # Deep respectful bow, with the shoulders and head lowered.
-        shift = (1, 3 if f in (1, 2) else 2)
-        up.line(8, 13, 12, 18, shirt.m)
-        up.rect(11, 18, 2, 2, skin.m)
-        up.p(13, 20, skin.l1)
-    elif kind == "eat":
-        # Bring a small lacquer bowl up to the mouth; subtle head bob.
-        shift = (0, -1 if f in (1, 2) else 0)
-        hand = (10, 10 + (f % 2))
-        up.line(shoulder[0], shoulder[1], hand[0], hand[1], shirt.m)
-        up.rect(hand[0], hand[1], 2, 2, skin.m)
-        up.ell(11, 16, 3, 2, hx("#3b2520")); up.ell(11, 15, 3, 1, hx("#d8b879"))
-        up.p(10, 15, hx("#fff0cf")); up.p(12, 15, hx("#fff0cf"))
-    elif kind == "alms":
-        # Carry a rounded alms bowl in both hands, the monk's signature morning pose.
-        up.line(shoulder[0] - 1, shoulder[1] + 1, 6, 16, shirt.m)
-        up.line(shoulder[0] + 2, shoulder[1] + 1, 10, 16, shirt.m)
-        up.rect(5, 15, 2, 2, skin.m); up.rect(10, 15, 2, 2, skin.m)
-        up.ell(8, 18, 4, 2, hx("#3b3029")); up.ell(8, 17, 4, 1, hx("#d6bd8b"))
-        up.p(6 + (f % 2), 17, hx("#fff0cf")); up.p(9, 17, hx("#fff0cf"))
-
-    out = Spr(16, 26)
-    out.paste(lo, 0, 2)
-    out.paste(up, shift[0], 2 + shift[1])
-    out.outline(-.72)
-    return out
-
-
-def kid_task_frame(f, pal, kind):
-    """The same task language redrawn for the shorter child silhouette."""
-    out = Spr(16, 26)
-    out.paste(kid_frame(f, "side", pal, pose="walk"), 0, 0)
-    skin = pal["skin"]
-    shirt = pal["shirt"]
-    if kind == "plant":
-        out.line(9, 12, 12, 19, shirt.m); out.rect(11, 18, 2, 2, skin.m)
-        out.rect(3, 15, 3, 4, hx("#8d5b32")); out.p(14, 22, hx("#e5c66c"))
-    elif kind == "water":
-        out.line(9, 12, 12, 14, shirt.m); out.rect(11, 14, 2, 2, skin.m)
-        out.rect(11, 16, 4, 3, hx("#477fa5")); out.p(15, 19, hx("#91d5ef")); out.p(14, 21, hx("#91d5ef"))
-    elif kind == "harvest":
-        out.line(9, 12, 12, 18, shirt.m); out.rect(11, 17, 2, 2, skin.m)
-        out.line(12, 18, 15, 20, hx("#9b6937")); out.line(13, 18, 15, 16, hx("#dbe2dc"))
-    elif kind == "fish":
-        out.line(9, 12, 10, 12, shirt.m); out.line(10, 12, 14, 2, hx("#9b6937")); out.line(14, 3, 15, 9, hx("#cfe0d7"))
-    elif kind == "cook":
-        out.line(9, 12, 12, 14, shirt.m); out.rect(11, 17, 4, 4, hx("#8b5031")); out.line(12, 14, 14, 18, hx("#d8b879"))
-    elif kind == "gesture":
-        out.line(9, 12, 12, 7 - (f % 2), shirt.m); out.rect(11, 6 - (f % 2), 2, 3, skin.m)
-    elif kind == "bow":
-        out.line(8, 13, 12, 18, shirt.m); out.rect(11, 18, 2, 2, skin.m)
-    elif kind == "eat":
-        out.rect(10, 10, 2, 3, skin.m); out.ell(11, 16, 3, 2, hx("#3b2520")); out.p(11, 15, hx("#fff0cf"))
-    elif kind == "alms":
-        out.line(7, 13, 6, 16, shirt.m); out.line(9, 13, 10, 16, shirt.m)
-        out.ell(8, 18, 4, 2, hx("#3b3029")); out.ell(8, 17, 4, 1, hx("#d6bd8b"))
-    out.outline(-.72)
-    return out
-
-
 # ------------------------------- kid ----------------------------------
 def kid_frame(f, direction, pal, pose="walk"):
     s = Spr(16, 26)
@@ -407,17 +281,12 @@ def person_sheet2(name, pal):
     if name == "kid":
         for d in ("down", "up", "side"):
             fr += [kid_frame(f, d, pal) for f in range(4)]
-        # Preserve the child's familiar play and seated poses in rows 3-4.
         fr += [kid_frame(f, "down", pal, pose="play") for f in range(4)]
         fr += [kid_sit(f, pal) for f in range(4)]
-        fr += [kid_task_frame(f, pal, kind) for kind in ("plant", "water", "harvest", "fish", "cook", "gesture", "bow", "eat", "alms") for f in range(4)]
         return sheet(fr, cols=4)
     for d in ("down", "up", "side"):
         fr += [person_frame(f, d, pal) for f in range(4)]
     kind = "broom" if name == "monk" else "bend" if name == "ma_thiri" else "hoe"
     fr += [work_frame(f, pal, kind) for f in range(4)]
     fr += [sit_frame(f, pal) for f in range(4)]
-    # Authored Burmese-village work cycles: planting, watering, harvesting,
-    # fishing, cooking, greeting/offering, homage, and eating.
-    fr += [task_frame(f, pal, action) for action in ("plant", "water", "harvest", "fish", "cook", "gesture", "bow", "eat", "alms") for f in range(4)]
     return sheet(fr, cols=4)

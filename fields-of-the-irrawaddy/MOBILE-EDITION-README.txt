@@ -43,16 +43,13 @@ DESKTOP CONTROLS
 
 MOBILE CONTROLS
 - Rotate the phone to landscape.
-- Use the left virtual joystick to move.
-- BAG opens the inventory.
-- BOARD opens daily village requests when nearby (R on a keyboard).
-- The HELP icon in the top-right opens the bilingual game guide.
-- TALK interacts with nearby villagers or the market.
-- The profile person icon in the top-right opens the farmer profile.
-- USE applies the currently selected farming tool.
+- Use the left virtual joystick to move around the village and farm.
 - Tap one of the four tool slots along the bottom to select the hoe, seeds, watering can, or sickle.
-- Inventory, market, village requests, and dialogue can be operated by tapping.
-- The top-right icon row contains fullscreen, music, help, language, profile, and Inventory (bag). Click the bag icon to open Inventory; the I key is no longer used. These icons are click-only and have no keyboard shortcuts.
+- Tap USE on the right to apply the selected farming tool. At a fishing spot, the same button casts the line and reels in a catch when the fish bites.
+- When near a villager, the right-side action prompt says CLICK TO TALK. Tap it to start or continue the conversation.
+- When near the market, village request board, or home entrance, the right-side prompt says CLICK TO OPEN. Tap it to open the matching screen or enter the house.
+- Inside the house, tap the bed, storage chest, cooker, or exit door to select it. The matching CLICK TO... prompt appears on the right; tap that prompt to sleep, open storage, cook, or leave the house.
+- Use the close control shown on each open panel to return to the game.
 
 TESTING NOTE
 The TypeScript source was syntax-checked after the UI changes. A full production build could not be run in this workspace because the project dependencies were not available here. Run the build command above on your computer before pushing the changes to GitHub or deploying them.
@@ -78,3 +75,10 @@ LATEST UI INTERACTION UPDATE
 LATEST INVENTORY CLEANUP
 - Removed unused wood, bamboo, herbs and coconut pickup items, their inventory counters, and their unused icon assets. The backpack now displays only rice seeds, harvested rice, and the four farming tools.
 - Removed the obsolete PICK control because there are no longer loose resource pickups.
+
+LATEST MOBILE INPUT UPDATE
+- Kept the mobile HUD to the movement joystick, the existing USE action, and one contextual prompt instead of separate BAG / BOARD / TALK buttons.
+- Enlarged the invisible touch target for the right-side action and contextual prompt without adding extra icons.
+- The contextual prompt now identifies whether the nearby action is talking or opening a location.
+- Indoor furniture taps select the bed, chest, cooker, or door; the matching right-side prompt performs the action.
+- The USE action button routes to fishing while at a fishing spot and to the selected farming tool everywhere else.

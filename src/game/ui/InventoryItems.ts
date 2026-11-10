@@ -4,7 +4,9 @@ export type InventoryItemId =
   | "water"
   | "harvest"
   | "rice"
-  | "fish"
+  | "silverBarb"
+  | "catfish"
+  | "goldenCarp"
   | "meals"
   | "rod"
   | "goldenWheat";
@@ -21,7 +23,9 @@ export const INVENTORY_ITEM_DEFINITIONS: Record<InventoryItemId, InventoryItemDe
   water: { nameKey: "farm.water", texture: "watering_can_asset", tool: "water" },
   harvest: { nameKey: "farm.harvest", texture: "sickle_asset", tool: "harvest" },
   rice: { nameKey: "inventory.rice", texture: "rice_bowl_asset" },
-  fish: { nameKey: "inventory.fishVariety", texture: "fish_catfish_asset" },
+  silverBarb: { nameKey: "inventory.silverBarb", texture: "fish_silver_barb_asset" },
+  catfish: { nameKey: "inventory.catfish", texture: "fish_catfish_asset" },
+  goldenCarp: { nameKey: "inventory.goldenCarp", texture: "fish_golden_carp_asset" },
   meals: { nameKey: "inventory.meals", texture: "meal_fish_rice_asset" },
   rod: { nameKey: "inventory.rod", texture: "fishing_rod_asset" },
   goldenWheat: { nameKey: "inventory.goldenWheat", texture: "rice_grain_asset" }

@@ -155,9 +155,9 @@ export class VillageSystem {
   private houseLabels: { text: Phaser.GameObjects.Text; x: number; y: number }[] = [];
 
   private talkKey!: Phaser.Input.Keyboard.Key;
-  private escapeKey!: Phaser.Input.Keyboard.Key;
   private isTalking = false;
   private activeVillager: Villager | null = null;
+  private readonly touchMode = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
   private dialogueIndex = 0;
 
   private dialoguePanel!: Phaser.GameObjects.Container;
@@ -199,7 +199,6 @@ export class VillageSystem {
       this.isTalking = false;
       this.activeVillager = null;
       this.talkKey.reset();
-      this.escapeKey.reset();
     }, this.dialogueCloseButton);
 
     this.ui.registerHud(
@@ -374,21 +373,7 @@ export class VillageSystem {
   private createControls(): void {
     const keyboard = this.scene.input.keyboard!;
     this.talkKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
-    this.escapeKey = keyboard.addKey(27);
-
-    window.addEventListener("keydown", this.handleWindowKeyDown, true);
-    this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      window.removeEventListener("keydown", this.handleWindowKeyDown, true);
-    });
   }
-
-  private handleWindowKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === "Escape" && this.isTalking) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.closeDialogue();
-    }
-  };
 
   private createClock(): void {
     const background = pixelPanel(this.scene, 93, 22, 170, 28).setDepth(150);
@@ -606,6 +591,11 @@ export class VillageSystem {
   getTimeOfDayHours(): number {
     const elapsedMinutes = Math.floor((this.scene.time.now - this.clockStartTime) / this.gameMinuteDuration);
     return ((360 + elapsedMinutes) % 1440) / 60;
+  }
+
+  /** Total elapsed in-game minutes since the world began; 1,440 = 24 hours. */
+  getElapsedGameMinutes(): number {
+    return Math.max(0, Math.floor((this.scene.time.now - this.clockStartTime) / this.gameMinuteDuration));
   }
 
   /** Day number shared by crop growth and daily village requests. */
@@ -1573,30 +1563,67 @@ export class VillageSystem {
             best = target;
           }
         }
-        const targetX = Phaser.Math.Clamp(best.x, schedule.wander?.x1 ?? 0, schedule.wander?.x2 ?? 1440);
-        const targetY = Phaser.Math.Clamp(best.y, schedule.wander?.y1 ?? 0, schedule.wander?.y2 ?? 640);
+        const targetX = Phaser.Math.Clamp(best.x, schedule.wander?.x1 ?? 8, schedule.wander?.x2 ?? 1432);
+        const targetY = Phaser.Math.Clamp(best.y, schedule.wander?.y1 ?? 12, schedule.wander?.y2 ?? 624);
         if (bestDistance < 22) {
           schedule.route = undefined;
+          villager.routeIndex = 0;
           villager.targetX = villager.x;
           villager.targetY = villager.y;
-          villager.waitTimer = 0.65;
+          villager.waitTimer = 0.45;
           villager.chaseCooldown = 0;
           this.playNpcAnimation(villager, "play");
           return;
         }
-        const chasePath = this.findWalkablePath(villager.x, villager.y, targetX, targetY);
+
+        // A chicken can run right up against a fence or world-edge cell. Aim
+        // for several nearby reachable points rather than abandoning the chase
+        // when its exact current position cannot be reached by the pathfinder.
+        const offsets: Array<[number, number]> = [
+          [0, 0], [18, 0], [-18, 0], [0, 12], [0, -12],
+          [30, 14], [-30, 14], [30, -14], [-30, -14],
+          [48, 0], [-48, 0], [0, 22], [0, -22],
+          [54, 18], [-54, 18], [54, -18], [-54, -18]
+        ];
+        let chasePath: Waypoint[] = [];
+        let bestPathCost = Infinity;
+        for (const [offsetX, offsetY] of offsets) {
+          const candidateX = Phaser.Math.Clamp(targetX + offsetX, schedule.wander?.x1 ?? 8, schedule.wander?.x2 ?? 1432);
+          const candidateY = Phaser.Math.Clamp(targetY + offsetY, schedule.wander?.y1 ?? 12, schedule.wander?.y2 ?? 624);
+          const candidatePath = this.findWalkablePath(villager.x, villager.y, candidateX, candidateY);
+          if (candidatePath.length === 0) continue;
+          let cost = 0;
+          let from = { x: villager.x, y: villager.y };
+          for (const point of candidatePath) {
+            cost += Phaser.Math.Distance.Between(from.x, from.y, point.x, point.y);
+            from = point;
+          }
+          cost += Phaser.Math.Distance.Between(candidateX, candidateY, best.x, best.y) * 0.28;
+          if (cost < bestPathCost) {
+            bestPathCost = cost;
+            chasePath = candidatePath;
+          }
+        }
         if (chasePath.length > 0) {
           schedule.route = chasePath;
           schedule.repeatRoute = false;
           villager.routeIndex = 0;
           villager.targetX = chasePath[0].x;
           villager.targetY = chasePath[0].y;
-        } else if (!schedule.route) {
-          villager.targetX = villager.x;
-          villager.targetY = villager.y;
-          this.playNpcAnimation(villager, "play");
+        } else {
+          // A cornered chicken may not have a reachable approach point. Let the
+          // child patrol a fresh reachable point while the next chase scan runs;
+          // never leave the child frozen against the coop fence.
+          schedule.route = undefined;
+          villager.routeIndex = 0;
+          if (!this.planNextWander(villager, schedule)) {
+            villager.targetX = villager.x;
+            villager.targetY = villager.y;
+            villager.waitTimer = 0.18;
+            this.playNpcAnimation(villager, "play");
+          }
         }
-        villager.chaseCooldown = 1.2;
+        villager.chaseCooldown = chasePath.length > 0 ? 0.55 : 0.22;
       }
     }
 
@@ -1749,7 +1776,7 @@ export class VillageSystem {
     this.playNpcAnimation(villager, "talk", false);
     villager.taskIcon.setVisible(false);
     this.dialogueIndex = 0;
-    this.scene.events.emit("sound-effect", "talk");
+    this.scene.events.emit("sound-effect", { name: "talk", x: villager.x, y: villager.y, maxDistance: 190 });
     this.speakerText.setText(this.language.t(NAME_KEYS[villager.id]));
     this.speakerPortrait.setTexture(PORTRAIT_KEYS[villager.id]);
     this.ui.open("dialogue");
@@ -1772,7 +1799,6 @@ export class VillageSystem {
     }
     this.ui.close("dialogue");
     this.talkKey.reset();
-    this.escapeKey.reset();
   };
 
   private nextDialogue(): void {
@@ -1801,6 +1827,10 @@ export class VillageSystem {
 
     this.openDialogue(nearest);
     return true;
+  }
+
+  canMobileTalk(playerX: number, playerY: number): boolean {
+    return !this.isTalking && !this.ui.hasActiveModal() && this.getNearestVillager(playerX, playerY) !== null;
   }
 
   getSaveData() {
@@ -1872,7 +1902,7 @@ export class VillageSystem {
 
     const nearest = this.getNearestVillager(playerX, playerY);
     if (nearest) {
-      nearest.promptText.setVisible(true);
+      nearest.promptText.setVisible(!this.touchMode);
       if (Phaser.Input.Keyboard.JustDown(this.talkKey)) {
         this.openDialogue(nearest);
       }

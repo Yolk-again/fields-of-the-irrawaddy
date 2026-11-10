@@ -155,9 +155,9 @@ export class VillageSystem {
   private houseLabels: { text: Phaser.GameObjects.Text; x: number; y: number }[] = [];
 
   private talkKey!: Phaser.Input.Keyboard.Key;
-  private escapeKey!: Phaser.Input.Keyboard.Key;
   private isTalking = false;
   private activeVillager: Villager | null = null;
+  private readonly touchMode = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
   private dialogueIndex = 0;
 
   private dialoguePanel!: Phaser.GameObjects.Container;
@@ -199,7 +199,6 @@ export class VillageSystem {
       this.isTalking = false;
       this.activeVillager = null;
       this.talkKey.reset();
-      this.escapeKey.reset();
     }, this.dialogueCloseButton);
 
     this.ui.registerHud(
@@ -374,21 +373,7 @@ export class VillageSystem {
   private createControls(): void {
     const keyboard = this.scene.input.keyboard!;
     this.talkKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
-    this.escapeKey = keyboard.addKey(27);
-
-    window.addEventListener("keydown", this.handleWindowKeyDown, true);
-    this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      window.removeEventListener("keydown", this.handleWindowKeyDown, true);
-    });
   }
-
-  private handleWindowKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === "Escape" && this.isTalking) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.closeDialogue();
-    }
-  };
 
   private createClock(): void {
     const background = pixelPanel(this.scene, 93, 22, 170, 28).setDepth(150);
@@ -1626,16 +1611,19 @@ export class VillageSystem {
           villager.targetX = chasePath[0].x;
           villager.targetY = chasePath[0].y;
         } else {
-          // Discard a stale, blocked route and retry shortly from the kid's
-          // actual position, so the child does not repeatedly walk into a wall.
+          // A cornered chicken may not have a reachable approach point. Let the
+          // child patrol a fresh reachable point while the next chase scan runs;
+          // never leave the child frozen against the coop fence.
           schedule.route = undefined;
           villager.routeIndex = 0;
-          villager.targetX = villager.x;
-          villager.targetY = villager.y;
-          villager.waitTimer = 0.12;
-          this.playNpcAnimation(villager, "play");
+          if (!this.planNextWander(villager, schedule)) {
+            villager.targetX = villager.x;
+            villager.targetY = villager.y;
+            villager.waitTimer = 0.18;
+            this.playNpcAnimation(villager, "play");
+          }
         }
-        villager.chaseCooldown = 0.55;
+        villager.chaseCooldown = chasePath.length > 0 ? 0.55 : 0.22;
       }
     }
 
@@ -1811,7 +1799,6 @@ export class VillageSystem {
     }
     this.ui.close("dialogue");
     this.talkKey.reset();
-    this.escapeKey.reset();
   };
 
   private nextDialogue(): void {
@@ -1840,6 +1827,10 @@ export class VillageSystem {
 
     this.openDialogue(nearest);
     return true;
+  }
+
+  canMobileTalk(playerX: number, playerY: number): boolean {
+    return !this.isTalking && !this.ui.hasActiveModal() && this.getNearestVillager(playerX, playerY) !== null;
   }
 
   getSaveData() {
@@ -1911,7 +1902,7 @@ export class VillageSystem {
 
     const nearest = this.getNearestVillager(playerX, playerY);
     if (nearest) {
-      nearest.promptText.setVisible(true);
+      nearest.promptText.setVisible(!this.touchMode);
       if (Phaser.Input.Keyboard.JustDown(this.talkKey)) {
         this.openDialogue(nearest);
       }

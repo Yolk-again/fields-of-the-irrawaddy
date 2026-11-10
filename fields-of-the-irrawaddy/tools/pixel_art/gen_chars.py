@@ -185,93 +185,69 @@ def pals():
 
 # ---------------- animals ----------------
 def chicken(f):
-    """Six-frame Burmese village hen: idle, peck, recover, two steps, wing flutter."""
     s = Spr(16, 16)
-    body = Ramp("#f0e8d7")
-    f = f % 6
-    body_y = 10 + (1 if f == 1 else 0)
-    s.ell(8, body_y, 5, 4, body.m)
-    s.ell(7, body_y + 1, 3, 2, body.l1)
-    s.rect(3, 8, 3, 3, body.d1)
-    # Tail feathers lift on the short wing-flutter frame.
-    if f == 5:
-        s.line(3, 9, 1, 5, body.l1); s.line(4, 8, 3, 4, body.m)
-    hx_ = 11 if f not in (1, 2) else 12
-    hy_ = 8 if f == 1 else 5 if f != 2 else 6
+    peck = f == 1
+    body = Ramp("#f2efe6")
+    s.ell(8, 10, 5, 4, body.m)
+    s.ell(7, 11, 3, 2, body.l1)
+    s.rect(3, 8, 3, 3, body.d1)  # tail
+    hx_ = 11 if not peck else 12
+    hy_ = 5 if not peck else 8
     s.ell(hx_, hy_, 2, 2, body.m)
     s.p(hx_ + 1, hy_ - 1, OUT)
-    s.p(hx_ - 1, hy_ - 3, hx("#d63b3b")); s.p(hx_, hy_ - 3, hx("#d63b3b"))
-    s.p(hx_ + 2, hy_, hx("#f2a22c")); s.p(hx_ + 3, hy_, hx("#f2a22c"))
+    s.p(hx_ - 1, hy_ - 3, hx("#d63b3b")); s.p(hx_, hy_ - 3, hx("#d63b3b"))   # comb
+    s.p(hx_ + 2, hy_, hx("#f2a22c")); s.p(hx_ + 3, hy_, hx("#f2a22c"))       # beak
     s.p(hx_, hy_ + 2, hx("#d63b3b"))
-    # Wing is normally tucked; the last frame gives a brief flutter.
-    if f == 5:
-        s.poly([(6, 9), (8, 7), (11, 8), (9, 11), (7, 11)], body.l1)
-        s.line(8, 8, 11, 6, body.l2)
-    else:
-        s.ell(8, 10 + (1 if f == 1 else 0), 3, 2, body.d1)
-        s.line(7, 10, 9, 11, body.l1)
-    step = 1 if f == 3 else -1 if f == 4 else 0
-    for x, y in ((6 + step, 14), (9 - step, 14)):
-        s.vline(x, y, 1, hx("#e09a2b")); s.hline(x - 1, y + 1, 3, hx("#e09a2b"))
+    legs = [(6, 14), (9, 14)] if f != 2 else [(5, 14), (10, 14)]
+    for x, y in legs:
+        s.vline(x, y, 1, hx("#e09a2b")); s.hline(x, y + 1, 2, hx("#e09a2b"))
     s.outline(-0.7)
     return s
 
 
 def duck(f):
-    """Four-frame mallard duck: idle, head dip, and two alternating waddles."""
     s = Spr(16, 16)
-    f = f % 4
     body = Ramp("#f5f0d8")
-    bob = 1 if f == 1 else 0
-    s.ell(7, 10 + bob, 5, 3, body.m)
-    s.ell(6, 11 + bob, 3, 2, body.l1)
-    s.rect(11, 5 + bob, 4, 4, hx("#2f7f4a"))
-    s.hline(11, 5 + bob, 3, hx("#3f9a5c"))
-    s.rect(12, 9 + bob, 2, 1, hx("#f6f2dc"))
-    s.p(13, 6 + bob, OUT)
-    s.rect(14, 7 + bob, 3 if f == 0 else 2, 1, hx("#f2b02c"))
+    s.ell(7, 10, 5, 3, body.m)
+    s.ell(6, 11, 3, 2, body.l1)
+    s.rect(11, 5, 4, 4, hx("#2f7f4a"))      # green head (mallard)
+    s.hline(11, 5, 3, hx("#3f9a5c"))
+    s.rect(12, 9, 2, 1, hx("#f6f2dc"))
+    s.p(13, 6, OUT)
+    s.rect(14, 7, 3 if f == 0 else 2, 1, hx("#f2b02c"))
     s.rect(2, 8, 3, 2, body.d1)
-    # Alternating feet for the two waddle frames.
-    if f in (2, 3):
-        left_y = 12 + (1 if f == 2 else 0)
-        right_y = 12 + (1 if f == 3 else 0)
-    else:
-        left_y = right_y = 12
-    s.rect(5, left_y, 2, 1, hx("#f2902c"))
-    s.rect(8, right_y, 2, 1, hx("#f2902c"))
-    if f == 1:
-        s.p(12, 10, hx("#5eab72"))
+    s.rect(5, 12 + (1 if f == 1 else 0), 2, 1, hx("#f2902c"))
+    s.rect(8, 12 + (1 if f == 2 else 0), 2, 1, hx("#f2902c"))
     s.outline(-0.7)
     return s
 
 
 def buffalo(f):
-    """Four-frame water buffalo cycle with alternating hooves, head bob and tail swish."""
-    f = f % 4
     s = Spr(44, 30)
     body = Ramp("#6a645e")
-    bob = 1 if f in (1, 3) else 0
-    # Broad, heavy body and hump; slight shoulder movement keeps the idle alive.
-    s.ell(20, 15 + bob, 15, 9, body.m)
-    s.ell(18, 12 + bob, 12, 5, body.l1)
-    s.hline(10, 10 + bob, 14, body.l2)
-    s.ell(33, 14 + bob, 5, 5, body.m)
-    s.rect(34, 14 + bob, 7, 7, body.d1)
-    s.rect(38, 17 + bob, 4, 4, shade(body.m, 0.2))
-    s.p(40, 19 + bob, OUT); s.p(37, 15 + bob, OUT)
+    # body
+    s.ell(20, 15, 15, 9, body.m)
+    s.ell(18, 12, 12, 5, body.l1)
+    s.hline(10, 10, 14, body.l2)
+    # hump / neck / head (faces right)
+    s.ell(33, 14, 5, 5, body.m)
+    s.rect(34, 14, 7, 7, body.d1)
+    s.rect(38, 17, 4, 4, shade(body.m, 0.2))      # muzzle
+    s.p(40, 19, OUT); s.p(40, 15, OUT) if False else None
+    s.p(37, 15, OUT)
+    # horns (big swept-back)
     horn = hx("#e8dcc0")
-    s.line(34, 11 + bob, 30, 6, horn); s.line(30, 6, 27, 6, horn); s.p(27, 5, horn)
-    # Tail sways in the last half of the loop.
-    tail_end = 15 if f in (1, 2) else 18
-    s.line(5, 11 + bob, 3, tail_end, body.d1)
-    s.p(3, tail_end, body.d2)
-    # Alternating hoof placement creates a slow, heavy walk cycle.
-    gait = (0, 1, 0, -1)[f]
-    for x, offset in ((10, gait), (14, -gait), (24, -gait), (28, gait)):
-        leg_top = 21 + bob
-        s.rect(x + (1 if offset > 0 else 0), leg_top, 3, 7 - abs(offset), body.d1)
-        s.rect(x + (1 if offset > 0 else 0), 27 + bob + (1 if offset > 0 else 0), 3, 1, hx("#3b352f"))
-    for x, y in ((12, 17 + bob), (19, 19 + bob), (26, 16 + bob)):
+    s.line(34, 11, 30, 6, horn); s.line(30, 6, 27, 6, horn); s.p(27, 5, horn)
+    s.line(36, 11, 40, 5, horn) if False else None
+    # tail
+    s.line(5, 11, 3, 18, body.d1)
+    # legs with walk offset
+    off = [0, 1, 0, -1][f % 4]
+    for x, o in ((10, off), (14, -off), (24, -off), (28, off)):
+        s.rect(x, 21, 3, 7 + (0), body.d1)
+        s.rect(x, 27 + (1 if o > 0 else 0), 3, 1, hx("#3b352f"))
+    # mud streaks
+    for x, y in ((12, 17), (19, 19), (26, 16)):
         s.hline(x, y, 3, hx("#4d4338"))
     s.outline(-0.72)
     return s

@@ -27,7 +27,7 @@ interface NpcFarmTile extends NpcFarmTileSave {
   x: number;
   y: number;
   base: Phaser.GameObjects.Image;
-  crop: Phaser.GameObjects.Sprite;
+  crop: Phaser.GameObjects.Image;
 }
 
 interface NpcFarmPlot {
@@ -80,7 +80,7 @@ export class NpcFarmingSystem {
         const y = origin.y + row * 32;
         const base = this.scene.add.image(x, y, "tile_plot")
           .setOrigin(0, 0).setScale(2).setDepth(15);
-        const crop = this.scene.add.sprite(x + 16, y + 30, "crop_0")
+        const crop = this.scene.add.image(x + 16, y + 30, "crop_0")
           .setOrigin(0.5, 1).setScale(2).setDepth(y + 31).setVisible(false);
         tiles.push({
           x, y, soil: false, planted: false, watered: false,
@@ -101,26 +101,15 @@ export class NpcFarmingSystem {
     else tile.base.setTexture(tile.watered ? "tile_wet" : "tile_tilled");
 
     if (!tile.planted) {
-      tile.crop.anims.stop();
       tile.crop.clearTint().setAlpha(1).setVisible(false);
       return;
     }
 
     if (tile.dead) {
-      tile.crop.anims.stop();
       tile.crop.setTexture("crop_3").setTint(0x75604b).setAlpha(0.88).setVisible(true);
     } else {
-      const stage = Phaser.Math.Clamp(tile.growth, 0, 3);
-      if (stage === 0) {
-        tile.crop.anims.stop();
-        tile.crop.setTexture("crop_0").setAlpha(1).setVisible(true);
-      } else {
-        const animationKey = `rice-sway-${stage}`;
-        tile.crop.setTexture(`rice_sway_${stage}`, 0).setAlpha(1).setVisible(true);
-        if (tile.crop.anims.currentAnim?.key !== animationKey) {
-          tile.crop.anims.play(animationKey, true);
-        }
-      }
+      tile.crop.setTexture(`crop_${Phaser.Math.Clamp(tile.growth, 0, 3)}`)
+        .setAlpha(1).setVisible(true);
       if (tile.dryDays > 0) tile.crop.setTint(0xb99567);
       else tile.crop.clearTint();
     }
@@ -254,7 +243,7 @@ export class NpcFarmingSystem {
       tile.dead = false;
       this.drawTile(tile);
     }
-    this.scene.events.emit("sound-effect", "sell");
+    this.scene.events.emit("sound-effect", { name: "sell", x: plot.tiles[0]?.x ?? 570, y: plot.tiles[0]?.y ?? 220, maxDistance: 220 });
     const ownerName = this.language.t(owner === "ma" ? "village.maThiri" : "village.koAung");
     const label = this.scene.add.text(570, 218, this.language.t("npcFarm.sold", { name: ownerName, amount: sold }), {
       fontFamily: this.language.getFontFamily(),
@@ -276,7 +265,7 @@ export class NpcFarmingSystem {
   }
 
   private playEffect(tile: NpcFarmTile, texture: "fx_dust" | "fx_splash" | "fx_sparkle", sound: string): void {
-    this.scene.events.emit("sound-effect", sound);
+    this.scene.events.emit("sound-effect", { name: sound, x: tile.x + 16, y: tile.y + 17, maxDistance: 210 });
     const fx = this.scene.add.sprite(tile.x + 16, tile.y + 17, texture, 0)
       .setScale(2).setDepth(tile.y + 80);
     fx.anims.play(`${texture}-play`);

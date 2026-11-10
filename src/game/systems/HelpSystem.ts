@@ -32,15 +32,15 @@ export class HelpSystem {
 
   private createCard(scene: Phaser.Scene, x: number, y: number, iconKey: string, titleKey: string, bodyKey: string): void {
     const width = 160;
-    const height = 86;
+    const height = 76;
     const background = scene.add.rectangle(x, y, width, height, 0x40513a, 1).setStrokeStyle(2, 0x9b7047);
     const iconFrame = scene.add.rectangle(x - 56, y, 34, 34, 0x2d3829, 1).setStrokeStyle(1, 0xd6b36b);
     const icon = scene.add.image(x - 56, y, iconKey).setScale(1.35);
-    const title = scene.add.text(x - 31, y - 20, "", {
+    const title = scene.add.text(x - 31, y - 17, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#e6c47e", fontStyle: "bold",
       wordWrap: { width: 120 }
     }).setOrigin(0, 0.5);
-    const body = scene.add.text(x - 31, y + 1, "", {
+    const body = scene.add.text(x - 31, y + 7, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#f5e8c6", lineSpacing: 2,
       wordWrap: { width: 120 }
     }).setOrigin(0, 0.5);
@@ -60,12 +60,12 @@ export class HelpSystem {
     }).setOrigin(0.5);
     this.panel.add([background, topLine, this.titleText, this.subtitleText]);
 
-    this.createCard(scene, 145, 139, "ui_icon_hand", "help.moveTitle", "help.moveBody");
-    this.createCard(scene, 320, 139, "ui_icon_sprout", "help.farmTitle", "help.farmBody");
-    this.createCard(scene, 495, 139, "fish_silver_barb_asset", "help.fishingTitle", "help.fishingBody");
-    this.createCard(scene, 145, 239, "ui_icon_talk", "help.villageTitle", "help.villageBody");
-    this.createCard(scene, 320, 239, "cooking_hearth_asset", "help.cookingTitle", "help.cookingBody");
-    this.createCard(scene, 495, 239, "ui_icon_bed", "help.houseTitle", "help.houseBody");
+    this.createCard(scene, 145, 136, "ui_icon_hand", "help.moveTitle", "help.moveBody");
+    this.createCard(scene, 320, 136, "ui_icon_sprout", "help.farmTitle", "help.farmBody");
+    this.createCard(scene, 495, 136, "fish_silver_barb_asset", "help.fishingTitle", "help.fishingBody");
+    this.createCard(scene, 145, 224, "ui_icon_talk", "help.villageTitle", "help.villageBody");
+    this.createCard(scene, 320, 224, "cooking_hearth_asset", "help.cookingTitle", "help.cookingBody");
+    this.createCard(scene, 495, 224, "ui_icon_bed", "help.houseTitle", "help.houseBody");
 
     this.exitHintText = scene.add.text(320, 318, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d7e6c5", align: "center"

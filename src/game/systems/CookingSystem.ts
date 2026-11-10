@@ -40,7 +40,6 @@ export class CookingSystem {
   private twoKey!: Phaser.Input.Keyboard.Key;
   private threeKey!: Phaser.Input.Keyboard.Key;
   private eatKey!: Phaser.Input.Keyboard.Key;
-  private escapeKey!: Phaser.Input.Keyboard.Key;
 
   private panel!: Phaser.GameObjects.Container;
   private closeButton!: Phaser.GameObjects.Container;
@@ -72,7 +71,6 @@ export class CookingSystem {
     this.twoKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.TWO);
     this.threeKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.THREE);
     this.eatKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.Q);
-    this.escapeKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
 
     this.createInterface();
     this.scene.input.on("pointerup", this.handlePointerUp, this);
@@ -86,7 +84,6 @@ export class CookingSystem {
     this.ui.registerPanel("cooking", this.panel, 230, () => {
       this.isOpen = false;
       this.interactKey.reset();
-      this.escapeKey.reset();
     }, this.closeButton);
     this.language.onChange(() => this.updateInterface());
   }
@@ -100,7 +97,8 @@ export class CookingSystem {
     }).setOrigin(0.5);
     const divider = this.scene.add.rectangle(320, 67, 470, 2, 0x9b7047, 0.8);
     this.subtitleText = this.scene.add.text(320, 83, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d7e6c5", align: "center"
+      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d7e6c5", align: "center",
+      wordWrap: { width: 430 }
     }).setOrigin(0.5);
 
     const ys = [125, 173, 221];
@@ -124,7 +122,8 @@ export class CookingSystem {
     }).setOrigin(0.5);
     this.eatBackground = this.scene.add.rectangle(320, 281, 340, 24, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
     this.eatText = this.scene.add.text(320, 281, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "7px", color: "#fff1cf", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: "7px", color: "#fff1cf", fontStyle: "bold",
+      wordWrap: { width: 315 }
     }).setOrigin(0.5);
     this.exitText = this.scene.add.text(320, 313, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d7e6c5", align: "center"
@@ -247,7 +246,6 @@ export class CookingSystem {
     this.isOpen = false;
     this.ui.close("cooking");
     this.interactKey.reset();
-    this.escapeKey.reset();
   };
 
   /** Called by the scene in world updates and while the cooking modal is open. */
@@ -257,7 +255,7 @@ export class CookingSystem {
       if (Phaser.Input.Keyboard.JustDown(this.twoKey)) this.cook(1);
       if (Phaser.Input.Keyboard.JustDown(this.threeKey)) this.cook(2);
       if (Phaser.Input.Keyboard.JustDown(this.eatKey)) this.eatMeal();
-      if (Phaser.Input.Keyboard.JustDown(this.interactKey) || Phaser.Input.Keyboard.JustDown(this.escapeKey)) this.close();
+      if (Phaser.Input.Keyboard.JustDown(this.interactKey)) this.close();
       return;
     }
 

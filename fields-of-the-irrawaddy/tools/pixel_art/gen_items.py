@@ -203,7 +203,7 @@ def meal_icon(kind="fish_rice"):
 
 
 # --------------------------- crops ---------------------------------
-def crop(stage, sway=0):
+def crop(stage):
     s = Spr(16, 16)
     if stage == 0:
         for x, y in ((6, 10), (9, 9), (8, 12)):
@@ -211,79 +211,27 @@ def crop(stage, sway=0):
         s.hline(5, 13, 6, hx("#7a4a2a"))
     elif stage == 1:
         for x, h in ((6, 4), (8, 6), (10, 4)):
-            for i in range(h):
-                xx = x + round(sway * (i / max(1, h - 1)))
-                s.p(xx, 13 - i, hx("#6bc04a") if i % 2 else hx("#4a9a3a"))
-            s.p(x + sway, 13 - h, hx("#9ae06a"))
+            for i in range(h): s.p(x, 13 - i, hx("#6bc04a") if i % 2 else hx("#4a9a3a"))
+            s.p(x, 13 - h, hx("#9ae06a"))
         s.p(7, 12, hx("#4a9a3a")); s.p(9, 12, hx("#4a9a3a"))
     elif stage == 2:
-        for x, h, direction in ((4, 7, -1), (6, 10, -1), (8, 12, 0), (10, 10, 1), (12, 7, 1)):
+        for x, h, sway in ((4, 7, -1), (6, 10, -1), (8, 12, 0), (10, 10, 1), (12, 7, 1)):
             for i in range(h):
-                xx = x + (direction if i > h // 2 else 0) + round(sway * (i / max(1, h - 1)))
+                xx = x + (sway if i > h // 2 else 0)
                 s.p(xx, 14 - i, hx("#4a9a3a") if i % 3 == 0 else hx("#6bc04a"))
-            s.p(x + direction + sway, 14 - h, hx("#a8e07a"))
+            s.p(x + sway, 14 - h, hx("#a8e07a"))
         s.hline(5, 14, 7, hx("#3a7a2a"))
     else:
-        for x, h, direction in ((4, 8, -2), (6, 11, -2), (8, 13, -1), (10, 11, 2), (12, 8, 2)):
+        for x, h, sway in ((4, 8, -2), (6, 11, -2), (8, 13, -1), (10, 11, 2), (12, 8, 2)):
             for i in range(h):
-                xx = x + (direction if i > h - 5 else 0) + round(sway * (i / max(1, h - 1)))
+                xx = x + (sway if i > h - 5 else 0)
                 s.p(xx, 14 - i, hx("#7ab04a") if i % 3 == 0 else hx("#9ac85a"))
             tip = 14 - h
             for k in range(4):
-                s.p(x + direction + sway + (k // 2) * (1 if direction > 0 else -1), tip + k, hx("#f0c840") if k % 2 else hx("#ffe070"))
-            s.p(x + direction + sway, tip - 1, hx("#ffe070"))
+                s.p(x + sway + (k // 2) * (1 if sway > 0 else -1), tip + k, hx("#f0c840") if k % 2 else hx("#ffe070"))
+            s.p(x + sway, tip - 1, hx("#ffe070"))
         s.hline(5, 14, 7, hx("#7a8a3a"))
     s.outline(-0.62)
-    return s
-
-
-def rice_crop_sway_sheet(stage):
-    """Four-frame wind movement for a living rice plant in the player's/NPC plots."""
-    return sheet([crop(stage, sway) for sway in (0, 1, 0, -1)], cols=4)
-
-
-def myna_bird(frame=0):
-    """Small common-myna silhouette, a familiar bird around Burmese villages."""
-    s = Spr(16, 16)
-    body = Ramp("#76513a")
-    head = Ramp("#302a2d")
-    wing = Ramp("#493b3a")
-    # Tail, body and cream wing patch.
-    s.poly([(3, 9), (0, 7), (1, 12), (5, 11)], body.d1)
-    s.ell(7, 9, 5, 3, body.m)
-    s.ell(6, 8, 3, 2, body.l1)
-    if frame in (0, 3):
-        s.poly([(5, 7), (7, 3), (10, 5), (9, 8)], wing.m)
-        s.line(6, 6, 8, 4, wing.l1)
-    elif frame == 1:
-        s.poly([(4, 8), (6, 5), (10, 6), (9, 9)], wing.l1)
-        s.line(5, 8, 8, 6, wing.m)
-    else:
-        s.poly([(5, 9), (7, 10), (11, 13), (8, 13)], wing.d1)
-        s.line(7, 10, 10, 12, wing.m)
-    s.ell(10, 6, 3, 3, head.m)
-    s.hline(11, 7, 3, hx("#e2b34e"))  # yellow eye patch
-    s.p(11, 5, hx("#f8e8ca")); s.p(12, 5, hx("#211a18"))
-    s.poly([(13, 6), (16, 7), (13, 8)], hx("#e0a42f"))
-    s.vline(6, 12, 2, hx("#d39b35")); s.vline(9, 12, 2, hx("#d39b35"))
-    s.hline(5, 14, 3, hx("#5b4229")); s.hline(8, 14, 3, hx("#5b4229"))
-    s.outline(-0.72)
-    return s
-
-
-def firefly_frame(frame=0):
-    """Tiny amber firefly with a pulsing abdomen; 8px frames for night ambience."""
-    s = Spr(8, 8)
-    levels = [0, 1, 2, 1]
-    level = levels[frame % 4]
-    glow_alpha = (45, 90, 135)[level]
-    # Translucent pixel halo around a bright yellow abdomen.
-    for x, y in ((3, 2), (2, 3), (4, 3), (3, 4), (1, 3), (5, 3)):
-        s.p(x, y, (255, 196, 75, glow_alpha))
-    s.p(3, 3, hx("#fff0a0")); s.p(4, 3, hx("#ffe071"))
-    s.p(2, 2, hx("#9b6b42")); s.p(5, 2, hx("#9b6b42"))
-    if frame in (1, 3):
-        s.p(2, 1, (225, 231, 215, 180)); s.p(5, 1, (225, 231, 215, 180))
     return s
 
 

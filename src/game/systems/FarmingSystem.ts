@@ -6,6 +6,17 @@ import { INVENTORY_ITEM_DEFINITIONS, type InventoryItemId } from "../ui/Inventor
 
 type FarmingTool = "hoe" | "seeds" | "water" | "harvest";
 
+export type FarmUpgradeId = "hoe" | "wateringCan" | "sickle" | "expansion" | "riceMill";
+export type FarmUpgradeLevels = Record<FarmUpgradeId, number>;
+
+export const FARM_UPGRADE_DEFINITIONS: Record<FarmUpgradeId, { maxLevel: number; costs: number[]; nameKey: string; descriptionKey: string }> = {
+  hoe: { maxLevel: 2, costs: [220, 520], nameKey: "market.upgrade.hoe", descriptionKey: "market.upgrade.hoeDesc" },
+  wateringCan: { maxLevel: 2, costs: [260, 580], nameKey: "market.upgrade.wateringCan", descriptionKey: "market.upgrade.wateringCanDesc" },
+  sickle: { maxLevel: 1, costs: [450], nameKey: "market.upgrade.sickle", descriptionKey: "market.upgrade.sickleDesc" },
+  expansion: { maxLevel: 1, costs: [700], nameKey: "market.upgrade.expansion", descriptionKey: "market.upgrade.expansionDesc" },
+  riceMill: { maxLevel: 1, costs: [1000], nameKey: "market.upgrade.riceMill", descriptionKey: "market.upgrade.riceMillDesc" }
+};
+
 interface FarmTile {
   x: number;
   y: number;
@@ -29,6 +40,7 @@ interface FarmSaveData {
   rice: number;
   goldenWheat?: number;
   mealBoostUntilGameMinute?: number;
+  upgrades?: Partial<FarmUpgradeLevels>;
   tiles: {
     soil: boolean;
     planted: boolean;
@@ -49,10 +61,13 @@ export class FarmingSystem {
   private getElapsedGameMinutes: () => number;
 
   private tiles: FarmTile[] = [];
+  private readonly plotRows = 3;
+  private readonly basePlotColumns = 5;
+  private upgrades: FarmUpgradeLevels = { hoe: 0, wateringCan: 0, sickle: 0, expansion: 0, riceMill: 0 };
   private tool: FarmingTool | null = "hoe";
   private hotbarItems: Array<InventoryItemId | null> = ["hoe", "seeds", "water", "harvest"];
   private selectedHotbarIndex = 0;
-  private seeds = 10;
+  private seeds = 5;
   private rice = 0;
   private goldenWheat = 0;
   private mealBoostUntilGameMinute = 0;
@@ -96,39 +111,37 @@ export class FarmingSystem {
   }
 
   private createPlot(): void {
-    const tileSize = 32;
+    for (let row = 0; row < this.plotRows; row++) {
+      for (let col = 0; col < this.basePlotColumns; col++) this.createTile(row, col);
+    }
+    this.highlight = this.scene.add.graphics().setDepth(25);
+  }
 
-    for (let row = 0; row < 3; row++) {
-      for (let col = 0; col < 5; col++) {
-        const x = 260 + col * tileSize;
-        const y = 356 + row * tileSize;
-        const base = this.scene.add.image(x, y, "tile_plot")
-          .setOrigin(0, 0).setScale(2).setDepth(15);
-        const crop = this.scene.add.image(x + 16, y + 30, "crop_0")
-          .setOrigin(0.5, 1).setScale(2).setDepth(y + 31).setVisible(false);
+  private createTile(row: number, col: number): void {
+    const x = 260 + col * 32;
+    const y = 356 + row * 32;
+    const base = this.scene.add.image(x, y, "tile_plot")
+      .setOrigin(0, 0).setScale(2).setDepth(15);
+    const crop = this.scene.add.image(x + 16, y + 30, "crop_0")
+      .setOrigin(0.5, 1).setScale(2).setDepth(y + 31).setVisible(false);
+    const tile: FarmTile = {
+      x, y, soil: false, planted: false, watered: false, growth: 0,
+      dryDays: 0, dead: false, wateredAtGameMinute: null,
+      plantedAtGameMinute: null, goldenWheat: false, base, crop
+    };
+    this.tiles.push(tile);
+    this.drawTile(tile);
+  }
 
-        const tile: FarmTile = {
-          x,
-          y,
-          soil: false,
-          planted: false,
-          watered: false,
-          growth: 0,
-          dryDays: 0,
-          dead: false,
-          wateredAtGameMinute: null,
-          plantedAtGameMinute: null,
-          goldenWheat: false,
-          base,
-          crop
-        };
-
-        this.tiles.push(tile);
-        this.drawTile(tile);
+  private ensureExpandedPlots(): void {
+    const targetColumns = this.basePlotColumns + (this.upgrades.expansion > 0 ? 2 : 0);
+    for (let row = 0; row < this.plotRows; row++) {
+      for (let col = this.basePlotColumns; col < targetColumns; col++) {
+        if (!this.tiles.some(tile => tile.x === 260 + col * 32 && tile.y === 356 + row * 32)) {
+          this.createTile(row, col);
+        }
       }
     }
-
-    this.highlight = this.scene.add.graphics().setDepth(25);
   }
 
   private drawTile(tile: FarmTile): void {
@@ -345,6 +358,13 @@ export class FarmingSystem {
     this.useTool();
   }
 
+  private getAreaTiles(center: FarmTile, radiusX: number, radiusY: number): FarmTile[] {
+    return this.tiles.filter(tile =>
+      Math.abs(tile.x - center.x) <= radiusX * 32 &&
+      Math.abs(tile.y - center.y) <= radiusY * 32
+    );
+  }
+
   private useTool(): void {
     if (!this.tool) {
       this.setStatus("farm.itemNotUsable");
@@ -358,14 +378,20 @@ export class FarmingSystem {
     const tile = this.selectedTile;
 
     if (this.tool === "hoe") {
-      if (tile.soil) {
+      const radiusX = this.upgrades.hoe > 0 ? 1 : 0;
+      const radiusY = this.upgrades.hoe >= 2 ? 1 : 0;
+      const targets = this.getAreaTiles(tile, radiusX, radiusY).filter(target => !target.soil);
+      if (targets.length === 0) {
         this.setStatus("farm.alreadyPrepared");
         return;
       }
-      tile.soil = true;
-      this.playFx(tile, "fx_dust", "hoe");
-      this.scene.events.emit("sound-effect", { name: "hoe", x: tile.x + 16, y: tile.y + 16 });
-      this.setStatus("farm.prepared");
+      for (const target of targets) {
+        target.soil = true;
+        this.drawTile(target);
+        this.playFx(target, "fx_dust", "hoe");
+        this.scene.events.emit("sound-effect", { name: "hoe", x: target.x + 16, y: target.y + 16 });
+      }
+      this.setStatus(targets.length > 1 ? "farm.preparedMany" : "farm.prepared", { amount: targets.length });
     } else if (this.tool === "seeds") {
       if (!tile.soil) {
         this.setStatus("farm.needSoil");
@@ -404,16 +430,25 @@ export class FarmingSystem {
         this.setStatus("farm.ready");
         return;
       }
-      if (tile.watered) {
+      const radiusX = this.upgrades.wateringCan > 0 ? 1 : 0;
+      const radiusY = this.upgrades.wateringCan >= 2 ? 1 : 0;
+      const now = Math.max(0, Math.floor(this.getElapsedGameMinutes()));
+      const targets = this.getAreaTiles(tile, radiusX, radiusY).filter(target =>
+        target.planted && !target.dead && target.growth < this.matureGrowth && !target.watered
+      );
+      if (targets.length === 0) {
         this.setStatus("farm.watered");
         return;
       }
-      tile.watered = true;
-      tile.wateredAtGameMinute = Math.max(0, Math.floor(this.getElapsedGameMinutes()));
-      tile.dryDays = 0;
-      this.playFx(tile, "fx_splash", "water");
-      this.scene.events.emit("sound-effect", { name: "water", x: tile.x + 16, y: tile.y + 16 });
-      this.setStatus("farm.waterSuccess");
+      for (const target of targets) {
+        target.watered = true;
+        target.wateredAtGameMinute = now;
+        target.dryDays = 0;
+        this.drawTile(target);
+        this.playFx(target, "fx_splash", "water");
+        this.scene.events.emit("sound-effect", { name: "water", x: target.x + 16, y: target.y + 16 });
+      }
+      this.setStatus(targets.length > 1 ? "farm.waterSuccessMany" : "farm.waterSuccess", { amount: targets.length });
     } else if (this.tool === "harvest") {
       if (!tile.planted || (!tile.dead && tile.growth < this.matureGrowth)) {
         this.setStatus("farm.notReady");
@@ -437,12 +472,13 @@ export class FarmingSystem {
         this.scene.events.emit("sound-effect", { name: "dead", x: tile.x + 16, y: tile.y + 16 });
         this.setStatus("farm.deadHarvested");
       } else {
-        this.rice += 3;
+        const harvestYield = 3 + this.upgrades.sickle;
+        this.rice += harvestYield;
         if (wasGolden) this.goldenWheat += 1;
         this.playFx(tile, "fx_sparkle", "harvest");
         this.scene.events.emit("sound-effect", { name: "harvest", x: tile.x + 16, y: tile.y + 16 });
-        this.floatText(tile, wasGolden ? "+3 RICE  +1 GOLDEN WHEAT" : "+3");
-        this.setStatus(wasGolden ? "farm.goldenHarvested" : "farm.harvested");
+        this.floatText(tile, wasGolden ? `+${harvestYield} RICE  +1 GOLDEN WHEAT` : `+${harvestYield}`);
+        this.setStatus(wasGolden ? "farm.goldenHarvested" : "farm.harvested", { amount: harvestYield });
       }
     }
 
@@ -516,6 +552,37 @@ export class FarmingSystem {
     return now < this.mealBoostUntilGameMinute;
   }
 
+  getUpgradeLevel(id: FarmUpgradeId): number {
+    return this.upgrades[id];
+  }
+
+  getNextUpgradeCost(id: FarmUpgradeId): number | null {
+    const definition = FARM_UPGRADE_DEFINITIONS[id];
+    const level = this.upgrades[id];
+    return level >= definition.maxLevel ? null : definition.costs[level] ?? null;
+  }
+
+  purchaseUpgrade(id: FarmUpgradeId): boolean {
+    const definition = FARM_UPGRADE_DEFINITIONS[id];
+    if (this.upgrades[id] >= definition.maxLevel) return false;
+    this.upgrades[id]++;
+    if (id === "expansion") this.ensureExpandedPlots();
+    this.updateInterface();
+    return true;
+  }
+
+  getRiceSaleBonus(): number {
+    return this.upgrades.riceMill * 2;
+  }
+
+  getHarvestYield(): number {
+    return 3 + this.upgrades.sickle;
+  }
+
+  getPlotCount(): number {
+    return this.tiles.length;
+  }
+
   getGoldenWheat(): number {
     return this.goldenWheat;
   }
@@ -581,6 +648,7 @@ export class FarmingSystem {
       rice: this.rice,
       goldenWheat: this.goldenWheat,
       mealBoostUntilGameMinute: this.mealBoostUntilGameMinute,
+      upgrades: { ...this.upgrades },
       tiles: this.tiles.map(tile => ({
         soil: tile.soil,
         planted: tile.planted,
@@ -601,6 +669,15 @@ export class FarmingSystem {
     this.rice = Math.max(0, Math.floor(Number(data.rice) || 0));
     this.goldenWheat = Math.max(0, Math.floor(Number(data.goldenWheat) || 0));
     this.mealBoostUntilGameMinute = Math.max(0, Math.floor(Number(data.mealBoostUntilGameMinute) || 0));
+    const savedUpgrades = data.upgrades ?? {};
+    this.upgrades = {
+      hoe: Phaser.Math.Clamp(Math.floor(Number(savedUpgrades.hoe) || 0), 0, FARM_UPGRADE_DEFINITIONS.hoe.maxLevel),
+      wateringCan: Phaser.Math.Clamp(Math.floor(Number(savedUpgrades.wateringCan) || 0), 0, FARM_UPGRADE_DEFINITIONS.wateringCan.maxLevel),
+      sickle: Phaser.Math.Clamp(Math.floor(Number(savedUpgrades.sickle) || 0), 0, FARM_UPGRADE_DEFINITIONS.sickle.maxLevel),
+      expansion: Phaser.Math.Clamp(Math.floor(Number(savedUpgrades.expansion) || 0), 0, FARM_UPGRADE_DEFINITIONS.expansion.maxLevel),
+      riceMill: Phaser.Math.Clamp(Math.floor(Number(savedUpgrades.riceMill) || 0), 0, FARM_UPGRADE_DEFINITIONS.riceMill.maxLevel)
+    };
+    this.ensureExpandedPlots();
 
     this.tiles.forEach((tile, index) => {
       const saved = data.tiles?.[index];

@@ -64,16 +64,15 @@ def save(spr, rel):
 
 
 def main():
-    # ---- characters (portrait = idle front frame; sheets = 4 columns x 13 action rows, 16x26)
+    # ---- characters (portrait = idle front frame, *_sheet = 4x3 walk sheet of 16x26 frames)
     for name, pal in P.people_pals().items():
         sh = P.person_sheet2(name, pal)
         save(sh, f"characters/{name}_sheet.png")
         save(sh.crop_box(0, 0, 16, 26), f"characters/{name}.png")
     # ---- animals
-    save(sheet([C.chicken(i) for i in range(6)]), "animals/chicken_sheet.png"); save(C.chicken(0), "animals/chicken.png")
-    save(sheet([C.duck(i) for i in range(4)]), "animals/duck_sheet.png"); save(C.duck(0), "animals/duck.png")
+    save(sheet([C.chicken(i) for i in range(3)]), "animals/chicken_sheet.png"); save(C.chicken(0), "animals/chicken.png")
+    save(sheet([C.duck(i) for i in range(3)]), "animals/duck_sheet.png"); save(C.duck(0), "animals/duck.png")
     save(sheet([C.buffalo(i) for i in range(4)]), "animals/water_buffalo_sheet.png"); save(C.buffalo(0), "animals/water_buffalo.png")
-    save(sheet([I.myna_bird(i) for i in range(4)]), "animals/myna_sheet.png")
     # ---- buildings
     save(B.stilt_house(88, 80, Ramp("#b88450"), "thatch", Ramp("#c9993f"), 1, flower=True), "buildings/player_home.png")
     save(B.stilt_house(66, 66, Ramp("#8fb07a"), "corr", Ramp("#4f86a8"), 2), "buildings/ma_thiri_home.png")
@@ -123,13 +122,6 @@ def main():
         save(fn(), f"ui/icon_{name}.png")
     save(V.ic_note(True), "ui/icon_note_off.png"); save(V.talk_bubble(), "ui/talk_bubble.png"); save(V.key_e(), "ui/key_e.png")
     save(V.cooking_hearth(), "village/cooking_hearth.png")
-    # Original Burmese home-interior furniture and household props.
-    save(V.house_bed(), "village/house_bed.png")
-    save(V.house_lacquer_chest(), "village/house_lacquer_chest.png")
-    save(V.house_woven_mat(), "village/house_woven_mat.png")
-    save(V.house_wall_textile(), "village/house_wall_textile.png")
-    save(V.house_clay_jar(), "village/house_clay_jar.png")
-    save(V.house_oil_lamp(), "village/house_oil_lamp.png")
     save(I.icon_rice_grain(), "ui/icon_rice.png")
     # ---- agriculture
     save(N.haystack(), "agriculture/haystack.png")
@@ -141,7 +133,6 @@ def main():
     save(I.icon_rice_bowl(), "agriculture/rice_bowl.png")
     for i in range(3): save(I.rice_clump(i), f"agriculture/young_rice_plant_0{i + 1}.png")
     for st in range(4): save(I.crop(st), f"agriculture/rice_stage_{st}.png")
-    for st in (1, 2, 3): save(I.rice_crop_sway_sheet(st), f"agriculture/rice_sway_{st}.png")
     save(I.icon_rice_grain(), "agriculture/rice_grain.png")
     save(I.fish_icon("silver_barb"), "agriculture/fish_silver_barb.png")
     save(I.fish_icon("catfish"), "agriculture/fish_catfish.png")
@@ -160,7 +151,6 @@ def main():
     save(I.icon_coin(), "ui/coin.png"); save(I.ui_slot(False), "ui/slot.png"); save(I.ui_slot(True), "ui/slot_selected.png"); save(I.ui_panel(), "ui/panel.png")
     # ---- fx
     save(I.fx_dust(), "fx/dust.png"); save(I.fx_splash(), "fx/splash.png"); save(I.fx_sparkle(), "fx/sparkle.png"); save(I.water_glint(), "fx/water_glint.png")
-    save(sheet([I.firefly_frame(i) for i in range(4)]), "fx/firefly.png")
     save(I.butterfly(hx("#ffd84a"), hx("#ff9a2e")), "fx/butterfly_yellow.png"); save(I.butterfly(hx("#ffffff"), hx("#8ac8ff")), "fx/butterfly_white.png")
     # ---- terrain
     save(G.build_ground(), "terrain/village_ground_base.png")

@@ -105,6 +105,8 @@ export class FarmScene extends Phaser.Scene {
   private joystickPointerId: number | null = null;
   private joystickVector = { x: 0, y: 0 };
   private joystickNub?: Phaser.GameObjects.Arc;
+  private mobileContextButton?: Phaser.GameObjects.Container;
+  private mobileContextLabel?: Phaser.GameObjects.Text;
   private readonly joystickCenter = { x: 76, y: 267 };
 
   constructor() {
@@ -237,6 +239,7 @@ export class FarmScene extends Phaser.Scene {
     this.help = new HelpSystem(this, this.ui, this.language);
     this.createHUD();
     this.music = new MusicSystem(this, this.ui, this.language);
+    this.music.setMobileHeaderHidden(this.isTouchDevice);
 
     this.farming = new FarmingSystem(
       this,
@@ -284,6 +287,7 @@ export class FarmScene extends Phaser.Scene {
       this.ui,
       this.language
     );
+    this.saveSystem.setMobileControlsHidden(this.isTouchDevice);
 
     this.house = new HouseInteriorSystem(
       this,
@@ -952,6 +956,15 @@ export class FarmScene extends Phaser.Scene {
           animal.ty = Phaser.Math.Clamp(sprite.y + (sprite.y < (animal.rect.y1 + animal.rect.y2) / 2 ? 12 : -12), animal.rect.y1 + 3, animal.rect.y2 - 3);
           animal.path = this.findChickenPath(animal, animal.tx, animal.ty);
           animal.pathIndex = 0;
+          // If the grid cannot produce a route from an awkward edge position,
+          // resume the idle cycle instead of keeping a permanently blocked path.
+          if (animal.path.length === 0) {
+            animal.state = "idle";
+            animal.fleeing = 0;
+            animal.timer = 0.2;
+            animal.fleeRepathTimer = 0.2;
+            this.playIdle(animal);
+          }
         }
       }
       if (Math.abs(dx) > 1) sprite.setFlipX(dx < 0);
@@ -1167,18 +1180,19 @@ export class FarmScene extends Phaser.Scene {
 
     // Movement and interaction keys are documented in the Help panel instead of a permanent HUD hint.
 
-    // Top-right icon buttons (right to left): fullscreen, help, language, profile, inventory
-    this.createFullscreenButton();
-    // Keep the same six-button row on desktop and touch: fullscreen, music,
-    // help, language, profile, inventory. Music owns x=594 in MusicSystem.
-    this.createIconButton(562, 22, "ui_icon_help", "hud.tip.help",
-      () => this.help.mobileToggle());
-    this.createIconButton(530, 22, "ui_icon_globe", "hud.tip.language",
-      () => this.language.toggleLanguage());
-    this.createIconButton(498, 22, "ui_icon_person", "hud.tip.profile",
-      () => this.profile.mobileToggle());
-    this.createIconButton(466, 22, "ui_icon_bag", "hud.tip.inventory",
-      () => this.inventory.mobileToggle());
+    // Desktop uses compact header controls. Touch devices get a larger
+    // thumb-friendly action grid instead, keeping the play view uncluttered.
+    if (!this.isTouchDevice) {
+      this.createFullscreenButton();
+      this.createIconButton(562, 22, "ui_icon_help", "hud.tip.help",
+        () => this.help.mobileToggle());
+      this.createIconButton(530, 22, "ui_icon_globe", "hud.tip.language",
+        () => this.language.toggleLanguage());
+      this.createIconButton(498, 22, "ui_icon_person", "hud.tip.profile",
+        () => this.profile.mobileToggle());
+      this.createIconButton(466, 22, "ui_icon_bag", "hud.tip.inventory",
+        () => this.inventory.mobileToggle());
+    }
   }
 
   /** 28px framed icon button with a hover/long-press tooltip. */
@@ -1292,17 +1306,14 @@ export class FarmScene extends Phaser.Scene {
     this.input.on("pointerup", this.handleJoystickEnd, this);
     this.input.on("pointerupoutside", this.handleJoystickEnd, this);
 
-    // 2 x 2 action grid on the right edge (clear of the clock, resources and hotbar)
-    const cols = [564, 614];
-    const rows = [100, 152];
-    const buttons = [
-      this.createMobileButton(cols[0], rows[0], "ui_icon_bag", "BAG", () => this.inventory.mobileToggle()),
-      this.createMobileButton(cols[1], rows[0], "ui_icon_note", "BOARD", () => this.villageBoard.mobileInteract(this.player.x, this.player.y)),
-      this.createMobileButton(cols[0], rows[1], "ui_icon_talk", "TALK", () => this.handleMobileTalk()),
-      this.createMobileButton(cols[1], rows[1], "ui_icon_action", "USE", () => this.farming.mobileUseTool())
-    ];
+    // The right side deliberately stays minimal: USE handles the recurring
+    // farming/fishing action, while OPEN appears only at a relevant place.
+    const useButton = this.createMobileButton(590, 224, "ui_icon_action", "USE", () => {
+      if (!this.fishing.mobileAction(this.player.x, this.player.y)) this.farming.mobileUseTool();
+    });
+    this.mobileContextButton = this.createMobileContextButton(570, 164);
 
-    this.ui.registerHud(base, innerRing, joystickNub, moveLabel, joystickZone, ...buttons);
+    this.ui.registerHud(base, innerRing, joystickNub, moveLabel, joystickZone, useButton, this.mobileContextButton);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.input.off("pointermove", this.handleJoystickMove, this);
@@ -1332,6 +1343,20 @@ export class FarmScene extends Phaser.Scene {
     hit.on("pointerout", () => button.setScale(1));
 
     button.add([frame, image, text, hit]);
+    return button;
+  }
+
+  private createMobileContextButton(x: number, y: number): Phaser.GameObjects.Container {
+    const button = this.add.container(x, y).setScrollFactor(0).setVisible(false);
+    const background = this.add.rectangle(0, 0, 126, 34, 0x527044, 0.96).setStrokeStyle(2, 0xd6b36b);
+    const label = this.add.text(0, 0, "CLICK TO OPEN", {
+      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf", fontStyle: "bold"
+    }).setOrigin(0.5);
+    const hit = this.add.rectangle(0, 0, 126, 34, 0xffffff, 0.001).setInteractive({ useHandCursor: true });
+    hit.on("pointerdown", () => this.handleMobileContextAction());
+    button.add([background, label, hit]);
+    this.mobileContextLabel = label;
+    this.language.onChange(() => label.setFontFamily(this.language.getFontFamily()));
     return button;
   }
 
@@ -1374,9 +1399,25 @@ export class FarmScene extends Phaser.Scene {
 
   private handleMobileTalk(): void {
     if (this.ui.hasActiveModal()) return;
+    if (this.house.mobileInteract(this.player.x, this.player.y)) return;
     if (this.village.mobileTalk(this.player.x, this.player.y)) return;
     if (this.villageBoard.mobileInteract(this.player.x, this.player.y)) return;
     this.market.mobileInteract(this.player.x, this.player.y);
+  }
+
+  private handleMobileContextAction(): void {
+    if (!this.isTouchDevice || this.ui.hasActiveModal()) return;
+    this.handleMobileTalk();
+  }
+
+  private updateMobileContextAction(): void {
+    if (!this.isTouchDevice || !this.mobileContextButton) return;
+    const x = this.player.x;
+    const y = this.player.y;
+    const visible = this.house.canMobileInteract(x, y) || this.village.canMobileTalk(x, y) ||
+      this.villageBoard.canMobileInteract(x, y) || this.market.canMobileInteract(x, y);
+    this.mobileContextButton.setVisible(visible);
+    if (visible) this.mobileContextLabel?.setText("CLICK TO OPEN");
   }
 
   private createFullscreenButton(): void {
@@ -1489,6 +1530,8 @@ export class FarmScene extends Phaser.Scene {
 
     this.villageBoard.update(this.player.x, this.player.y);
     if (this.ui.hasActiveModal()) return;
+
+    this.updateMobileContextAction();
 
     // Keep the player at the riverbank while the line is cast so the bobber
     // stays attached to the correct fishing spot until the reel/miss resolves.

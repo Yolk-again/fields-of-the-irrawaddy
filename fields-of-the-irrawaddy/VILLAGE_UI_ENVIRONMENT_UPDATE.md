@@ -1,36 +1,76 @@
-# Village layout and interface revision
+# Fields of the Irrawaddy — Village UI & Environment Update
 
 ## What changed
 
-- Removed `village_paths_overlay.png` from the scene and asset build. All roads now come exclusively from the original dirt-road artwork baked into `public/assets/terrain/village_ground_base.png`.
-- Kept the original map dimensions because the current ground already has enough usable space; the new layout uses the grass plots and the stone courtyard as separate village zones.
-- Reorganized the player homestead, granary, market and workshop along the original main dirt road. Ko Aung's and Ma Thiri's homes now face the same road.
-- Moved the player's 5x3 field to a clear grass area, moved the decorative rice paddy beside it, and reserved the original tiled ground patch for the monastery courtyard, rice drying and lotus pond.
-- Grouped the chicken coop and chickens into one compact fenced yard. Canal washing and clothes drying sit in their own separate strip above the original canal.
-- Removed permanent floating world-location captions. Only one nearby NPC label, one nearest-home label, or one nearby service prompt is shown at a time; the activity/talk stack is no longer drawn over villagers.
-- Removed extra decorative clutter around the homestead well. The secondary irrigation-channel texture remains available for generator compatibility but is not placed in the village.
-- Tightened the chicken-yard and player-field fence spacing, opened the actual gates, and aligned collision boundaries with the visible fence layout.
-- Reduced HUD height and put Save/Load, Music, Help and Fullscreen into a single top utility row. The bottom bar is reserved for tool slots and short control hints. Touch controls use the coarse-pointer test and are separated from tool slots.
+### Interface
+- Added opaque screen-fixed top and bottom HUD bands so the scrolling village cannot draw over interface controls.
+- Consolidated the game title, Burmese subtitle and in-game clock into one title panel.
+- Grouped day, seed and rice information in a compact status panel with simple visual indicators.
+- Kept the farming hotbar in a dedicated footer area and fixed tool-icon positioning on touch devices.
+- Moved the music control into the top HUD row beside Help and Fullscreen.
+- Added responsive web-page instruction cards with movement, village-action and farming controls.
 
-## Files changed
+### Village layout
+- Kept the existing main road, canal, farm plot and NPC home positions.
+- Added footpaths connecting the homestead, granary, market, chicken yard, home plots, rice paddy, monastery, lotus pond and canal crossing.
+- Grouped village props into recognizable working areas rather than scattering them across the map.
+- Moved the perimeter trees down so their canopies are not clipped by the world boundary.
+- Added bilingual zone labels for the chicken yard, home garden, rice fields, canal washing area and rice drying area.
 
+### New / clearer pixel-art assets
+- Stone community well.
+- Woven rice-drying mat with visible rice grains.
+- Irrigation channel.
+- Canal washing platform with a folded longyi and wash bowl.
+- Bamboo clothesline with recognizable village clothing.
+- Village sign with a pagoda emblem.
+- Bamboo chicken coop.
+- Transparent village footpath overlay.
+
+## Files updated for this pass
+
+- `index.html`
+- `src/style.css`
 - `src/game/scenes/FarmScene.ts`
 - `src/game/systems/FarmingSystem.ts`
-- `src/game/systems/VillageSystem.ts`
+- `src/game/systems/LanguageSystem.ts`
 - `src/game/systems/MarketSystem.ts`
-- `src/game/systems/CraftingSystem.ts`
-- `src/game/systems/SaveSystem.ts`
+- `src/game/systems/ModalUIManager.ts`
 - `src/game/systems/MusicSystem.ts`
+- `src/game/systems/VillageSystem.ts`
 - `tools/pixel_art/build_village_decorations.py`
-- `public/assets/asset-manifest.json`
+- `public/assets/asset-manifest.json` and the generated assets under `public/assets/`
 
-## Run
+The ZIP also preserves the other files and existing changes in the uploaded project. No `node_modules`, `.git`, Python cache or stale `dist` output is included.
+
+## Run on Windows
+
+From the project folder:
 
 ```cmd
-npm.cmd run build
+npm.cmd install
 npm.cmd run dev
 ```
 
-No road overlay, secondary track, or road-like irrigation strip is generated or loaded. The original `village_ground_base.png` remains byte-for-byte unchanged and is the single source of truth for the existing dirt road and canal. All new path-looking overlays have been removed.
+Build check:
 
-The map remains 1440 x 640 world pixels. It was not enlarged because the original ground has sufficient space; using the larger canvas would not improve readability without also reworking the base tile art.
+```cmd
+npm.cmd run build
+```
+
+Regenerate only the new village props and path overlay (does not run the full asset builder):
+
+```cmd
+python tools\pixel_art\build_village_decorations.py
+```
+
+## Verification performed in the working copy
+
+- `tsc --noEmit` passed using the available TypeScript 5.8.3 compiler.
+- `tools/pixel_art/build_village_decorations.py` ran successfully and regenerated all 8 listed assets.
+- All direct `/assets/...` references found in the TypeScript, HTML and CSS sources resolve to files in `public/assets/`.
+- Full Vite bundling was not verified in this Linux test environment because the uploaded `node_modules` contains the Windows-only Rolldown native binding. On the Windows development machine, run `npm.cmd run build` to verify the Vite bundle using the platform-matching dependencies.
+
+## Visual previews
+
+See `irrawaddy_map_layout_preview_final.jpg` and `irrawaddy_village_assets_preview.jpg` supplied alongside the project ZIP.

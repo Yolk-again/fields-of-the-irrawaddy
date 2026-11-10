@@ -30,7 +30,6 @@ export class VillageBoardSystem {
 
   private interactKey!: Phaser.Input.Keyboard.Key;
   private deliverKey!: Phaser.Input.Keyboard.Key;
-  private escapeKey!: Phaser.Input.Keyboard.Key;
 
   private promptText!: Phaser.GameObjects.Text;
   private boardLabel!: Phaser.GameObjects.Text;
@@ -44,6 +43,7 @@ export class VillageBoardSystem {
   private deliverText!: Phaser.GameObjects.Text;
   private exitHintText!: Phaser.GameObjects.Text;
   private deliverCard!: Phaser.GameObjects.Rectangle;
+  private readonly touchMode = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
 
   constructor(
     scene: Phaser.Scene,
@@ -75,18 +75,23 @@ export class VillageBoardSystem {
       this.isOpen = false;
       this.interactKey.reset();
       this.deliverKey.reset();
-      this.escapeKey.reset();
     }, this.closeButton);
     this.ui.registerHud(this.promptText);
     this.language.onChange(() => this.updateInterface());
   }
 
+  private requestOptionsForDay(day: number): number[] {
+    if (day <= 3) return [5, 6, 7];
+    if (day <= 7) return [7, 8, 9, 10];
+    if (day <= 15) return [9, 10, 12, 13];
+    return [10, 12, 14, 15];
+  }
+
   private rollDailyRequest(): void {
     this.day = this.farming.getDay();
-    // Randomise the amount each in-game day and avoid repeating yesterday's ask.
     const previous = this.riceRequired;
-    const options = [3, 4, 5, 6, 7, 8, 9].filter(amount => amount !== previous);
-    this.riceRequired = Phaser.Utils.Array.GetRandom(options) ?? 5;
+    const options = this.requestOptionsForDay(this.day).filter(amount => amount !== previous);
+    this.riceRequired = Phaser.Utils.Array.GetRandom(options) ?? this.requestOptionsForDay(this.day)[0];
     this.lastRiceRequired = previous;
     this.delivered = false;
   }
@@ -117,47 +122,31 @@ export class VillageBoardSystem {
       strokeThickness: 2
     }).setOrigin(0.5).setDepth(600);
 
-    this.promptText = this.scene.add.text(this.boardX, this.boardY + 17, "", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
-      color: "#fff1b8",
-      backgroundColor: "#79382e",
-      padding: { x: 5, y: 4 },
-      stroke: "#2a1a14",
-      strokeThickness: 2
-    }).setOrigin(0.5).setDepth(650).setVisible(false);
+    this.promptText = this.scene.add.text(320, 286, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf",
+      backgroundColor: "#2a1a14", padding: { x: 7, y: 4 },
+      stroke: "#2a1a14", strokeThickness: 2
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(7200).setVisible(false);
   }
 
   private createControls(): void {
     const keyboard = this.scene.input.keyboard!;
     this.interactKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
     this.deliverKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE);
-    this.escapeKey = keyboard.addKey(27);
-
-    window.addEventListener("keydown", this.handleWindowKeyDown, true);
-    this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      window.removeEventListener("keydown", this.handleWindowKeyDown, true);
-    });
   }
-
-  private handleWindowKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === "Escape" && this.isOpen) {
-      event.preventDefault();
-      event.stopPropagation();
-      this.closeBoard();
-    }
-  };
 
   private createInterface(): void {
     this.panel = this.scene.add.container(0, 0).setScrollFactor(0);
     const background = modalPanel(this.scene, 320, 180, 520, 284);
-    const divider = this.scene.add.rectangle(320, 91, 468, 2, 0x9b7047, 0.9);
+    const divider = this.scene.add.rectangle(320, 99, 468, 2, 0x9b7047, 0.9);
 
-    this.titleText = this.scene.add.text(320, 48, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "18px", color: "#e6c47e", fontStyle: "bold"
+    this.titleText = this.scene.add.text(320, 56, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "16px", color: "#e6c47e", fontStyle: "bold",
+      align: "center", wordWrap: { width: 450 }
     }).setOrigin(0.5);
-    this.subtitleText = this.scene.add.text(320, 73, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "11px", color: "#d7e6c5", align: "center"
+    this.subtitleText = this.scene.add.text(320, 80, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d7e6c5", align: "center",
+      wordWrap: { width: 452 }
     }).setOrigin(0.5);
 
     const requestCard = this.scene.add.rectangle(320, 151, 454, 82, 0x3d4b34, 1);
@@ -194,11 +183,11 @@ export class VillageBoardSystem {
   }
 
   private get coinReward(): number {
-    return this.riceRequired * 7 + 8;
+    return this.riceRequired * 3 + 5;
   }
 
   private get seedReward(): number {
-    return Math.max(2, Math.floor(this.riceRequired / 2));
+    return Math.max(1, Math.floor(this.riceRequired / 7));
   }
 
   /** Screen-space pointer handling for the visible delivery button. */
@@ -263,7 +252,6 @@ export class VillageBoardSystem {
     this.ui.close("board");
     this.interactKey.reset();
     this.deliverKey.reset();
-    this.escapeKey.reset();
   };
 
   private deliverRice(): void {
@@ -279,7 +267,7 @@ export class VillageBoardSystem {
     this.delivered = true;
     this.market.addCoins(this.coinReward);
     this.farming.addSeeds(this.seedReward);
-    this.scene.events.emit("sound-effect", "request");
+    this.scene.events.emit("sound-effect", { name: "request", x: this.boardX, y: this.boardY, maxDistance: 175 });
     this.updateInterface();
     this.statusText.setText(this.language.t("board.thankYou", {
       coins: this.coinReward,
@@ -304,6 +292,11 @@ export class VillageBoardSystem {
     return true;
   }
 
+  canMobileInteract(playerX: number, playerY: number): boolean {
+    return !this.isOpen && !this.ui.hasActiveModal() &&
+      Phaser.Math.Distance.Between(playerX, playerY, this.boardX, this.boardY) < 90;
+  }
+
   getSaveData(): VillageBoardSaveData {
     return {
       day: this.day,
@@ -315,11 +308,9 @@ export class VillageBoardSystem {
 
   loadSaveData(data: VillageBoardSaveData): void {
     this.day = Math.max(1, Math.floor(Number(data.day) || this.farming.getDay()));
-    const validAmounts = [3, 4, 5, 6, 7, 8, 9];
-    this.riceRequired = validAmounts.includes(Number(data.riceRequired)) ? Number(data.riceRequired) : 5;
-    this.lastRiceRequired = validAmounts.includes(Number(data.lastRiceRequired))
-      ? Number(data.lastRiceRequired)
-      : 0;
+    const validAmounts = this.requestOptionsForDay(this.day);
+    this.riceRequired = validAmounts.includes(Number(data.riceRequired)) ? Number(data.riceRequired) : (Phaser.Utils.Array.GetRandom(validAmounts) ?? validAmounts[0]);
+    this.lastRiceRequired = Math.max(0, Math.floor(Number(data.lastRiceRequired) || 0));
     this.delivered = data.delivered === true;
     if (this.day !== this.farming.getDay()) this.rollDailyRequest();
     this.updateInterface();
@@ -334,7 +325,7 @@ export class VillageBoardSystem {
     }
 
     const near = Phaser.Math.Distance.Between(playerX, playerY, this.boardX, this.boardY) < 90;
-    this.promptText.setVisible(near);
+    this.promptText.setVisible(near && !this.ui.hasActiveModal() && !this.touchMode);
     if (near && Phaser.Input.Keyboard.JustDown(this.interactKey)) this.openBoard();
   }
 }

@@ -60,6 +60,7 @@ export class SaveSystem {
   private storageKey = "fields_of_irrawaddy_save_v3";
 
   private statusText!: Phaser.GameObjects.Text;
+  private controls: Array<Phaser.GameObjects.Rectangle | Phaser.GameObjects.Text> = [];
 
   constructor(
     scene: Phaser.Scene,
@@ -211,6 +212,7 @@ export class SaveSystem {
       background,
       buttonText
     );
+    this.controls.push(background, buttonText);
 
     this.updateButtonLabel(buttonText);
   }
@@ -244,9 +246,18 @@ export class SaveSystem {
     }
   }
 
+  /** Save/load remain available from the mobile action grid without crowding it with desktop buttons. */
+  setMobileControlsHidden(hidden: boolean): void {
+    for (const control of this.controls) control.setVisible(!hidden);
+  }
+
+  mobileSave(): void { this.saveGame(); }
+
+  mobileLoad(): void { this.loadGame(); }
+
   private createSaveData(): GameSaveData {
     return {
-      version: 11,
+      version: 13,
       savedAt: new Date().toISOString(),
 
       player: {
@@ -327,7 +338,7 @@ export class SaveSystem {
       const data = parsed as GameSaveData;
 
       if (
-        ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(data.version) ||
+        ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(data.version) ||
         !data.player ||
         !Number.isFinite(data.player.x) ||
         !Number.isFinite(data.player.y) ||

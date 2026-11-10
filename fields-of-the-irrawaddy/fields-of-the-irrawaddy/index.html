@@ -1,0 +1,65 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#2a1a14" />
+    <title>Fields of the Irrawaddy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="app">
+      <header class="site-header">
+        <div class="brand">
+          <div class="brand-icon">FI</div>
+          <div>
+            <p class="eyebrow">A MYANMAR COUNTRYSIDE ADVENTURE</p>
+            <h1>Fields of the Irrawaddy</h1>
+          </div>
+        </div>
+
+        <div class="prototype-label">PIXEL EDITION · BROWSER GAME</div>
+      </header>
+
+      <main>
+        <section class="game-panel">
+          <div id="game-container"></div>
+        </section>
+
+        <section class="game-information">
+          <div>
+            <span class="info-label">MOVEMENT</span>
+            <strong>WASD / Arrow Keys or the mobile joystick</strong>
+          </div>
+
+          <div>
+            <span class="info-label">NEED HELP?</span>
+            <strong>Press H or tap HELP inside the game for the full guide</strong>
+          </div>
+
+          <div>
+            <span class="info-label">FARMING ROUTINE</span>
+            <strong>Prepare soil → Plant → Water → New day → Harvest</strong>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        Fields of the Irrawaddy · An independent Myanmar farming game project
+      </footer>
+    </div>
+
+    <div class="orientation-overlay" role="status" aria-live="polite">
+      <div class="orientation-card">
+        <div class="orientation-icon">↻</div>
+        <strong>Rotate your phone</strong>
+        <span>Fields of the Irrawaddy is best played in landscape mode.</span>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

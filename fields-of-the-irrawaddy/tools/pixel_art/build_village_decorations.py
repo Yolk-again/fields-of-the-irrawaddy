@@ -1,4 +1,4 @@
-"""Generate clear, Burmese countryside pixel-art landmarks and village props.
+"""Generate clear, Burmese countryside pixel-art landmarks and path overlays.
 
 All artwork is deliberately drawn on a small pixel grid without antialiasing.
 Run from the project root:
@@ -99,6 +99,29 @@ def make_drying_mat():
     return save(im, "decorations/rice_drying_mat.png")
 
 
+def make_irrigation_channel():
+    im = new((80, 20)); d = ImageDraw.Draw(im)
+    d.ellipse((1, 15, 78, 19), fill=(37, 30, 20, 45))
+    # Earthen banks and dark channel bed.
+    d.polygon([(1,5),(8,2),(72,2),(79,5),(79,16),(1,16)], fill=WOOD_D)
+    d.polygon([(4,6),(10,4),(70,4),(76,6),(76,13),(4,13)], fill=STRAW_D)
+    d.rectangle((7,7,73,13), fill=WATER_D)
+    d.line((8,8,71,8), fill=WATER_L)
+    d.line((12,11,25,11), fill=WATER)
+    d.line((35,10,48,10), fill=WATER_L)
+    d.line((57,12,70,12), fill=WATER)
+    # Visible stone / bamboo retaining edges.
+    for x in range(4, 77, 8):
+        d.rectangle((x,3,x+3,5), fill=WOOD_L)
+        d.rectangle((x,14,x+3,16), fill=WOOD)
+    # Little rice seedlings mark the channel as farm irrigation.
+    for x in (16, 62):
+        d.line((x,4,x-2,0), fill=LEAF_D)
+        d.line((x,4,x+2,0), fill=LEAF)
+        d.point((x,3), fill=LEAF_L)
+    return save(im, "decorations/irrigation_channel.png")
+
+
 def make_washing_platform():
     im = new((48, 28)); d = ImageDraw.Draw(im)
     d.ellipse((2,22,45,27), fill=(40,31,23,55))
@@ -186,6 +209,46 @@ def make_chicken_coop():
     return save(im, "buildings/chicken_coop.png")
 
 
+def make_paths_overlay():
+    # Ground tile is 720x320; paths are drawn at source resolution then rendered 2x.
+    im = new((720, 320)); d = ImageDraw.Draw(im)
+
+    # Short, clearly connected footpaths lead from each doorway to the main road.
+    # A dark edge and sandy center make them read as worn village earth tracks.
+    paths = [
+        [(95, 124), (95, 141)],       # player homestead to main road
+        [(190, 111), (190, 141)],     # shared rice granary
+        [(348, 74), (348, 141)],      # Ko Aung's house
+        [(410, 124), (410, 141)],     # Ma Thiri's house
+        [(285, 128), (285, 141)],     # village market stall
+        [(614, 123), (614, 141)],     # monastery entrance
+        [(82, 148), (82, 190), (60, 202)],  # open gate into chicken yard
+        [(112, 140), (112, 170)],     # approach to the community well (from west)
+        [(165, 145), (165, 178)],     # clear farm-plot entrance gate
+        [(230, 151), (230, 165)],     # footpath to the rice paddy edge
+        [(350, 165), (350, 210)],     # narrow track along the paddy's east edge
+        [(350, 210), (520, 210)],     # path from paddy to canal bridge lane
+        [(520, 210), (520, 258)],     # joins the existing canal crossing
+        [(614, 142), (614, 184), (642, 218)],  # monastery to lotus pond
+    ]
+    for points in paths:
+        d.line(points, fill="#765239", width=13, joint="curve")
+        d.line(points, fill="#bd9160", width=8, joint="curve")
+        # Small, deliberate texture flecks break up the flat path center.
+        for px, py in points:
+            d.point((px-2, py+2), fill="#d2aa77")
+            d.point((px+2, py-1), fill="#98714a")
+
+    # Worn stepping stones make the well and canal access points legible.
+    for x, y in [(108,166),(112,172),(116,178),(158,169),(165,175),
+                 (226,158),(233,162),(350,185),(350,198),(365,210),
+                 (382,210),(399,210),(416,210),(433,210),(450,210),
+                 (467,210),(484,210),(501,210),(614,160),(614,174),
+                 (624,190),(636,205)]:
+        d.rectangle((x, y, x+2, y+1), fill="#c6b18c")
+    return save(im, "terrain/village_paths_overlay.png")
+
+
 def update_manifest(files):
     manifest = ASSETS / "asset-manifest.json"
     try:
@@ -208,9 +271,9 @@ def update_manifest(files):
 
 def main():
     generated = [
-        make_well(), make_drying_mat(),
+        make_well(), make_drying_mat(), make_irrigation_channel(),
         make_washing_platform(), make_clothesline(), make_village_sign(),
-        make_chicken_coop(),
+        make_chicken_coop(), make_paths_overlay(),
     ]
     update_manifest(generated)
     for path in generated:

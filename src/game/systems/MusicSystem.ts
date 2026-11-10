@@ -70,6 +70,7 @@ export class MusicSystem {
   private icon!: Phaser.GameObjects.Image;
   private tip!: Phaser.GameObjects.Text;
   private language: LanguageSystem;
+  private headerControls: Phaser.GameObjects.GameObject[] = [];
 
   constructor(scene: Phaser.Scene, ui: ModalUIManager, language: LanguageSystem) {
     this.scene = scene;
@@ -137,6 +138,7 @@ export class MusicSystem {
     this.button.on("pointerout", () => this.tip.setVisible(false));
     this.button.on("pointerup", () => this.openSettings());
     ui.registerHud(frame, this.icon, this.button, this.tip);
+    this.headerControls = [frame, this.icon, this.button, this.tip];
     this.refreshButton();
   }
 
@@ -293,6 +295,16 @@ export class MusicSystem {
     this.updateSettingsText();
     this.updateSliderVisuals();
     this.ui.open("audio");
+  }
+
+  /** Opens audio settings from the touch action grid. */
+  mobileToggle(): void { this.openSettings(); }
+
+  /** The touch grid owns this function, so the desktop header control is hidden. */
+  setMobileHeaderHidden(hidden: boolean): void {
+    for (const control of this.headerControls) {
+      (control as unknown as { setVisible: (visible: boolean) => void }).setVisible(!hidden);
+    }
   }
 
   private applyVolume(): void {

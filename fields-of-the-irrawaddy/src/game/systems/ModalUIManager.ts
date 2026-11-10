@@ -10,7 +10,8 @@ export type ModalId =
   | "help"
   | "cooking"
   | "house"
-  | "chest";
+  | "chest"
+  | "audio";
 
 interface DisplayAccess {
   visible: boolean;

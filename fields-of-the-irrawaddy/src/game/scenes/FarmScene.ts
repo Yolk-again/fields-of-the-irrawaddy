@@ -38,8 +38,8 @@ type Obstacle = {
 
 interface Wanderer {
   sprite: Phaser.GameObjects.Sprite;
-  shadow: Phaser.GameObjects.Ellipse | Phaser.GameObjects.Sprite;
-  kind: "chicken" | "duck" | "water_buffalo" | "sheep";
+  shadow: Phaser.GameObjects.Ellipse;
+  kind: "chicken" | "duck" | "water_buffalo";
   rect: { x1: number; y1: number; x2: number; y2: number };
   speed: number;
   state: "idle" | "walk";
@@ -47,28 +47,15 @@ interface Wanderer {
   tx: number;
   ty: number;
   fleeing?: number;
+  path: Array<{ x: number; y: number }>;
+  pathIndex: number;
+  stuckTimer: number;
+  fleeRepathTimer: number;
 }
 
 interface Butterfly {
   sprite: Phaser.GameObjects.Sprite;
   angle: number;
-  speed: number;
-}
-
-interface VillageBird {
-  sprite: Phaser.GameObjects.Sprite;
-  anchorX: number;
-  anchorY: number;
-  phase: number;
-  speed: number;
-  range: number;
-}
-
-interface Firefly {
-  sprite: Phaser.GameObjects.Sprite;
-  x: number;
-  y: number;
-  phase: number;
   speed: number;
 }
 
@@ -78,8 +65,7 @@ export class FarmScene extends Phaser.Scene {
   private facing: "down" | "up" | "side" = "down";
   private animals: Wanderer[] = [];
   private butterflies: Butterfly[] = [];
-  private birds: VillageBird[] = [];
-  private fireflies: Firefly[] = [];
+  private footstepCooldown = 0;
   private riceClumps: Phaser.GameObjects.Image[] = [];
   private farming!: FarmingSystem;
   private market!: MarketSystem;
@@ -119,6 +105,8 @@ export class FarmScene extends Phaser.Scene {
   private joystickPointerId: number | null = null;
   private joystickVector = { x: 0, y: 0 };
   private joystickNub?: Phaser.GameObjects.Arc;
+  private mobileContextButton?: Phaser.GameObjects.Container;
+  private mobileContextLabel?: Phaser.GameObjects.Text;
   private readonly joystickCenter = { x: 76, y: 267 };
 
   constructor() {
@@ -175,6 +163,7 @@ export class FarmScene extends Phaser.Scene {
       ["tile_wet", "/assets/terrain/tilled_soil_wet.png"],
       ["market_stall_asset", "/assets/buildings/market_stall.png"],
       ["rice_bowl_asset", "/assets/agriculture/rice_bowl.png"],
+      ["rice_grain_asset", "/assets/agriculture/rice_grain.png"],
       ["rice_seed_bag_asset", "/assets/tools/rice_seed_bag.png"],
       ["hoe_asset", "/assets/tools/hoe.png"],
       ["watering_can_asset", "/assets/tools/watering_can.png"],
@@ -183,12 +172,6 @@ export class FarmScene extends Phaser.Scene {
       ["road_lamp_asset", "/assets/village/road_lamp.png"],
       ["road_lamp_glow", "/assets/village/road_lamp_glow.png"],
       ["cooking_hearth_asset", "/assets/village/cooking_hearth.png"],
-      ["house_bed_asset", "/assets/village/house_bed.png"],
-      ["house_chest_asset", "/assets/village/house_lacquer_chest.png"],
-      ["house_woven_mat_asset", "/assets/village/house_woven_mat.png"],
-      ["house_wall_textile_asset", "/assets/village/house_wall_textile.png"],
-      ["house_clay_jar_asset", "/assets/village/house_clay_jar.png"],
-      ["house_oil_lamp_asset", "/assets/village/house_oil_lamp.png"],
       ["fishing_rod_asset", "/assets/tools/fishing_rod.png"],
       ["fish_silver_barb_asset", "/assets/agriculture/fish_silver_barb.png"],
       ["fish_catfish_asset", "/assets/agriculture/fish_catfish.png"],
@@ -230,11 +213,6 @@ export class FarmScene extends Phaser.Scene {
       ["chicken_sheet", "/assets/animals/chicken_sheet.png", 16, 16],
       ["duck_sheet", "/assets/animals/duck_sheet.png", 16, 16],
       ["water_buffalo_sheet", "/assets/animals/water_buffalo_sheet.png", 44, 30],
-      ["myna_sheet", "/assets/animals/myna_sheet.png", 16, 16],
-      ["firefly_sheet", "/assets/fx/firefly.png", 8, 8],
-      ["rice_sway_1", "/assets/agriculture/rice_sway_1.png", 16, 16],
-      ["rice_sway_2", "/assets/agriculture/rice_sway_2.png", 16, 16],
-      ["rice_sway_3", "/assets/agriculture/rice_sway_3.png", 16, 16],
       ["fx_dust", "/assets/fx/dust.png", 16, 16],
       ["fx_splash", "/assets/fx/splash.png", 16, 16],
       ["fx_sparkle", "/assets/fx/sparkle.png", 16, 16],
@@ -244,25 +222,6 @@ export class FarmScene extends Phaser.Scene {
     ];
 
     for (const [key, path, frameWidth, frameHeight] of sheets) {
-      this.load.spritesheet(key, path, { frameWidth, frameHeight });
-    }
-
-    // The supplied paid pack mixes 16px tiles, 48px environment tiles and
-    // larger building frames. Each sheet is loaded on its native grid.
-    const paidSheets: [string, string, number, number][] = [
-      ["paid_character_sheet", "/assets/paid_pack/character.png", 16, 16],
-      ["paid_fences_sheet", "/assets/paid_pack/fences.png", 16, 16],
-      ["paid_fire_sheet", "/assets/paid_pack/fire.png", 16, 16],
-      ["paid_house_sheet", "/assets/paid_pack/house.png", 96, 112],
-      ["paid_plants_sheet", "/assets/paid_pack/plants.png", 16, 16],
-      ["paid_sheep_sheet", "/assets/paid_pack/sheep.png", 16, 16],
-      ["paid_sheep_shadow_sheet", "/assets/paid_pack/sheep_with_shadow.png", 16, 16],
-      ["paid_tile_map_sheet", "/assets/paid_pack/tile_map.png", 16, 16],
-      ["paid_toilet_sheet", "/assets/paid_pack/toilet.png", 36, 48],
-      ["paid_trees_sheet", "/assets/paid_pack/trees.png", 48, 48],
-      ["paid_water_sheet", "/assets/paid_pack/water.png", 48, 48]
-    ];
-    for (const [key, path, frameWidth, frameHeight] of paidSheets) {
       this.load.spritesheet(key, path, { frameWidth, frameHeight });
     }
   }
@@ -280,8 +239,14 @@ export class FarmScene extends Phaser.Scene {
     this.help = new HelpSystem(this, this.ui, this.language);
     this.createHUD();
     this.music = new MusicSystem(this, this.ui, this.language);
+    this.music.setMobileHeaderHidden(this.isTouchDevice);
 
-    this.farming = new FarmingSystem(this, this.ui, this.language);
+    this.farming = new FarmingSystem(
+      this,
+      this.ui,
+      this.language,
+      () => this.village?.getElapsedGameMinutes() ?? 0
+    );
     this.fishing = new FishingSystem(
       this,
       this.ui,
@@ -322,6 +287,7 @@ export class FarmScene extends Phaser.Scene {
       this.ui,
       this.language
     );
+    this.saveSystem.setMobileControlsHidden(this.isTouchDevice);
 
     this.house = new HouseInteriorSystem(
       this,
@@ -379,14 +345,15 @@ export class FarmScene extends Phaser.Scene {
       make(`${sheet}-work`, sheet, [12, 13, 14, 15], sheet.startsWith("monk") ? 4 : 8);
       make(`${sheet}-sit`, sheet, [16, 17, 18, 19], 2);
 
-      // Character sheets now contain 14 Burmese action rows (56 frames total):
-      // walk, work, sit, plant, water, harvest, fish, cook, gesture, homage, eat.
-      make(`${sheet}-task-market`, sheet, [40, 41, 42, 43, 42, 41], 3);
+      // Task-specific loops use the action poses already drawn in each
+      // character sheet. Different rhythm and frame order make each activity
+      // visibly distinct without replacing the original pixel-art characters.
+      make(`${sheet}-task-market`, sheet, [0, 1, 2, 3, 2, 1], 3);
       make(`${sheet}-task-farm`, sheet, [12, 13, 14, 15, 14, 13], 8);
-      make(`${sheet}-task-fish`, sheet, [32, 33, 34, 35, 34, 33], 5);
-      make(`${sheet}-task-cook`, sheet, [36, 37, 38, 39, 38, 37], 5);
+      make(`${sheet}-task-fish`, sheet, [8, 9, 10, 11, 10, 9], 5);
+      make(`${sheet}-task-cook`, sheet, [12, 13, 14, 15, 14, 13], 5);
       make(`${sheet}-task-rest`, sheet, [16, 17, 18, 19, 18, 17], 2.5);
-      make(`${sheet}-task-eat`, sheet, [48, 49, 50, 51, 50, 49], 4);
+      make(`${sheet}-task-eat`, sheet, [0, 1, 2, 3, 2, 1], 4);
       make(`${sheet}-task-sleep`, sheet, [16, 16, 17, 17, 18, 18, 19, 19], 1.5);
       make(`${sheet}-task-sweep`, sheet, [12, 14, 13, 15, 14, 12], 7);
       make(`${sheet}-task-meditate`, sheet, [16, 16, 17, 17, 18, 18, 19, 19], 1.5);
@@ -394,32 +361,25 @@ export class FarmScene extends Phaser.Scene {
       make(`${sheet}-task-play`, sheet, [12, 13, 14, 15, 14, 13], 12);
       make(`${sheet}-task-school`, sheet, [16, 17, 16, 18, 19, 18], 2.5);
       make(`${sheet}-task-skip`, sheet, [12, 13, 14, 15, 13, 12], 10);
-      make(`${sheet}-task-alms`, sheet, [52, 53, 54, 55], 2.5);
-      make(`${sheet}-task-offer`, sheet, [40, 41, 42, 43, 42, 41], 4);
-      make(`${sheet}-task-homage`, sheet, [44, 45, 46, 47, 46, 45], 3.5);
+      make(`${sheet}-task-alms`, sheet, [0, 1, 0, 1], 2.5);
+      make(`${sheet}-task-offer`, sheet, [0, 1, 2, 3, 2, 1], 4);
+      make(`${sheet}-task-homage`, sheet, [16, 17, 18, 19, 18, 17], 3.5);
       make(`${sheet}-task-walkMeditate`, sheet, [8, 9, 10, 11], 3);
-      make(`${sheet}-task-talk`, sheet, [40, 41, 42, 43, 42, 41], 3);
-      // Player-only actions use their dedicated side-view frames.
+      make(`${sheet}-task-talk`, sheet, [0, 1, 2, 3, 2, 1], 3);
+      // Player-only tool animations (the farmer sheets also register these).
       make(`${sheet}-task-hoe`, sheet, [12, 13, 14, 15], 9, 0);
-      make(`${sheet}-task-plant`, sheet, [20, 21, 22, 23], 5, 0);
-      make(`${sheet}-task-water`, sheet, [24, 25, 26, 27], 5, 0);
-      make(`${sheet}-task-harvest`, sheet, [28, 29, 30, 31], 11, 0);
-      make(`${sheet}-task-clear`, sheet, [28, 30, 28], 6, 0);
+      make(`${sheet}-task-plant`, sheet, [12, 13, 12, 13], 5, 0);
+      make(`${sheet}-task-water`, sheet, [12, 14, 15, 12], 5, 0);
+      make(`${sheet}-task-harvest`, sheet, [12, 13, 14, 15], 11, 0);
+      make(`${sheet}-task-clear`, sheet, [12, 14, 12], 6, 0);
     }
 
-    make("chicken-idle", "chicken_sheet", [0, 2, 0, 2], 2.5);
-    make("chicken-walk", "chicken_sheet", [3, 4, 3, 4], 7);
-    make("chicken-peck", "chicken_sheet", [0, 1, 2, 1, 0], 5);
-    make("chicken-flutter", "chicken_sheet", [2, 5, 2], 8, 0);
-    make("duck-walk", "duck_sheet", [2, 3, 2, 3], 5);
-    make("duck-idle", "duck_sheet", [0, 1, 0, 1], 2.5);
+    make("chicken-walk", "chicken_sheet", [0, 2], 6);
+    make("chicken-peck", "chicken_sheet", [0, 1, 1, 0], 5);
+    make("duck-walk", "duck_sheet", [0, 1, 0, 2], 5);
+    make("duck-idle", "duck_sheet", [0], 1);
     make("water_buffalo-walk", "water_buffalo_sheet", [0, 1, 2, 3], 4);
-    make("water_buffalo-idle", "water_buffalo_sheet", [0, 1, 0, 3], 1.7);
-    make("myna-flap", "myna_sheet", [0, 1, 2, 3], 8);
-    make("firefly-pulse", "firefly_sheet", [0, 1, 2, 3], 3);
-    make("rice-sway-1", "rice_sway_1", [0, 1, 2, 3], 2.2);
-    make("rice-sway-2", "rice_sway_2", [0, 1, 2, 3], 1.9);
-    make("rice-sway-3", "rice_sway_3", [0, 1, 2, 3], 1.6);
+    make("water_buffalo-idle", "water_buffalo_sheet", [0], 1);
 
     make("fx_dust-play", "fx_dust", [0, 1, 2, 3], 12, 0);
     make("fx_splash-play", "fx_splash", [0, 1, 2, 3], 12, 0);
@@ -427,18 +387,6 @@ export class FarmScene extends Phaser.Scene {
     make("water_glint-play", "water_glint", [0, 1, 2, 3], 4, -1);
     make("butterfly_yellow-flap", "butterfly_yellow", [0, 1], 10);
     make("butterfly_white-flap", "butterfly_white", [0, 1], 10);
-
-    // Paid-pack animations: frames were checked against each sheet's native
-    // grid so no blank padding cells are used in the visible loops.
-    make("paid-character-walk", "paid_character_sheet", [280, 281, 282, 284, 285, 286], 8);
-    make("paid-sheep-walk", "paid_sheep_sheet", Array.from({ length: 15 }, (_, i) => i), 7);
-    make("paid-sheep-idle", "paid_sheep_sheet", [15, 16, 17, 18], 2);
-    make("paid-sheep-shadow-walk", "paid_sheep_shadow_sheet", Array.from({ length: 15 }, (_, i) => i), 7);
-    make("paid-fire-loop", "paid_fire_sheet", [36, 42, 48, 54], 4);
-    make("paid-house-smoke", "paid_house_sheet", [0, 1, 2, 3, 4, 5, 6], 2);
-    make("paid-house-door", "paid_house_sheet", [7, 8, 9, 10, 11, 12, 13, 14], 2.5);
-    make("paid-toilet-door", "paid_toilet_sheet", [0, 1, 2, 3, 4, 5, 6, 7], 2);
-    make("paid-water-glimmer", "paid_water_sheet", [43, 48, 53, 58], 1.8);
   }
 
   // ------------------------------------------------------------------
@@ -446,23 +394,10 @@ export class FarmScene extends Phaser.Scene {
   // ------------------------------------------------------------------
   /** Places a 2x pixel-art prop with its feet at (x, y). */
   private prop(texture: string, x: number, y: number, depth?: number): Phaser.GameObjects.Image {
-    const image = this.add.image(x, y, texture)
+    return this.add.image(x, y, texture)
       .setOrigin(0.5, 1)
       .setScale(PIXEL_SCALE)
       .setDepth(depth ?? y);
-    // A very small base-pivot sway gives tropical foliage life without
-    // changing its collision footprint or making the pixel art look rubbery.
-    if (["palm_tree_tall", "palm_tree_small", "banana_plant_asset", "fruit_tree_round", "fruit_tree_large"].includes(texture)) {
-      this.tweens.add({
-        targets: image,
-        angle: { from: -0.45, to: 0.45 },
-        duration: Phaser.Math.Between(4200, 6200),
-        yoyo: true,
-        repeat: -1,
-        ease: "Sine.easeInOut"
-      });
-    }
-    return image;
   }
 
   private createWorld(): void {
@@ -478,7 +413,6 @@ export class FarmScene extends Phaser.Scene {
     this.drawCanal();
     this.drawRiceField();
     this.drawVillage();
-    this.drawPaidPackAdditions();
     this.drawMonasteryCompound();
     this.drawFarmPlotFence();
     this.drawNpcFarmPlotFences();
@@ -487,8 +421,6 @@ export class FarmScene extends Phaser.Scene {
     this.createWorldLabels();
     this.spawnAnimals();
     this.spawnButterflies();
-    this.spawnBirds();
-    this.spawnFireflies();
     this.createRoadLamps();
   }
 
@@ -569,131 +501,6 @@ export class FarmScene extends Phaser.Scene {
       { x: m.gate.left - 14, y: m.frontWallY - 14, width: 28, height: 14 },
       { x: m.gate.right - 14, y: m.frontWallY - 14, width: 28, height: 14 }
     );
-  }
-
-  private drawPaidPackAdditions(): void {
-    // The 48px tree atlas stores its larger trees as adjacent half-tiles.
-    // Compose each pair so the canopy and trunk are never cut in half.
-    const orchard: [number, number, number, number][] = [
-      [350, 150, 23, 24], [520, 150, 40, 41]
-    ];
-    for (const [x, y, leftFrame, rightFrame] of orchard) {
-      this.add.image(x - 48, y, "paid_trees_sheet", leftFrame)
-        .setOrigin(0.5, 1).setScale(PIXEL_SCALE).setDepth(y - 3);
-      this.add.image(x + 48, y, "paid_trees_sheet", rightFrame)
-        .setOrigin(0.5, 1).setScale(PIXEL_SCALE).setDepth(y - 3);
-    }
-
-    // Small mixed crop and flower tiles decorate the monastery-side garden,
-    // staying outside the two NPC crop plots and the lotus pond's main area.
-    const gardenPlants: [number, number, number][] = [
-      [1250, 348, 24], [1280, 358, 30], [1380, 346, 36],
-      [1410, 366, 42], [1260, 378, 45]
-    ];
-    for (const [x, y, frame] of gardenPlants) {
-      this.add.image(x, y, "paid_plants_sheet", frame)
-        .setOrigin(0.5, 1)
-        .setScale(PIXEL_SCALE)
-        .setDepth(y + 2);
-    }
-
-    // The tile atlas contributes natural stone and timber details to the
-    // rice-yard path. These are real 16px tiles, not scaled screenshots.
-    for (const [x, y, frame] of [[815, 516, 11], [848, 520, 12], [905, 530, 13]] as [number, number, number][]) {
-      this.add.image(x, y, "paid_tile_map_sheet", frame)
-        .setOrigin(0.5, 1)
-        .setScale(PIXEL_SCALE)
-        .setDepth(y + 4);
-    }
-
-    // Give the sheep a small dirt feeding area inside their new southwest
-    // paddock. These ground tiles sit below the animal sprites and fence.
-    for (const [x, y, frame] of [[96, 502, 146], [128, 502, 147], [160, 502, 148]] as [number, number, number][]) {
-      this.add.image(x, y, "paid_tile_map_sheet", frame)
-        .setOrigin(0.5, 1)
-        .setScale(PIXEL_SCALE)
-        .setDepth(450);
-    }
-
-    // Small sheep paddock made from the pack's fence tiles. The south edge
-    // has a two-tile opening so the enclosure reads as a real farm gate.
-    for (let x = 64; x <= 192; x += 32) {
-      this.add.image(x, 454, "paid_fences_sheet", 40)
-        .setOrigin(0.5, 1).setScale(PIXEL_SCALE).setDepth(455);
-      if (x !== 128 && x !== 160) {
-        this.add.image(x, 520, "paid_fences_sheet", 40)
-          .setOrigin(0.5, 1).setScale(PIXEL_SCALE).setDepth(521);
-      }
-    }
-    for (let y = 454; y <= 518; y += 32) {
-      this.add.image(64, y, "paid_fences_sheet", 39)
-        .setOrigin(0.5, 1).setScale(PIXEL_SCALE).setDepth(y + 20);
-      this.add.image(208, y, "paid_fences_sheet", 39)
-        .setOrigin(0.5, 1).setScale(PIXEL_SCALE).setDepth(y + 20);
-    }
-    this.obstacles.push(
-      { x: 52, y: 445, width: 24, height: 74 },
-      { x: 196, y: 445, width: 24, height: 74 },
-      { x: 64, y: 439, width: 144, height: 10 },
-      { x: 64, y: 510, width: 48, height: 10 },
-      { x: 160, y: 510, width: 48, height: 10 }
-    );
-
-    // A compact field shed sits in the gap between the two NPC farm plots.
-    // The paid house sheet has two separate animations: chimney smoke on the
-    // house body, and a small door overlay that opens/closes at the entrance.
-    const shed = this.add.sprite(1035, 540, "paid_house_sheet", 0)
-      .setOrigin(0.5, 1)
-      .setScale(0.9)
-      .setDepth(535);
-    shed.anims.play("paid-house-smoke");
-    const shedDoor = this.add.sprite(1035, 540, "paid_house_sheet", 7)
-      .setOrigin(0.5, 1)
-      .setScale(0.9)
-      .setDepth(536);
-    shedDoor.anims.play("paid-house-door");
-    this.obstacles.push({ x: 995, y: 516, width: 80, height: 20 });
-
-    // A little fire uses only the pack's actual flame frames, not the log
-    // and ember cells that share the same atlas.
-    const cookingFire = this.add.sprite(930, 520, "paid_fire_sheet", 36)
-      .setOrigin(0.5, 1)
-      .setScale(PIXEL_SCALE)
-      .setDepth(519);
-    cookingFire.anims.play("paid-fire-loop");
-
-    const outhouse = this.add.sprite(1100, 540, "paid_toilet_sheet", 0)
-      .setOrigin(0.5, 1)
-      .setScale(1.35)
-      .setDepth(540);
-    outhouse.anims.play("paid-toilet-door");
-    this.obstacles.push({ x: 1080, y: 516, width: 40, height: 24 });
-
-    // An animated water patch joins the bottom edge of the existing lotus
-    // pond, making a larger village water feature rather than a second pond.
-    const pond = this.add.sprite(1270, 540, "paid_water_sheet", 43)
-      .setOrigin(0.5, 1)
-      .setScale(1.5)
-      .setDepth(541);
-    pond.anims.play("paid-water-glimmer");
-
-    // The pack's generic 16px traveller is kept as a background villager;
-    // Ko Aung, Ma Thiri, the monk and the child retain their Burmese sprites.
-    const traveller = this.add.sprite(462, 304, "paid_character_sheet", 280)
-      .setOrigin(0.5, 1)
-      .setScale(2.5)
-      .setDepth(305);
-    traveller.anims.play("paid-character-walk");
-    this.tweens.add({
-      targets: traveller,
-      x: { from: 448, to: 488 },
-      duration: 5200,
-      ease: "Sine.easeInOut",
-      yoyo: true,
-      repeat: -1,
-      onYoyo: () => traveller.setFlipX(true),
-      onRepeat: () => traveller.setFlipX(false)
-    });
   }
 
   private drawRiceField(): void {
@@ -890,25 +697,23 @@ export class FarmScene extends Phaser.Scene {
       speed: number,
       shadowW: number
     ): void => {
-      const sheetKey = kind === "water_buffalo"
-        ? "water_buffalo_sheet"
-        : kind === "sheep" ? "paid_sheep_sheet" : `${kind}_sheet`;
-      const shadow = kind === "sheep"
-        ? this.add.sprite(x, y - 1, "paid_sheep_shadow_sheet", 0)
-          .setOrigin(0.5, 1).setScale(PIXEL_SCALE).setDepth(y - 0.5)
-        : this.add.ellipse(x, y - 1, shadowW, Math.max(5, shadowW / 4), 0x1d3015, 0.35)
-          .setDepth(y - 0.5);
+      const sheetKey = kind === "water_buffalo" ? "water_buffalo_sheet" : `${kind}_sheet`;
+      const shadow = this.add.ellipse(x, y - 1, shadowW, Math.max(5, shadowW / 4), 0x1d3015, 0.35)
+        .setDepth(y - 0.5);
       const sprite = this.add.sprite(x, y, sheetKey, 0)
         .setOrigin(0.5, 1)
         .setScale(PIXEL_SCALE)
         .setDepth(y);
-      if (kind === "sheep") (shadow as Phaser.GameObjects.Sprite).anims.play("paid-sheep-shadow-walk");
       this.animals.push({
         sprite, shadow, kind, rect, speed,
         state: "idle",
         timer: Phaser.Math.FloatBetween(0.2, 3),
         tx: x,
-        ty: y
+        ty: y,
+        path: [],
+        pathIndex: 0,
+        stuckTimer: 0,
+        fleeRepathTimer: 0
       });
       this.playIdle(this.animals[this.animals.length - 1]);
     };
@@ -924,17 +729,139 @@ export class FarmScene extends Phaser.Scene {
     }
 
     add("water_buffalo", 730, 408, { x1: 692, y1: 382, x2: 756, y2: 430 }, 9, 64);
-
-    for (const [x, y] of [[94, 478], [142, 490], [174, 474]] as [number, number][]) {
-      add("sheep", x, y, { x1: 80, y1: 466, x2: 194, y2: 508 }, 6, 24);
-    }
   }
 
   private playIdle(animal: Wanderer): void {
     if (animal.kind === "chicken") animal.sprite.anims.play("chicken-peck", true);
     else if (animal.kind === "duck") animal.sprite.anims.play("duck-idle", true);
-    else if (animal.kind === "sheep") animal.sprite.anims.play("paid-sheep-idle", true);
     else animal.sprite.anims.play("water_buffalo-idle", true);
+  }
+
+  private chickenCanStand(animal: Wanderer, x: number, y: number): boolean {
+    if (x < animal.rect.x1 + 4 || x > animal.rect.x2 - 4 ||
+        y < animal.rect.y1 + 2 || y > animal.rect.y2 - 2) return false;
+    const left = x - 5;
+    const right = x + 5;
+    const top = y - 13;
+    const bottom = y - 2;
+    for (const obstacle of this.obstacles) {
+      if (right > obstacle.x && left < obstacle.x + obstacle.width &&
+          bottom > obstacle.y && top < obstacle.y + obstacle.height) return false;
+    }
+    return true;
+  }
+
+  /** Four-way grid route inside the chicken yard; waypoints preserve every corner. */
+  private findChickenPath(animal: Wanderer, targetX: number, targetY: number): Array<{ x: number; y: number }> {
+    const step = 8;
+    const columns = Math.floor((animal.rect.x2 - animal.rect.x1) / step) + 1;
+    const rows = Math.floor((animal.rect.y2 - animal.rect.y1) / step) + 1;
+    const total = columns * rows;
+    const pointFor = (index: number): { x: number; y: number } => ({
+      x: animal.rect.x1 + (index % columns) * step,
+      y: animal.rect.y1 + Math.floor(index / columns) * step
+    });
+    const walkable = new Int8Array(total);
+    const isWalkable = (index: number): boolean => {
+      if (walkable[index] !== 0) return walkable[index] === 1;
+      const point = pointFor(index);
+      walkable[index] = this.chickenCanStand(animal, point.x, point.y) ? 1 : -1;
+      return walkable[index] === 1;
+    };
+    const nearestNode = (x: number, y: number): number => {
+      const candidates: Array<{ index: number; distance: number }> = [];
+      for (let index = 0; index < total; index++) {
+        const point = pointFor(index);
+        candidates.push({ index, distance: Math.hypot(point.x - x, point.y - y) });
+      }
+      candidates.sort((a, b) => a.distance - b.distance);
+      return candidates.find(candidate => isWalkable(candidate.index))?.index ?? -1;
+    };
+
+    const start = nearestNode(animal.sprite.x, animal.sprite.y);
+    const goal = nearestNode(targetX, targetY);
+    if (start < 0 || goal < 0 || start === goal) return [];
+    const previous = new Int32Array(total).fill(-1);
+    const visited = new Uint8Array(total);
+    const queue = new Int32Array(total);
+    let head = 0;
+    let tail = 0;
+    queue[tail++] = start;
+    visited[start] = 1;
+    while (head < tail && !visited[goal]) {
+      const current = queue[head++];
+      const col = current % columns;
+      const row = Math.floor(current / columns);
+      const neighbours = [
+        row > 0 ? current - columns : -1,
+        col < columns - 1 ? current + 1 : -1,
+        row < rows - 1 ? current + columns : -1,
+        col > 0 ? current - 1 : -1
+      ];
+      for (const next of neighbours) {
+        if (next < 0 || visited[next] || !isWalkable(next)) continue;
+        visited[next] = 1;
+        previous[next] = current;
+        queue[tail++] = next;
+      }
+    }
+    if (!visited[goal]) return [];
+
+    const indices: number[] = [];
+    for (let node = goal; node !== start && node >= 0; node = previous[node]) indices.push(node);
+    indices.reverse();
+    const full = indices.map(pointFor);
+    const corners: Array<{ x: number; y: number }> = [];
+    let lastDirection = "";
+    for (let index = 0; index < full.length; index++) {
+      const prior = index === 0 ? { x: animal.sprite.x, y: animal.sprite.y } : full[index - 1];
+      const point = full[index];
+      const direction = Math.abs(point.x - prior.x) > Math.abs(point.y - prior.y) ? "h" : "v";
+      const next = full[index + 1];
+      const nextDirection = next
+        ? (Math.abs(next.x - point.x) > Math.abs(next.y - point.y) ? "h" : "v")
+        : "";
+      if (index === full.length - 1 || direction !== nextDirection || direction !== lastDirection) corners.push(point);
+      lastDirection = direction;
+    }
+    return corners;
+  }
+
+  private planChickenEscape(animal: Wanderer, threat: { x: number; y: number }): boolean {
+    const baseAngle = Math.atan2(animal.sprite.y - threat.y, animal.sprite.x - threat.x);
+    let bestPath: Array<{ x: number; y: number }> = [];
+    let bestScore = -Infinity;
+    for (let index = 0; index < 24; index++) {
+      const angle = baseAngle + index * (Math.PI * 2 / 24);
+      const targetX = Phaser.Math.Clamp(animal.sprite.x + Math.cos(angle) * 82, animal.rect.x1 + 5, animal.rect.x2 - 5);
+      const targetY = Phaser.Math.Clamp(animal.sprite.y + Math.sin(angle) * 25, animal.rect.y1 + 3, animal.rect.y2 - 3);
+      if (Phaser.Math.Distance.Between(animal.sprite.x, animal.sprite.y, targetX, targetY) < 12) continue;
+      const path = this.findChickenPath(animal, targetX, targetY);
+      if (path.length === 0) continue;
+      const endpoint = path[path.length - 1];
+      const threatDistance = Phaser.Math.Distance.Between(endpoint.x, endpoint.y, threat.x, threat.y);
+      const routeLength = path.reduce((sum, point, pathIndex) => {
+        const previous = pathIndex === 0 ? animal.sprite : path[pathIndex - 1];
+        return sum + Phaser.Math.Distance.Between(previous.x, previous.y, point.x, point.y);
+      }, 0);
+      const score = threatDistance - routeLength * 0.18;
+      if (score > bestScore) {
+        bestScore = score;
+        bestPath = path;
+      }
+    }
+    if (bestPath.length === 0) return false;
+    animal.path = bestPath;
+    animal.pathIndex = 0;
+    animal.tx = bestPath[bestPath.length - 1].x;
+    animal.ty = bestPath[bestPath.length - 1].y;
+    animal.state = "walk";
+    animal.fleeing = 1;
+    animal.timer = 10;
+    animal.stuckTimer = 0;
+    animal.fleeRepathTimer = 0.45;
+    animal.sprite.anims.play("chicken-walk", true);
+    return true;
   }
 
   private updateAnimals(delta: number): void {
@@ -943,58 +870,107 @@ export class FarmScene extends Phaser.Scene {
     for (const animal of this.animals) {
       const sprite = animal.sprite;
       animal.timer -= dt;
+      animal.fleeRepathTimer = Math.max(0, animal.fleeRepathTimer - dt);
 
-      // chickens bolt away from the village kid (and a little from the player)
       if (animal.kind === "chicken") {
         const threats = [kid, { x: this.player.x, y: this.player.y + 20 }];
-        for (const t of threats) {
-          if (!t) continue;
-          const d = Phaser.Math.Distance.Between(sprite.x, sprite.y, t.x, t.y);
-          const limit = t === kid ? 70 : 28;
-          if (d < limit) {
-            const ang = Math.atan2(sprite.y - t.y, sprite.x - t.x);
-            animal.tx = Phaser.Math.Clamp(sprite.x + Math.cos(ang) * 60, animal.rect.x1, animal.rect.x2);
-            animal.ty = Phaser.Math.Clamp(sprite.y + Math.sin(ang) * 20, animal.rect.y1, animal.rect.y2);
-            animal.state = "walk";
-            animal.timer = 1.2;
-            animal.fleeing = t === kid ? 1 : 0.5;
-            sprite.anims.play("chicken-walk", true);
+        let nearestThreat: { x: number; y: number } | null = null;
+        let nearestDistance = Infinity;
+        for (const threat of threats) {
+          if (!threat) continue;
+          const distance = Phaser.Math.Distance.Between(sprite.x, sprite.y, threat.x, threat.y);
+          const limit = threat === kid ? 94 : 38;
+          if (distance < limit && distance < nearestDistance) {
+            nearestThreat = threat;
+            nearestDistance = distance;
           }
         }
+        if (nearestThreat && animal.fleeRepathTimer <= 0) this.planChickenEscape(animal, nearestThreat);
       }
 
       if (animal.state === "idle") {
         if (animal.timer <= 0) {
-          if (animal.kind === "chicken" && Math.random() < 0.22) {
-            sprite.anims.play("chicken-flutter", true);
-            animal.timer = 0.55;
-            continue;
-          }
-          animal.tx = Phaser.Math.Between(animal.rect.x1, animal.rect.x2);
-          animal.ty = Phaser.Math.Between(animal.rect.y1, animal.rect.y2);
+          animal.tx = Phaser.Math.Between(animal.rect.x1 + 5, animal.rect.x2 - 5);
+          animal.ty = Phaser.Math.Between(animal.rect.y1 + 3, animal.rect.y2 - 3);
+          animal.path = animal.kind === "chicken" ? this.findChickenPath(animal, animal.tx, animal.ty) : [];
+          animal.pathIndex = 0;
           animal.state = "walk";
-          animal.timer = Phaser.Math.FloatBetween(2, 5);
-          sprite.anims.play(animal.kind === "sheep" ? "paid-sheep-walk" : `${animal.kind}-walk`, true);
+          animal.timer = animal.kind === "chicken" ? 20 : Phaser.Math.FloatBetween(2, 5);
+          if (animal.kind !== "chicken" || animal.path.length > 0) sprite.anims.play(`${animal.kind}-walk`, true);
+          else { animal.state = "idle"; animal.timer = 0.5; }
         }
         continue;
       }
 
-      const dx = animal.tx - sprite.x;
-      const dy = animal.ty - sprite.y;
+      let targetX = animal.tx;
+      let targetY = animal.ty;
+      if (animal.kind === "chicken") {
+        const waypoint = animal.path[animal.pathIndex];
+        if (!waypoint) {
+          animal.state = "idle";
+          animal.fleeing = 0;
+          animal.timer = Phaser.Math.FloatBetween(0.5, 1.8);
+          this.playIdle(animal);
+          continue;
+        }
+        targetX = waypoint.x;
+        targetY = waypoint.y;
+      }
+
+      const dx = targetX - sprite.x;
+      const dy = targetY - sprite.y;
       const distance = Math.hypot(dx, dy);
-      if (distance < 2 || animal.timer <= 0) {
+      if (distance < 2 || (animal.timer <= 0 && animal.kind !== "chicken")) {
+        if (animal.kind === "chicken" && animal.pathIndex < animal.path.length - 1 && distance < 2) {
+          animal.pathIndex++;
+          animal.stuckTimer = 0;
+          continue;
+        }
         animal.state = "idle";
         animal.fleeing = 0;
+        animal.path = [];
         animal.timer = Phaser.Math.FloatBetween(1.5, 4.5);
         this.playIdle(animal);
         continue;
       }
 
-      const boost = animal.fleeing && animal.timer > 0 ? 3.4 : 1;
+      const boost = animal.fleeing && animal.kind === "chicken" ? 3.4 : 1;
       const step = Math.min(distance, animal.speed * boost * dt);
-      sprite.x += (dx / distance) * step;
-      sprite.y += (dy / distance) * step;
+      const nextX = sprite.x + (dx / distance) * step;
+      const nextY = sprite.y + (dy / distance) * step;
+      const canStep = animal.kind !== "chicken" || this.chickenCanStand(animal, nextX, nextY);
+      if (canStep) {
+        sprite.x = nextX;
+        sprite.y = nextY;
+        animal.stuckTimer = 0;
+      } else {
+        animal.stuckTimer += dt;
+      }
+      if (animal.stuckTimer >= 0.35 && animal.kind === "chicken") {
+        animal.path = [];
+        animal.pathIndex = 0;
+        animal.stuckTimer = 0;
+        const threat = kid ?? { x: this.player.x, y: this.player.y + 20 };
+        if (!this.planChickenEscape(animal, threat)) {
+          animal.tx = Phaser.Math.Clamp(sprite.x + (sprite.x < (animal.rect.x1 + animal.rect.x2) / 2 ? 36 : -36), animal.rect.x1 + 5, animal.rect.x2 - 5);
+          animal.ty = Phaser.Math.Clamp(sprite.y + (sprite.y < (animal.rect.y1 + animal.rect.y2) / 2 ? 12 : -12), animal.rect.y1 + 3, animal.rect.y2 - 3);
+          animal.path = this.findChickenPath(animal, animal.tx, animal.ty);
+          animal.pathIndex = 0;
+          // If the grid cannot produce a route from an awkward edge position,
+          // resume the idle cycle instead of keeping a permanently blocked path.
+          if (animal.path.length === 0) {
+            animal.state = "idle";
+            animal.fleeing = 0;
+            animal.timer = 0.2;
+            animal.fleeRepathTimer = 0.2;
+            this.playIdle(animal);
+          }
+        }
+      }
       if (Math.abs(dx) > 1) sprite.setFlipX(dx < 0);
+      if (animal.kind === "chicken" && Phaser.Math.Distance.Between(sprite.x, sprite.y, targetX, targetY) < 2) {
+        animal.pathIndex++;
+      }
       sprite.setDepth(sprite.y);
       animal.shadow.setPosition(sprite.x, sprite.y - 1).setDepth(sprite.y - 0.5);
     }
@@ -1032,66 +1008,6 @@ export class FarmScene extends Phaser.Scene {
       sprite.setPosition(nx, ny);
       sprite.setDepth(ny + 15);
       sprite.setFlipX(Math.cos(b.angle) < 0);
-    }
-  }
-
-  private spawnBirds(): void {
-    const perches: [number, number, number][] = [
-      [118, 154, 24], [542, 118, 28], [930, 160, 22], [1165, 176, 34]
-    ];
-    for (const [x, y, range] of perches) {
-      const sprite = this.add.sprite(x, y, "myna_sheet", 0)
-        .setOrigin(0.5, 0.5)
-        .setScale(1.7)
-        .setDepth(y + 30)
-        .setAlpha(0);
-      sprite.anims.play("myna-flap");
-      this.birds.push({ sprite, anchorX: x, anchorY: y, phase: Phaser.Math.FloatBetween(0, Math.PI * 2), speed: Phaser.Math.FloatBetween(0.45, 0.8), range });
-    }
-  }
-
-  private updateBirds(delta: number): void {
-    const dt = Math.min(delta, 50) / 1000;
-    const hour = this.village?.getTimeOfDayHours() ?? 8;
-    const daylight = hour >= 6 && hour < 18.5;
-    for (const bird of this.birds) {
-      bird.phase += bird.speed * dt;
-      const x = bird.anchorX + Math.sin(bird.phase) * bird.range;
-      const y = bird.anchorY + Math.sin(bird.phase * 2.1) * 5;
-      bird.sprite.setPosition(x, y)
-        .setDepth(y + 30)
-        .setFlipX(Math.cos(bird.phase) < 0)
-        .setAlpha(daylight ? 0.95 : 0);
-    }
-  }
-
-  private spawnFireflies(): void {
-    const glades: [number, number][] = [
-      [530, 222], [690, 472], [1118, 352], [354, 486],
-      [1300, 294], [854, 530], [618, 142], [1015, 207], [245, 390]
-    ];
-    for (const [x, y] of glades) {
-      const sprite = this.add.sprite(x, y, "firefly_sheet", 0)
-        .setScale(2)
-        // Fireflies sit just above the night tint so their warm pixel glow remains visible.
-        .setDepth(2050 + this.fireflies.length)
-        .setVisible(false)
-        .setAlpha(0.8);
-      sprite.anims.play("firefly-pulse");
-      this.fireflies.push({ sprite, x, y, phase: Phaser.Math.FloatBetween(0, Math.PI * 2), speed: Phaser.Math.FloatBetween(0.7, 1.3) });
-    }
-  }
-
-  private updateFireflies(delta: number): void {
-    const dt = Math.min(delta, 50) / 1000;
-    const hour = this.village?.getTimeOfDayHours() ?? 8;
-    const night = hour >= 19 || hour < 5.5;
-    for (const fly of this.fireflies) {
-      fly.phase += fly.speed * dt;
-      fly.sprite.setPosition(fly.x + Math.sin(fly.phase) * 5, fly.y + Math.cos(fly.phase * 1.6) * 4)
-        .setDepth(2050 + this.fireflies.indexOf(fly))
-        .setVisible(night)
-        .setAlpha(0.55 + 0.4 * (0.5 + 0.5 * Math.sin(fly.phase * 2)));
     }
   }
 
@@ -1262,33 +1178,21 @@ export class FarmScene extends Phaser.Scene {
     this.isTouchDevice = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 ||
       window.matchMedia("(pointer: coarse)").matches;
 
-    // Desktop control hint (bottom-left, clear of the hotbar)
-    if (!this.isTouchDevice) {
-      const hintBackground = pixelPanel(this, 117, 345, 218, 22).setDepth(100);
-      const hint = this.add.text(20, 339, "", {
-        fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#f2e6c5"
-      }).setScrollFactor(0).setDepth(101);
-      const refreshHint = (): void => {
-        hint.setText(this.language.t("hud.hint"));
-        hint.setFontFamily(this.language.getFontFamily());
-      };
-      refreshHint();
-      this.language.onChange(refreshHint);
-      this.ui.registerHud(hintBackground, hint);
-    }
+    // Movement and interaction keys are documented in the Help panel instead of a permanent HUD hint.
 
-    // Top-right icon buttons (right to left): fullscreen, help, language, profile, inventory
-    this.createFullscreenButton();
-    // Keep the same six-button row on desktop and touch: fullscreen, music,
-    // help, language, profile, inventory. Music owns x=594 in MusicSystem.
-    this.createIconButton(562, 22, "ui_icon_help", "hud.tip.help",
-      () => this.help.mobileToggle());
-    this.createIconButton(530, 22, "ui_icon_globe", "hud.tip.language",
-      () => this.language.toggleLanguage());
-    this.createIconButton(498, 22, "ui_icon_person", "hud.tip.profile",
-      () => this.profile.mobileToggle());
-    this.createIconButton(466, 22, "ui_icon_bag", "hud.tip.inventory",
-      () => this.inventory.mobileToggle());
+    // Desktop uses compact header controls. Touch devices get a larger
+    // thumb-friendly action grid instead, keeping the play view uncluttered.
+    if (!this.isTouchDevice) {
+      this.createFullscreenButton();
+      this.createIconButton(562, 22, "ui_icon_help", "hud.tip.help",
+        () => this.help.mobileToggle());
+      this.createIconButton(530, 22, "ui_icon_globe", "hud.tip.language",
+        () => this.language.toggleLanguage());
+      this.createIconButton(498, 22, "ui_icon_person", "hud.tip.profile",
+        () => this.profile.mobileToggle());
+      this.createIconButton(466, 22, "ui_icon_bag", "hud.tip.inventory",
+        () => this.inventory.mobileToggle());
+    }
   }
 
   /** 28px framed icon button with a hover/long-press tooltip. */
@@ -1402,17 +1306,14 @@ export class FarmScene extends Phaser.Scene {
     this.input.on("pointerup", this.handleJoystickEnd, this);
     this.input.on("pointerupoutside", this.handleJoystickEnd, this);
 
-    // 2 x 2 action grid on the right edge (clear of the clock, resources and hotbar)
-    const cols = [564, 614];
-    const rows = [100, 152];
-    const buttons = [
-      this.createMobileButton(cols[0], rows[0], "ui_icon_bag", "BAG", () => this.inventory.mobileToggle()),
-      this.createMobileButton(cols[1], rows[0], "ui_icon_note", "BOARD", () => this.villageBoard.mobileInteract(this.player.x, this.player.y)),
-      this.createMobileButton(cols[0], rows[1], "ui_icon_talk", "TALK", () => this.handleMobileTalk()),
-      this.createMobileButton(cols[1], rows[1], "ui_icon_action", "USE", () => this.farming.mobileUseTool())
-    ];
+    // The right side deliberately stays minimal: USE handles the recurring
+    // farming/fishing action, while OPEN appears only at a relevant place.
+    const useButton = this.createMobileButton(588, 232, "ui_icon_action", "USE", () => {
+      if (!this.fishing.mobileAction(this.player.x, this.player.y)) this.farming.mobileUseTool();
+    });
+    this.mobileContextButton = this.createMobileContextButton(570, 164);
 
-    this.ui.registerHud(base, innerRing, joystickNub, moveLabel, joystickZone, ...buttons);
+    this.ui.registerHud(base, innerRing, joystickNub, moveLabel, joystickZone, useButton, this.mobileContextButton);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.input.off("pointermove", this.handleJoystickMove, this);
@@ -1431,17 +1332,34 @@ export class FarmScene extends Phaser.Scene {
     action: () => void
   ): Phaser.GameObjects.Container {
     const button = this.add.container(x, y).setScrollFactor(0);
-    const frame = pixelPanel(this, 0, 0, 44, 44, { fill: 0x4a3324, alpha: 0.92 });
-    const image = this.add.image(0, -6, icon).setScale(2);
-    const text = this.add.text(0, 15, label, {
+    const frame = pixelPanel(this, 0, 0, 48, 48, { fill: 0x4a3324, alpha: 0.92 });
+    const image = this.add.image(0, -7, icon).setScale(2);
+    const text = this.add.text(0, 17, label, {
       fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#ffd978", stroke: "#2a1a14", strokeThickness: 2
     }).setOrigin(0.5);
-    const hit = this.add.rectangle(0, 0, 44, 44, 0xffffff, 0.001).setInteractive({ useHandCursor: true });
+    const hit = this.add.rectangle(0, 0, 60, 60, 0xffffff, 0.001).setInteractive({ useHandCursor: true });
     hit.on("pointerdown", () => { button.setScale(0.94); action(); });
     hit.on("pointerup", () => button.setScale(1));
+    hit.on("pointerupoutside", () => button.setScale(1));
     hit.on("pointerout", () => button.setScale(1));
 
     button.add([frame, image, text, hit]);
+    return button;
+  }
+
+  private createMobileContextButton(x: number, y: number): Phaser.GameObjects.Container {
+    const button = this.add.container(x, y).setScrollFactor(0).setVisible(false);
+    const background = this.add.rectangle(0, 0, 132, 36, 0x527044, 0.96).setStrokeStyle(2, 0xd6b36b);
+    const label = this.add.text(0, 0, "CLICK TO OPEN", {
+      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf", fontStyle: "bold"
+    }).setOrigin(0.5);
+    const hit = this.add.rectangle(0, 0, 148, 48, 0xffffff, 0.001).setInteractive({ useHandCursor: true });
+    hit.on("pointerdown", () => { button.setScale(0.96); this.handleMobileContextAction(); });
+    hit.on("pointerup", () => button.setScale(1));
+    hit.on("pointerupoutside", () => button.setScale(1));
+    button.add([background, label, hit]);
+    this.mobileContextLabel = label;
+    this.language.onChange(() => label.setFontFamily(this.language.getFontFamily()));
     return button;
   }
 
@@ -1484,9 +1402,30 @@ export class FarmScene extends Phaser.Scene {
 
   private handleMobileTalk(): void {
     if (this.ui.hasActiveModal()) return;
+    if (this.house.mobileInteract(this.player.x, this.player.y)) return;
     if (this.village.mobileTalk(this.player.x, this.player.y)) return;
     if (this.villageBoard.mobileInteract(this.player.x, this.player.y)) return;
     this.market.mobileInteract(this.player.x, this.player.y);
+  }
+
+  private handleMobileContextAction(): void {
+    if (!this.isTouchDevice || this.ui.hasActiveModal()) return;
+    this.handleMobileTalk();
+  }
+
+  private updateMobileContextAction(): void {
+    if (!this.isTouchDevice || !this.mobileContextButton) return;
+    const x = this.player.x;
+    const y = this.player.y;
+    const nearHome = this.house.canMobileInteract(x, y);
+    const nearVillager = this.village.canMobileTalk(x, y);
+    const nearBoard = this.villageBoard.canMobileInteract(x, y);
+    const nearMarket = this.market.canMobileInteract(x, y);
+    const visible = nearHome || nearVillager || nearBoard || nearMarket;
+    this.mobileContextButton.setVisible(visible);
+    if (visible) {
+      this.mobileContextLabel?.setText(this.language.t(nearVillager && !nearHome ? "mobile.clickToTalk" : "mobile.clickToOpen"));
+    }
   }
 
   private createFullscreenButton(): void {
@@ -1549,17 +1488,16 @@ export class FarmScene extends Phaser.Scene {
       this.player.setPosition(320, 330);
     }
 
+    this.music.setListenerPosition(this.player.x, this.player.y);
     this.updateAnimals(delta);
     this.updateButterflies(delta);
-    this.updateBirds(delta);
-    this.updateFireflies(delta);
     this.updateWorldLabels();
     this.updateLighting();
     this.music.setTimeOfDayHours(this.village.getTimeOfDayHours());
     this.updateResourceHud();
 
     // Farming and daily village requests share the exact same 24-hour game clock.
-    this.farming.syncGameDay(this.village.getGameDay());
+    this.farming.syncGameDay(this.village.getGameDay(), this.village.getElapsedGameMinutes());
 
     const activeModal = this.ui.getActiveModal();
     if (activeModal !== null) {
@@ -1601,6 +1539,8 @@ export class FarmScene extends Phaser.Scene {
     this.villageBoard.update(this.player.x, this.player.y);
     if (this.ui.hasActiveModal()) return;
 
+    this.updateMobileContextAction();
+
     // Keep the player at the riverbank while the line is cast so the bobber
     // stays attached to the correct fishing spot until the reel/miss resolves.
     if (this.fishing.isBusy()) {
@@ -1628,6 +1568,8 @@ export class FarmScene extends Phaser.Scene {
     if (length > 0) {
       moveX /= length;
       moveY /= length;
+      const previousX = this.player.x;
+      const previousY = this.player.y;
       const step = PLAYER_SPEED * Math.min(delta, 40) / 1000;
       const nextX = this.player.x + moveX * step;
       const nextY = this.player.y + moveY * step;
@@ -1635,8 +1577,17 @@ export class FarmScene extends Phaser.Scene {
       if (this.canMoveTo(nextX, this.player.y)) this.player.x = nextX;
       if (this.canMoveTo(this.player.x, nextY)) this.player.y = nextY;
 
+      const distanceMoved = Math.hypot(this.player.x - previousX, this.player.y - previousY);
+      if (distanceMoved > 0.5) {
+        this.footstepCooldown -= delta;
+        if (this.footstepCooldown <= 0) {
+          this.events.emit("sound-effect", { name: "footstep", x: this.player.x, y: this.player.y, maxDistance: 135 });
+          this.footstepCooldown = Phaser.Math.Between(300, 360);
+        }
+      }
       this.animatePlayer(moveX, moveY, true);
     } else {
+      this.footstepCooldown = 0;
       this.animatePlayer(0, 0, false);
     }
 

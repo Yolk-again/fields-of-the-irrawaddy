@@ -25,7 +25,8 @@ export class FishingSystem {
   private getGameHour: () => number;
 
   private rodOwned = false;
-  private wellFed = false;
+  private soundX = 320;
+  private soundY = 330;
   private fish: Record<FishKind, number> = {
     silverBarb: 0,
     catfish: 0,
@@ -134,10 +135,6 @@ export class FishingSystem {
     return this.rodOwned;
   }
 
-  setWellFed(active: boolean): void {
-    this.wellFed = active;
-  }
-
   grantFishingRod(): void {
     this.rodOwned = true;
     this.showToast(this.language.t("fishing.rodPurchased"));
@@ -209,28 +206,29 @@ export class FishingSystem {
     this.line.lineTo(spot.waterX, 558);
     this.line.strokePath();
     this.bobber.setPosition(spot.waterX, 558).setVisible(true);
+    this.soundX = spot.waterX;
+    this.soundY = 558;
     this.prompt.setText(this.language.t("fishing.waiting"));
     this.prompt.setVisible(true);
     this.scene.events.emit("player-action", "fish");
-    this.scene.events.emit("sound-effect", "cast");
+    this.scene.events.emit("sound-effect", { name: "cast", x: this.soundX, y: this.soundY, maxDistance: 245 });
   }
 
   private pickFish(): FishKind {
     const hour = ((this.getGameHour() % 24) + 24) % 24;
     const roll = Math.random();
-    const luckyShift = this.wellFed ? 0.12 : 0;
     if (hour < 6 || hour >= 18) {
       if (roll < 0.48) return "catfish";
-      if (roll < 0.74 + luckyShift) return "goldenCarp";
+      if (roll < 0.74) return "goldenCarp";
       return "silverBarb";
     }
     if (hour >= 6 && hour < 9 || hour >= 16 && hour < 18) {
-      if (roll < 0.34 + luckyShift) return "goldenCarp";
-      if (roll < 0.57 + luckyShift) return "catfish";
+      if (roll < 0.34) return "goldenCarp";
+      if (roll < 0.57) return "catfish";
       return "silverBarb";
     }
-    if (roll < 0.20 + luckyShift) return "goldenCarp";
-    if (roll < 0.38 + luckyShift) return "catfish";
+    if (roll < 0.20) return "goldenCarp";
+    if (roll < 0.38) return "catfish";
     return "silverBarb";
   }
 
@@ -238,7 +236,7 @@ export class FishingSystem {
     const kind = this.pickFish();
     this.addFish(kind);
     this.scene.events.emit("player-action", "fish");
-    this.scene.events.emit("sound-effect", "catch");
+    this.scene.events.emit("sound-effect", { name: "catch", x: this.soundX, y: this.soundY, maxDistance: 245 });
     this.showToast(this.language.t(`fishing.caught.${kind}`));
     this.finishCast();
   }
@@ -264,6 +262,24 @@ export class FishingSystem {
     });
   }
 
+  /** Touch equivalent of cast/reel. Returns false when the player is not at water. */
+  mobileAction(playerX: number, playerY: number): boolean {
+    if (this.state === "bite") {
+      this.catchFish();
+      return true;
+    }
+    if (this.state === "waiting") return true;
+
+    const spot = this.nearestSpot(playerX, playerY);
+    if (!spot) return false;
+    if (!this.rodOwned) {
+      this.prompt.setText(this.language.t("fishing.needRod")).setVisible(true);
+      return true;
+    }
+    this.beginCast(playerX, playerY, spot);
+    return true;
+  }
+
   /** Returns true while fishing consumes SPACE so farming cannot use the tool. */
   update(playerX: number, playerY: number, delta: number, modalOpen = false): boolean {
     if (modalOpen) {
@@ -279,7 +295,7 @@ export class FishingSystem {
         this.stateTimer = 0;
         this.biteWindow = 2300;
         this.prompt.setText(this.language.t("fishing.bite"));
-        this.scene.events.emit("sound-effect", "bite");
+        this.scene.events.emit("sound-effect", { name: "bite", x: this.soundX, y: this.soundY, maxDistance: 245 });
       }
       return true;
     }
@@ -292,7 +308,7 @@ export class FishingSystem {
         return true;
       }
       if (this.stateTimer >= this.biteWindow) {
-        this.scene.events.emit("sound-effect", "miss");
+        this.scene.events.emit("sound-effect", { name: "miss", x: this.soundX, y: this.soundY, maxDistance: 245 });
         this.showToast(this.language.t("fishing.missed"));
         this.finishCast();
       }

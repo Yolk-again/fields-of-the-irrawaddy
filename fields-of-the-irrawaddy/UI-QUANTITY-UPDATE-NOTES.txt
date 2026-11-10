@@ -1,0 +1,25 @@
+FIELDS OF THE IRRAWADDY — INTERACTION AND QUANTITY UPDATE
+
+House interior
+- Removed the permanently visible bed, storage chest, and cooking hearth labels.
+- Removed the always-on welcome/room description.
+- Added contextual prompts above the player when close to the bed, storage chest, cooking hearth, or exit doorway.
+- Prompts are localized in English and Burmese.
+- Moved the outdoor E-to-enter prompt upward slightly.
+
+Storage chest
+- Added per-item quantity selection using minus and plus buttons.
+- Hold Shift while clicking minus/plus to change the selected amount by 10.
+- STORE and TAKE now transfer only the selected amount, capped at the amount available on the relevant side.
+- Existing stored contents and save-data structure are unchanged.
+
+Village market
+- Selling rice, cooked meals, and fish now opens a quantity selector.
+- The selector shows the available quantity and provides minus, plus, MAX, SELL AMOUNT, and CANCEL controls.
+- Only the selected quantity is sold.
+- Existing item prices are preserved: rice 5 coins; Silver Barb 4; Catfish 6; Golden Carp 8; Fish & Rice Bowl 20; Mohinga 24; Golden Carp Curry 20.
+- For mixed fish or meal sales, common/first-listed varieties are consumed first, matching the previous all-sell order.
+
+Validation
+- All 21 TypeScript source files passed a syntax transpilation check.
+- Full npm/Vite production build was not run here because npm dependency installation timed out. Run `npm.cmd install` and `npm.cmd run build` locally to perform the full project build.

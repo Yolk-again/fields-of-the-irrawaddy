@@ -1,0 +1,146 @@
+FIELDS OF THE IRRAWADDY — MAP & NPC FARMING UPDATE
+
+MAP
+- Added two 5 x 3 NPC rice plots for Ko Aung and Ma Thiri.
+- Both plots use the same ground tiles, crop stages, watering states, and fence/gate geometry as the player's plot.
+- Reworked the shared farm access lane, market and monastery forecourts, granary/harvest yard, paddy edge, and lotus-pond garden.
+- Redrew the toddy palm and banana plant sprite assets in tools/pixel_art and regenerated the terrain/art manifest.
+
+NPC FARMING LOOP
+- Morning route works tile-by-tile: hoe, plant seed, water.
+- Crops grow on the shared 24-hour in-game clock and need four successful daily watering cycles to mature.
+- On the mature day, the NPC harvests each crop tile and carries the rice to the market.
+- NPC harvest batches are sold independently of the player's inventory, then the NPC plot resets for the next cycle.
+- NPC crop state and mid-harvest sale progress are stored in the save data.
+
+EXPANSION DESIGN NOTE
+- The starting NPC plots intentionally match the player's 5 x 3 plot. A paid expansion is recommended as a later progression upgrade rather than enlarging the starting map immediately. No expansion price or upgrade UI has been added in this update.
+
+RUN
+- npm install
+- npm run build
+- npm run dev
+
+
+FENCE, TOOL ICON & MONK ROUTE FIX
+- Redrew the hoe, seed packet and sickle icons with clearer silhouettes, richer wood/paper/steel shading and sharper pixel details. The icons remain 16x16 so they fit the existing hotbar and inventory slots.
+- Rebuilt the vertical bamboo fence segment as continuous paired rails with tie-posts. Player and NPC farm plots now use exact 176x112 runs, aligned 16px horizontal sections and 28px vertical sections, capped end-posts, matching corner joins and a consistent 48px entrance.
+- Rebuilt the monastery compound on a 32px wall grid: 320px back wall, 160px side walls closing to the map edge, front wall divided into complete segments around a centered gate, and collision strips aligned with the visible walls and gate pillars.
+- Moved the monk's courtyard work route back to the open forecourt and defined the alms path as clear, axis-aligned gate and road legs. The morning alms schedule now reserves three in-game hours, so the monk has time to visit both Ko Aung and Ma Thiri and return before the next activity.
+- Moved the offering stand point from y=294 to y=286 to avoid the signpost's collision-clearance zone; both resident doorstep routes were checked against the map collision geometry.
+
+LATEST UPDATE — ROADSIDE LAMPS & DAY/NIGHT LIGHTING
+- Repositioned the five village lanterns onto roadside shoulders beside the east-west and vertical dirt roads (including one paved shoulder). The two vertical-lane lamps now sit in the clear strips between each lane and nearby farm/signpost footprints; no lamp foot is on the walkable road.
+- Moved each warm light halo to the lantern window at the top of the lamp sprite. Added a soft radial amber glow texture that renders above the world darkness tint while remaining below the HUD.
+- Increased midnight darkness to a deep blue-black tint (0.76 maximum alpha). Dusk begins at 17:00 and reaches full night by 19:00; dawn fades from 05:00 to 07:00.
+- Lanterns fade on from 17:00, remain fully lit overnight, and fade off between 05:00 and 07:00 using the same 24-hour game clock as NPC schedules and crop growth. The clock icon changes to the moon at dusk and back to the sun after dawn. A very subtle lantern-halo flicker is included.
+
+Night lighting follow-up fix:
+- Fixed the Phaser shape fill-alpha issue that left the night overlay completely transparent.
+  The overlay now updates its fill alpha with setFillStyle(), rather than changing only
+  the GameObject alpha.
+- Road-lamp flame circles now have an opaque-capable fill, so the animated alpha can
+  actually reveal the flame at dusk and night.
+- Raised maximum night darkness to 0.80 while preserving the dusk/dawn fade and warm
+  lamp glow schedule.
+
+
+LATEST UPDATE — PLAYER NAME, SOFTER LANTERNS, TIME-OF-DAY SOUND
+
+- Increased the floating player name label slightly (6px to 7px).
+- Removed the separate small bright circle/flame drawn inside each road lamp.
+- Replaced the old sharper glow with a broad, soft amber radial halo with a slightly stronger, smooth falloff.
+- Added four procedural soundtrack moods driven by the shared in-game clock:
+  dawn (rising plucked melody and birds), day (brighter village theme, birds and stream),
+  dusk (warmer slower chords, breeze and occasional early insects), and night
+  (quiet lower sustained chords, wind, stream and cricket chirps).
+- Ambience layers crossfade when the time-of-day phase changes. The existing Music
+  button continues to mute/unmute the music, ambience, and gameplay sound effects.
+- Audio is synthesized locally with the Web Audio API; no external music files or
+  third-party copyrighted recordings are used. Browser audio starts after the first
+  user interaction, as required by browser autoplay policies.
+
+
+LATEST UPDATE — GLOBAL SOUND MUTE FIX
+
+- The Music icon is now a true global sound toggle: it immediately sets the shared Web Audio output bus to zero and suspends the AudioContext, stopping currently-playing notes, birds, crickets, water/wind ambience, and in-progress one-shot effects.
+- New bird/cricket/music scheduling and one-shot sound effects are guarded while muted.
+- Phaser's own Sound Manager is muted/unmuted by the same control, covering any native Phaser sounds added now or later.
+- Unmuting resumes the audio context and resets the time-based schedulers to prevent a burst of stale notes or ambience.
+- The tooltip now says “All sound” in English and Burmese. The saved mute preference remains persistent.
+
+
+LATEST UPDATE — FISHING & HOME COOKING
+
+- Added a riverbank fishing activity with three accessible bank spots, purchased fishing rod, cast/wait/reel timing, and a short bite window. Fish species vary with the in-game time: Silver Barb, River Catfish, and Golden Carp.
+- Added fishing rod and fish inventory tracking, including separate counts for all three fish types. Fishing equipment, fish counts, and cooked meals are included in save data; older saves load with empty fishing/cooking progress.
+- Added an outdoor home cooking hearth on the grass beside the player’s home yard (kept clear of the main road and farm gate) and three recipes: Fish & Rice Bowl, River Catfish Mohinga, and Golden Carp Curry. Recipes consume harvested rice and the appropriate fish.
+- Cooked meals can be sold at the village market for more than the raw rice value. Raw fish can also be sold by species (Silver Barb 4 coins, Catfish 6, Golden Carp 8), so players can choose an immediate sale or save a catch for cooking. Players can eat a meal to receive a temporary fishing-luck bonus until the next in-game day.
+- Added clickable recipe cards and keyboard controls (1–3 to cook, Q to eat, E to close), plus market actions (1 buy seeds, 2 sell rice, 3 buy rod, 4 sell meals).
+- Expanded the bilingual Help guide with fishing and cooking cards, and expanded the backpack resource display to show fish variety, meals, and rod ownership.
+- Added player cast/reel and cooking/eating task animations, plus original procedural cast, bite, catch, miss, cooking, and eating effects. The existing global mute control remains in charge of music, birds, ambience, and all gameplay sounds.
+- Fishing spots were checked against map collisions; the middle bank point was moved away from the granary footprint. Player movement is locked during an active cast so the fishing line and bobber remain attached to the selected spot.
+
+
+ASSET GENERATOR MAINTENANCE — FISHING & COOKING
+
+- Added deterministic generator functions for the 16x16 fishing rod, Silver Barb, River Catfish, Golden Carp, and three cooked-meal icons, plus the 24x24 outdoor cooking hearth.
+- Added the 128x128 soft amber lamp-glow generator so rebuilding the asset pack retains the nighttime light halo.
+- The generated asset manifest includes the fishing/cooking assets and the roadside lamp glow.
+
+
+HOUSE INTERIOR UPDATE
+---------------------
+The player's house is now enterable. Walk to the front door and press E.
+Inside, use WASD / arrow keys to move and E near the bed, storage chest, or
+cooking hearth. Press ESC or use the red close control to leave the house.
+
+Sleep schedule:
+- Sleep between 06:00 and 11:59 -> wake at 18:00 the same in-game day.
+- Sleep between 12:00 and 18:59 -> wake at 21:00 the same in-game day.
+- Sleep from 19:00 through the pre-dawn hours -> wake at 07:00 the next day.
+
+The storage chest transfers rice seeds, harvested rice, all fish species, and
+cooked meals between the backpack and persistent home storage. The cooker is
+now indoors beside the kitchen hearth; recipes and meal buffs are unchanged.
+Sleeping advances the shared village clock and synchronizes crop growth, daily
+requests, NPC schedules, lighting, and ambient audio.
+
+LATEST UPDATE — BURMESE ASSET & ANIMATION REFRESH
+
+- Reviewed the supplied SuperRetroRanch Free Tier, Farm RPG FREE 16x16, and Cute Fantasy
+  Free packs. Their useful visual ideas informed animation coverage and asset planning, but
+  no images were copied: two licences prohibit redistribution of the assets (including
+  modified versions), and the RAR pack contains no licence/readme establishing reuse rights.
+- Rebuilt all eight character sheets as 4 columns x 14 rows of 16x26 frames. Added dedicated
+  planting, watering, harvesting, fishing, cooking, greeting/offering, homage/bowing, and
+  eating and alms-bowl carry poses while preserving each villager's Burmese clothing palette and silhouette.
+- Player actions and NPC task loops now use the matching action rows instead of recycling
+  generic walking frames for fishing, cooking, planting, watering, harvesting, offering,
+  and homage.
+- Added wind-sway crop sheets for rice growth stages 1–3. Both player and NPC farm plots
+  now render growing rice as animated sprites; dead crops remain static and desaturated.
+- Expanded animal animation: chickens now have idle/peck/recover/walk/flutter frames; ducks
+  have a head-dip and alternating waddle; water buffalo gait includes head bob and tail
+  swish. Added animated common myna birds flying around the canopy during daylight.
+- Added small fireflies that drift and pulse in village clearings at night, rendering above
+  the darkness tint so their glow remains visible after sunset.
+- Added subtle base-pivot breeze movement to toddy palms, banana plants, and fruit trees.
+- Improved the player's Burmese-style house interior with original generated teak bed,
+  red-lacquer storage chest, woven floor mat, longyi-pattern wall textile, terracotta water
+  jar, and brass/clay oil lamp. The existing bed/chest/cooker interaction positions remain.
+- The project asset generator now rebuilds the expanded sheets, animal animations, rice
+  sway, flying myna, fireflies, and interior furnishing assets. `asset-manifest.json` was
+  regenerated from the 163 original project assets.
+- Added `ASSET-PACK-REVIEW.md` documenting the supplied pack review and redistribution
+  decisions.
+
+
+LATEST UPDATE — PAID ASSET PACK INTEGRATION
+
+- Inspected all eleven supplied PNG sheets and confirmed the pack can be integrated alongside the existing Burmese village artwork.
+- Added the original sheets under public/assets/paid_pack and recorded each sheet's frame dimensions in an asset manifest.
+- Added native-grid Phaser sprite sheets for character, fence, fire, house, plants, sheep, sheep shadows, terrain, toilet, trees and water.
+- Added walking animations for the pack character and sheep, a matching animated sheep shadow, separate chimney-smoke and door loops for the field shed, an animated outhouse door, a looping flame-only fire animation and a subtle water shimmer loop.
+- Added a small fenced sheep paddock in the southwest clearing, complete paired-tile orchard trees, garden plants, terrain details, a field shed, an outhouse and a pond extension without removing the existing Burmese rice field, village structures or gameplay systems.
+- Kept the existing Burmese player/NPC sprites as the primary characters; the generic pack character appears only as a background traveller.

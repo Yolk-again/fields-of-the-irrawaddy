@@ -42,6 +42,7 @@ export class HouseInteriorSystem {
   private avatarY = 278;
   private sleeping = false;
   private promptTarget: RoomTarget | null = null;
+  private readonly touchMode = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
   private avatarTexture = "farmer_green_sheet";
   private readonly entrance = { x: 190, y: 267 };
   private readonly targets: Record<RoomTarget, { x: number; y: number }> = {
@@ -229,6 +230,15 @@ export class HouseInteriorSystem {
   }
 
   private promptTextFor(target: RoomTarget): string {
+    if (this.touchMode) {
+      const mobileKeys: Record<RoomTarget, string> = {
+        bed: "mobile.clickToSleep",
+        chest: "mobile.clickToOpen",
+        cooker: "mobile.clickToCook",
+        door: "mobile.clickToExit"
+      };
+      return this.language.t(mobileKeys[target]);
+    }
     const keys: Record<RoomTarget, string> = {
       bed: "house.promptBed",
       chest: "house.promptChest",
@@ -318,7 +328,14 @@ export class HouseInteriorSystem {
     const found = hitAreas.find(area => pointer.x >= area.left && pointer.x <= area.right && pointer.y >= area.top && pointer.y <= area.bottom);
     if (found) {
       const targetPoint = this.targets[found.target];
-      if (Phaser.Math.Distance.Between(this.avatarX, this.avatarY, targetPoint.x, targetPoint.y) < 92) {
+      // Touch players do not have a second indoor joystick. A deliberate tap
+      // on furniture is therefore treated as walking up to it and interacting.
+      if (this.touchMode || Phaser.Math.Distance.Between(this.avatarX, this.avatarY, targetPoint.x, targetPoint.y) < 92) {
+        if (this.touchMode) {
+          this.avatarX = targetPoint.x;
+          this.avatarY = targetPoint.y;
+          this.avatar.setPosition(this.avatarX, this.avatarY);
+        }
         this.roomPrompt.setVisible(false);
         this.interact(found.target);
       }
@@ -328,7 +345,7 @@ export class HouseInteriorSystem {
   update(playerX: number, playerY: number, delta = this.scene.game.loop.delta): void {
     if (!this.inside) {
       const near = Phaser.Math.Distance.Between(playerX, playerY, this.entrance.x, this.entrance.y) < 76;
-      this.outsidePrompt.setVisible(near && !this.ui.hasActiveModal());
+      this.outsidePrompt.setVisible(near && !this.ui.hasActiveModal() && !this.touchMode);
       if (near && Phaser.Input.Keyboard.JustDown(this.enterKey) && !this.ui.hasActiveModal()) this.enterHouse();
       return;
     }
@@ -357,4 +374,17 @@ export class HouseInteriorSystem {
   }
 
   isInside(): boolean { return this.inside; }
+
+  /** Touch equivalent of the E key for entering the home from the world. */
+  mobileInteract(playerX: number, playerY: number): boolean {
+    if (this.inside || this.ui.hasActiveModal()) return false;
+    if (Phaser.Math.Distance.Between(playerX, playerY, this.entrance.x, this.entrance.y) >= 76) return false;
+    this.enterHouse();
+    return true;
+  }
+
+  canMobileInteract(playerX: number, playerY: number): boolean {
+    return !this.inside && !this.ui.hasActiveModal() &&
+      Phaser.Math.Distance.Between(playerX, playerY, this.entrance.x, this.entrance.y) < 76;
+  }
 }
