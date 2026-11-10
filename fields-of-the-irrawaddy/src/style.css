@@ -331,3 +331,378 @@ footer {
     outline: 0;
   }
 }
+
+/* ================= GUARANTEED TITLE / SAVE SCREEN ================= */
+#game-container {
+  position: relative;
+  isolation: isolate;
+}
+
+#game-container canvas {
+  position: relative;
+  z-index: 0;
+}
+
+.title-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: clamp(8px, 2.2vw, 18px);
+  background:
+    radial-gradient(circle at 78% 20%, rgba(246, 215, 131, 0.94) 0 3.4%, transparent 3.6%),
+    linear-gradient(180deg, rgba(113, 157, 111, 0.97) 0%, rgba(143, 181, 132, 0.98) 42%, rgba(62, 104, 59, 0.99) 43%, rgba(43, 76, 45, 1) 100%);
+  transition: opacity 180ms ease, visibility 180ms ease;
+}
+
+.title-screen::before,
+.title-screen::after {
+  position: absolute;
+  right: -4%;
+  bottom: 31%;
+  left: -4%;
+  height: 32%;
+  content: "";
+  pointer-events: none;
+}
+
+.title-screen::before {
+  background: #688b62;
+  clip-path: polygon(0 78%, 17% 16%, 36% 74%, 55% 8%, 77% 70%, 91% 22%, 100% 73%, 100% 100%, 0 100%);
+  opacity: 0.76;
+}
+
+.title-screen::after {
+  bottom: 18%;
+  height: 27%;
+  background: #416c45;
+  clip-path: polygon(0 45%, 16% 12%, 38% 66%, 58% 23%, 78% 58%, 100% 10%, 100% 100%, 0 100%);
+}
+
+.title-screen.is-hidden {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.title-screen-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: min(100%, 720px);
+  max-height: 100%;
+  gap: clamp(7px, 1.6vh, 14px);
+}
+
+.title-screen-heading {
+  text-align: center;
+  text-shadow: 2px 2px 0 #2a1a14;
+}
+
+.title-screen-eyebrow {
+  margin: 0 0 3px;
+  color: #ffe09a;
+  font-size: clamp(7px, 1.2vw, 10px);
+  font-weight: 800;
+  letter-spacing: 0.19em;
+}
+
+.title-screen-heading h2 {
+  margin: 0;
+  color: #fff1cf;
+  font-size: clamp(16px, 3vw, 26px);
+  font-weight: 900;
+  letter-spacing: 0.045em;
+  line-height: 1.15;
+}
+
+.title-screen-subtitle {
+  margin: 4px 0 0;
+  color: #f8e7bd;
+  font-size: clamp(8px, 1.35vw, 11px);
+  font-weight: 600;
+}
+
+.save-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(5px, 1.1vw, 10px);
+}
+
+.save-slot-card {
+  display: flex;
+  min-width: 0;
+  min-height: clamp(112px, 34vh, 156px);
+  flex-direction: column;
+  align-items: stretch;
+  padding: clamp(7px, 1.2vw, 11px);
+  border: 3px solid #2a1a14;
+  background: rgba(54, 69, 43, 0.97);
+  box-shadow: inset 2px 2px 0 #8b744d, inset -2px -2px 0 #24170f, 0 4px 0 rgba(20, 34, 19, 0.65);
+}
+
+.save-slot-title {
+  margin: 0;
+  color: #f3d28e;
+  font-size: clamp(9px, 1.55vw, 13px);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.save-slot-details {
+  display: grid;
+  min-height: 28px;
+  flex: 1;
+  place-items: center;
+  margin: 5px 0 7px;
+  color: #f6edd8;
+  font-size: clamp(7px, 1.15vw, 10px);
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.save-slot-details.is-empty {
+  color: #c6d7b4;
+  letter-spacing: 0.08em;
+}
+
+.save-slot-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.save-slot-secondary-actions,
+.save-confirmation-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.save-button {
+  min-width: 0;
+  min-height: clamp(23px, 5.2vh, 31px);
+  padding: 4px 6px;
+  border: 2px solid #21150f;
+  border-radius: 0;
+  color: #fff4d9;
+  font: 800 clamp(7px, 1.1vw, 10px)/1.15 "Noto Sans", "Noto Sans Myanmar", Arial, sans-serif;
+  text-align: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.18), inset -2px -2px 0 rgba(0, 0, 0, 0.24), 0 2px 0 #1b120d;
+}
+
+.save-button:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.16), 0 1px 0 #1b120d;
+}
+
+.save-button:disabled {
+  opacity: 0.52;
+  cursor: default;
+}
+
+.save-button-primary {
+  width: 100%;
+  background: #527b43;
+}
+
+.save-button-secondary {
+  flex: 1;
+  background: #80603b;
+}
+
+.save-button-danger {
+  flex: 1;
+  background: #813b32;
+}
+
+.title-screen-footer {
+  margin: 0;
+  color: #f0d99f;
+  font-size: clamp(7px, 1.1vw, 9px);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-align: center;
+  text-shadow: 1px 1px 0 #2a1a14;
+}
+
+.save-confirmation {
+  position: fixed;
+  inset: 0;
+  z-index: 10002;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  background: rgba(20, 25, 17, 0.78);
+}
+
+.save-confirmation[hidden] {
+  display: none;
+}
+
+.save-confirmation-card {
+  width: min(92%, 390px);
+  padding: clamp(12px, 2vw, 20px);
+  border: 4px solid #2a1a14;
+  background: #36452b;
+  box-shadow: inset 3px 3px 0 #8b744d, inset -3px -3px 0 #24170f, 0 5px 0 #1b120d;
+  text-align: center;
+}
+
+.save-confirmation-card h2 {
+  margin: 0 0 8px;
+  color: #f3d28e;
+  font-size: clamp(12px, 2vw, 17px);
+}
+
+.save-confirmation-card p {
+  margin: 0 0 14px;
+  color: #fff1cf;
+  font-size: clamp(9px, 1.4vw, 12px);
+  line-height: 1.5;
+}
+
+.mobile-game-hud {
+  position: absolute;
+  z-index: 30;
+  top: 7px;
+  right: 7px;
+  display: none;
+  align-items: center;
+  gap: clamp(3px, 0.6vw, 6px);
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.mobile-game-hud button {
+  display: grid;
+  width: clamp(31px, 5vw, 40px);
+  height: clamp(31px, 5vw, 40px);
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 3px;
+  border: 3px solid #2a1a14;
+  border-radius: 0;
+  background: #4a3324;
+  box-shadow: inset 2px 2px 0 #8a5a34, inset -2px -2px 0 #2a1a14, 0 2px 0 #21150f;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-game-hud button:active {
+  transform: translateY(1px);
+  background: #6c4b30;
+}
+
+.mobile-game-hud .mobile-hud-text-button {
+  width: auto;
+  min-width: clamp(44px, 7vw, 56px);
+  height: clamp(31px, 5vw, 40px);
+  padding: 0 6px;
+  color: #fff1cf;
+  font-family: "Noto Sans", "Noto Sans Myanmar", Arial, sans-serif;
+  font-size: clamp(8px, 1.3vw, 10px);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-shadow: 1px 1px 0 #2a1a14;
+}
+
+.mobile-game-hud img {
+  display: block;
+  width: clamp(17px, 2.8vw, 24px);
+  height: clamp(17px, 2.8vw, 24px);
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+body.foi-touch-device.foi-in-game .mobile-game-hud {
+  display: flex;
+}
+
+@media (max-width: 520px) and (orientation: landscape) {
+  .title-screen-content {
+    gap: 5px;
+  }
+
+  .save-slot-card {
+    min-height: 108px;
+  }
+
+  .save-slot-details {
+    margin: 3px 0 5px;
+  }
+}
+
+@media (max-width: 700px) and (orientation: portrait) {
+  .title-screen {
+    display: grid !important;
+    place-items: center;
+    overflow-y: auto;
+    padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
+  }
+
+  .title-screen-content {
+    width: min(100%, 430px);
+    max-height: 100%;
+    gap: 12px;
+    overflow-y: auto;
+  }
+
+  .title-screen-heading h2 {
+    font-size: clamp(18px, 6vw, 27px);
+  }
+
+  .title-screen-eyebrow {
+    font-size: 9px;
+  }
+
+  .title-screen-subtitle {
+    font-size: 11px;
+  }
+
+  .save-slot-grid {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .save-slot-card {
+    min-height: 0;
+    padding: 10px 12px;
+  }
+
+  .save-slot-title {
+    font-size: 12px;
+  }
+
+  .save-slot-details {
+    min-height: 18px;
+    margin: 4px 0 7px;
+    font-size: 10px;
+  }
+
+  .save-button {
+    min-height: 38px;
+    padding: 7px 10px;
+    font-size: 10px;
+  }
+
+  .title-screen-footer {
+    font-size: 9px;
+  }
+
+  .mobile-game-hud {
+    display: none !important;
+  }
+}

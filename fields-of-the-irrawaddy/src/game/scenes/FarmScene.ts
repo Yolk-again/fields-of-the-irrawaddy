@@ -111,6 +111,34 @@ export class FarmScene extends Phaser.Scene {
   private selectedSaveSlot = 1;
   private loadExistingSave = false;
   private enteredThroughSaveSelect = false;
+  private handleMobileHudAction = (event: Event): void => {
+    if (!this.isTouchDevice) return;
+    const action = (event as CustomEvent<string>).detail;
+    switch (action) {
+      case "inventory":
+        this.inventory?.mobileToggle();
+        break;
+      case "profile":
+        this.profile?.mobileToggle();
+        break;
+      case "language":
+        this.language?.toggleLanguage();
+        break;
+      case "help":
+        this.help?.mobileToggle();
+        break;
+      case "audio":
+        this.music?.mobileToggle();
+        break;
+      case "fullscreen":
+        this.scale.toggleFullscreen();
+        break;
+      case "title":
+        this.saveSystem?.saveNow();
+        window.dispatchEvent(new CustomEvent("foi-quit-to-title"));
+        break;
+    }
+  };
 
   constructor() {
     super("FarmScene");
@@ -242,12 +270,23 @@ export class FarmScene extends Phaser.Scene {
   }
 
   create(): void {
-    // A fresh game must never open directly. Require an explicit save-slot
-    // selection so desktop and mobile always begin at the title screen.
+    // The title screen is shown before Phaser is created. FarmScene only
+    // becomes visible after the player explicitly chooses a save slot.
     if (!this.enteredThroughSaveSelect) {
-      this.scene.start("SaveSelectScene");
+      document.body.classList.remove("foi-in-game", "foi-launching");
+      document.getElementById("title-screen")?.classList.remove("is-hidden");
+      document.getElementById("mobile-game-hud")?.setAttribute("aria-hidden", "true");
+      this.scene.stop();
       return;
     }
+
+    this.isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0 ||
+      window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(max-width: 900px)").matches;
+    document.body.classList.toggle("foi-touch-device", this.isTouchDevice);
+    document.body.classList.remove("foi-launching");
+    document.body.classList.add("foi-in-game");
+    document.getElementById("title-screen")?.classList.add("is-hidden");
+    document.getElementById("mobile-game-hud")?.setAttribute("aria-hidden", this.isTouchDevice ? "false" : "true");
 
     this.language = new LanguageSystem();
     this.createAnimations();
@@ -261,7 +300,7 @@ export class FarmScene extends Phaser.Scene {
     this.help = new HelpSystem(this, this.ui, this.language);
     this.createHUD();
     this.music = new MusicSystem(this, this.ui, this.language, this.isTouchDevice);
-    this.music.setMobileHeaderHidden(false);
+    this.music.setMobileHeaderHidden(this.isTouchDevice);
 
     this.farming = new FarmingSystem(
       this,
@@ -1199,13 +1238,21 @@ export class FarmScene extends Phaser.Scene {
   }
 
   private createHUD(): void {
-    this.isTouchDevice = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 ||
-      window.matchMedia("(pointer: coarse)").matches;
+    this.isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0 ||
+      window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(max-width: 900px)").matches;
 
     const headerY = this.isTouchDevice ? 24 : 22;
     const positions = this.isTouchDevice
       ? { bag: 420, profile: 460, language: 500, help: 540, fullscreen: 620 }
       : { bag: 466, profile: 498, language: 530, help: 562, fullscreen: 626 };
+
+    if (this.isTouchDevice) {
+      window.addEventListener("foi-mobile-hud-action", this.handleMobileHudAction);
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+        window.removeEventListener("foi-mobile-hud-action", this.handleMobileHudAction);
+      });
+      return;
+    }
 
     this.createFullscreenButton(positions.fullscreen, headerY);
     this.createIconButton(positions.help, headerY, "ui_icon_help", "hud.tip.help",

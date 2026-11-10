@@ -1,16 +1,27 @@
-START SCREEN FIX
+TITLE SCREEN + MOBILE HEADER — STARTUP REWORK
 
-The game now always opens SaveSelectScene before gameplay.
+Startup flow:
+- The HTML title and save-selection screen is a fixed page-level overlay outside #app and #game-container.
+- The title screen is not hidden by the portrait-orientation layout. It remains visible on desktop, tablet, and phone before starting a game.
+- Phaser is not created when the page first loads. The player must select a save slot first.
+- After a slot is selected, Phaser creates SaveSlotBootScene, which passes the selected slot data to FarmScene.
+- FarmScene only hides the title screen after it receives an explicit fromSaveSelect flag.
+- A direct FarmScene start without save-selection data stops safely and reveals the title screen.
 
-Startup protection:
-- Phaser post-boot explicitly stops FarmScene and opens SaveSelectScene.
-- FarmScene requires the fromSaveSelect flag before creating the farm world.
-- The Continue and New Game buttons pass the selected slot and this flag.
-- If FarmScene is started directly without save-selection data, it redirects to SaveSelectScene.
+Save slots:
+- Three independent save slots remain supported.
+- Existing legacy autosaves are migrated into the first available slot.
+- Continue loads the selected occupied slot.
+- New Game in an occupied slot requires overwrite confirmation.
+- Delete requires a separate confirmation.
 
-This applies to desktop and mobile because both versions use the same Phaser startup flow.
+Mobile header:
+- Six native touch buttons use existing assets: inventory, profile, language, help, audio, and fullscreen.
+- The native buttons dispatch actions to the active FarmScene and use the existing game systems.
+- Touch/mobile layout detection also considers compact viewport width for browsers that do not report touch capability reliably.
+- The mobile header is displayed only while touch/mobile gameplay is active; the desktop Phaser header remains unchanged.
 
-Build and run on Windows:
-  npm.cmd install
-  npm.cmd run build
-  npm.cmd run dev
+Return to title (mobile):
+- A MENU button in the in-game mobile header saves the current slot and returns to the title screen, where any slot can be continued, overwritten or deleted without reloading the page.
+- Returning to title fully stops the running game, including its save listeners, so a later save to another slot cannot be affected by the previous session.
+- Overwrite confirmation no longer wipes a slot if a game is already running.
