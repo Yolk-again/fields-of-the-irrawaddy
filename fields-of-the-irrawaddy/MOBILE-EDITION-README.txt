@@ -82,3 +82,6 @@ LATEST MOBILE INPUT UPDATE
 - The contextual prompt now identifies whether the nearby action is talking or opening a location.
 - Indoor furniture taps select the bed, chest, cooker, or door; the matching right-side prompt performs the action.
 - The USE action button routes to fishing while at a fishing spot and to the selected farming tool everywhere else.
+- Restored the Inventory, Profile, Language, Help, Audio, and Fullscreen icons across the top-right on mobile, with larger touch targets.
+- Enlarged USE and moved it to the right side directly opposite the joystick; removed the MOVE label.
+- Header icons, USE, and contextual prompts respond on touch-down, so a second finger can operate a button while the other holds the joystick.

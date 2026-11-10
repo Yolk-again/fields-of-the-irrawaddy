@@ -71,11 +71,18 @@ export class MusicSystem {
   private tip!: Phaser.GameObjects.Text;
   private language: LanguageSystem;
   private headerControls: Phaser.GameObjects.GameObject[] = [];
+  private mobileLayout: boolean;
 
-  constructor(scene: Phaser.Scene, ui: ModalUIManager, language: LanguageSystem) {
+  constructor(
+    scene: Phaser.Scene,
+    ui: ModalUIManager,
+    language: LanguageSystem,
+    mobileLayout = false
+  ) {
     this.scene = scene;
     this.ui = ui;
     this.language = language;
+    this.mobileLayout = mobileLayout;
     try {
       const legacyMuted = window.localStorage.getItem(LEGACY_MUTE_KEY) === "1";
       this.musicVolume = legacyMuted ? 0 : this.readStoredVolume(MUSIC_VOLUME_KEY, 1);
@@ -122,13 +129,17 @@ export class MusicSystem {
   }
 
   private createButton(ui: ModalUIManager): void {
-    const frame = pixelPanel(this.scene, 594, 22, 28, 28, { fill: 0x4a3324 }).setDepth(8500);
-    this.icon = this.scene.add.image(594, 22, "ui_icon_note")
+    const x = this.mobileLayout ? 580 : 594;
+    const y = this.mobileLayout ? 24 : 22;
+    const frameSize = this.mobileLayout ? 32 : 28;
+    const hitSize = this.mobileLayout ? 38 : 28;
+    const frame = pixelPanel(this.scene, x, y, frameSize, frameSize, { fill: 0x4a3324 }).setDepth(8500);
+    this.icon = this.scene.add.image(x, y, "ui_icon_note")
       .setScrollFactor(0).setDepth(8501);
-    this.button = this.scene.add.rectangle(594, 22, 28, 28, 0xffffff, 0.001)
+    this.button = this.scene.add.rectangle(x, y, hitSize, hitSize, 0xffffff, 0.001)
       .setScrollFactor(0).setDepth(8502)
       .setInteractive({ useHandCursor: true });
-    this.tip = this.scene.add.text(594, 44, "", {
+    this.tip = this.scene.add.text(x, y + 22, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf",
       backgroundColor: "#2a1a14", padding: { x: 4, y: 2 }
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(8503).setVisible(false);
@@ -136,7 +147,7 @@ export class MusicSystem {
 
     this.button.on("pointerover", () => this.tip.setVisible(true));
     this.button.on("pointerout", () => this.tip.setVisible(false));
-    this.button.on("pointerup", () => this.openSettings());
+    this.button.on(this.mobileLayout ? "pointerdown" : "pointerup", () => this.openSettings());
     ui.registerHud(frame, this.icon, this.button, this.tip);
     this.headerControls = [frame, this.icon, this.button, this.tip];
     this.refreshButton();
@@ -297,10 +308,10 @@ export class MusicSystem {
     this.ui.open("audio");
   }
 
-  /** Opens audio settings from the touch action grid. */
+  /** Opens audio settings from a mobile control. */
   mobileToggle(): void { this.openSettings(); }
 
-  /** The touch grid owns this function, so the desktop header control is hidden. */
+  /** Allows the header music control to remain visible on touch layouts. */
   setMobileHeaderHidden(hidden: boolean): void {
     for (const control of this.headerControls) {
       (control as unknown as { setVisible: (visible: boolean) => void }).setVisible(!hidden);

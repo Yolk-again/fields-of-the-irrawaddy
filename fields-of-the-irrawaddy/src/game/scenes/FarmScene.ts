@@ -238,8 +238,8 @@ export class FarmScene extends Phaser.Scene {
     this.ui = new ModalUIManager(this);
     this.help = new HelpSystem(this, this.ui, this.language);
     this.createHUD();
-    this.music = new MusicSystem(this, this.ui, this.language);
-    this.music.setMobileHeaderHidden(this.isTouchDevice);
+    this.music = new MusicSystem(this, this.ui, this.language, this.isTouchDevice);
+    this.music.setMobileHeaderHidden(false);
 
     this.farming = new FarmingSystem(
       this,
@@ -1178,24 +1178,25 @@ export class FarmScene extends Phaser.Scene {
     this.isTouchDevice = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 ||
       window.matchMedia("(pointer: coarse)").matches;
 
-    // Movement and interaction keys are documented in the Help panel instead of a permanent HUD hint.
+    // Keep the same header actions on desktop and mobile. Mobile targets are
+    // spaced farther apart and have larger invisible touch areas.
+    const headerY = this.isTouchDevice ? 24 : 22;
+    const positions = this.isTouchDevice
+      ? { bag: 420, profile: 460, language: 500, help: 540, fullscreen: 620 }
+      : { bag: 466, profile: 498, language: 530, help: 562, fullscreen: 626 };
 
-    // Desktop uses compact header controls. Touch devices get a larger
-    // thumb-friendly action grid instead, keeping the play view uncluttered.
-    if (!this.isTouchDevice) {
-      this.createFullscreenButton();
-      this.createIconButton(562, 22, "ui_icon_help", "hud.tip.help",
-        () => this.help.mobileToggle());
-      this.createIconButton(530, 22, "ui_icon_globe", "hud.tip.language",
-        () => this.language.toggleLanguage());
-      this.createIconButton(498, 22, "ui_icon_person", "hud.tip.profile",
-        () => this.profile.mobileToggle());
-      this.createIconButton(466, 22, "ui_icon_bag", "hud.tip.inventory",
-        () => this.inventory.mobileToggle());
-    }
+    this.createFullscreenButton(positions.fullscreen, headerY);
+    this.createIconButton(positions.help, headerY, "ui_icon_help", "hud.tip.help",
+      () => this.help.mobileToggle());
+    this.createIconButton(positions.language, headerY, "ui_icon_globe", "hud.tip.language",
+      () => this.language.toggleLanguage());
+    this.createIconButton(positions.profile, headerY, "ui_icon_person", "hud.tip.profile",
+      () => this.profile.mobileToggle());
+    this.createIconButton(positions.bag, headerY, "ui_icon_bag", "hud.tip.inventory",
+      () => this.inventory.mobileToggle());
   }
 
-  /** 28px framed icon button with a hover/long-press tooltip. */
+  /** Framed header icon with a desktop click target or a larger mobile touch target. */
   private createIconButton(
     x: number,
     y: number,
@@ -1203,9 +1204,11 @@ export class FarmScene extends Phaser.Scene {
     tipKey: string,
     action: () => void
   ): Phaser.GameObjects.Image {
-    const frame = pixelPanel(this, x, y, 28, 28, { fill: 0x4a3324 }).setDepth(8500);
+    const frameSize = this.isTouchDevice ? 32 : 28;
+    const hitSize = this.isTouchDevice ? 38 : 28;
+    const frame = pixelPanel(this, x, y, frameSize, frameSize, { fill: 0x4a3324 }).setDepth(8500);
     const image = this.add.image(x, y, icon).setScrollFactor(0).setDepth(8501);
-    const hit = this.add.rectangle(x, y, 28, 28, 0xffffff, 0.001)
+    const hit = this.add.rectangle(x, y, hitSize, hitSize, 0xffffff, 0.001)
       .setScrollFactor(0).setDepth(8502).setInteractive({ useHandCursor: true });
     const tip = this.add.text(x, y + 22, this.language.t(tipKey), {
       fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf",
@@ -1218,7 +1221,7 @@ export class FarmScene extends Phaser.Scene {
 
     hit.on("pointerover", () => { image.setY(y - 1); tip.setVisible(true); });
     hit.on("pointerout", () => { image.setY(y); tip.setVisible(false); });
-    hit.on("pointerup", action);
+    hit.on(this.isTouchDevice ? "pointerdown" : "pointerup", action);
     this.ui.registerHud(frame, image, hit, tip);
     return image;
   }
@@ -1281,14 +1284,6 @@ export class FarmScene extends Phaser.Scene {
     joystickNub.setStrokeStyle(2, 0x68452e, 1);
     this.joystickNub = joystickNub;
 
-    const moveLabel = this.add.text(this.joystickCenter.x, 207, "MOVE", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
-      color: "#f5e8c6",
-      backgroundColor: "#34271d",
-      padding: { x: 5, y: 3 }
-    }).setOrigin(0.5).setScrollFactor(0);
-
     const joystickZone = this.add.zone(
       this.joystickCenter.x,
       this.joystickCenter.y,
@@ -1306,14 +1301,15 @@ export class FarmScene extends Phaser.Scene {
     this.input.on("pointerup", this.handleJoystickEnd, this);
     this.input.on("pointerupoutside", this.handleJoystickEnd, this);
 
-    // The right side deliberately stays minimal: USE handles the recurring
-    // farming/fishing action, while OPEN appears only at a relevant place.
-    const useButton = this.createMobileButton(588, 232, "ui_icon_action", "USE", () => {
+    // The action control is directly opposite the joystick, centered on the
+    // same horizontal line and large enough for a comfortable thumb press.
+    const useButton = this.createMobileButton(564, 267, "ui_icon_action", "USE", () => {
+      if (this.ui.hasActiveModal()) return;
       if (!this.fishing.mobileAction(this.player.x, this.player.y)) this.farming.mobileUseTool();
     });
-    this.mobileContextButton = this.createMobileContextButton(570, 164);
+    this.mobileContextButton = this.createMobileContextButton(560, 164);
 
-    this.ui.registerHud(base, innerRing, joystickNub, moveLabel, joystickZone, useButton, this.mobileContextButton);
+    this.ui.registerHud(base, innerRing, joystickNub, joystickZone, useButton, this.mobileContextButton);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.input.off("pointermove", this.handleJoystickMove, this);
@@ -1332,32 +1328,43 @@ export class FarmScene extends Phaser.Scene {
     action: () => void
   ): Phaser.GameObjects.Container {
     const button = this.add.container(x, y).setScrollFactor(0);
-    const frame = pixelPanel(this, 0, 0, 48, 48, { fill: 0x4a3324, alpha: 0.92 });
-    const image = this.add.image(0, -7, icon).setScale(2);
-    const text = this.add.text(0, 17, label, {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#ffd978", stroke: "#2a1a14", strokeThickness: 2
+    const outerFrame = this.add.rectangle(0, 0, 64, 64, 0x2a1a14, 1)
+      .setStrokeStyle(3, 0xd6b36b, 1);
+    const innerFrame = this.add.rectangle(0, 0, 58, 58, 0x4a3324, 0.98)
+      .setStrokeStyle(2, 0xb88450, 1);
+    const image = this.add.image(0, -8, icon).setScale(2.3);
+    const text = this.add.text(0, 20, label, {
+      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#ffd978", stroke: "#2a1a14", strokeThickness: 2
     }).setOrigin(0.5);
-    const hit = this.add.rectangle(0, 0, 60, 60, 0xffffff, 0.001).setInteractive({ useHandCursor: true });
-    hit.on("pointerdown", () => { button.setScale(0.94); action(); });
-    hit.on("pointerup", () => button.setScale(1));
-    hit.on("pointerupoutside", () => button.setScale(1));
-    hit.on("pointerout", () => button.setScale(1));
 
-    button.add([frame, image, text, hit]);
+    button.add([outerFrame, innerFrame, image, text]);
+    button.setInteractive(
+      new Phaser.Geom.Rectangle(-40, -40, 80, 80),
+      Phaser.Geom.Rectangle.Contains
+    );
+    button.on("pointerdown", () => { button.setScale(0.94); action(); });
+    button.on("pointerup", () => button.setScale(1));
+    button.on("pointerupoutside", () => button.setScale(1));
+    button.on("pointerout", () => button.setScale(1));
     return button;
   }
 
   private createMobileContextButton(x: number, y: number): Phaser.GameObjects.Container {
     const button = this.add.container(x, y).setScrollFactor(0).setVisible(false);
-    const background = this.add.rectangle(0, 0, 132, 36, 0x527044, 0.96).setStrokeStyle(2, 0xd6b36b);
+    const background = this.add.rectangle(0, 0, 148, 42, 0x527044, 0.98)
+      .setStrokeStyle(2, 0xd6b36b);
     const label = this.add.text(0, 0, "CLICK TO OPEN", {
       fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf", fontStyle: "bold"
     }).setOrigin(0.5);
-    const hit = this.add.rectangle(0, 0, 148, 48, 0xffffff, 0.001).setInteractive({ useHandCursor: true });
-    hit.on("pointerdown", () => { button.setScale(0.96); this.handleMobileContextAction(); });
-    hit.on("pointerup", () => button.setScale(1));
-    hit.on("pointerupoutside", () => button.setScale(1));
-    button.add([background, label, hit]);
+    button.add([background, label]);
+    button.setInteractive(
+      new Phaser.Geom.Rectangle(-80, -28, 160, 56),
+      Phaser.Geom.Rectangle.Contains
+    );
+    button.on("pointerdown", () => { button.setScale(0.96); this.handleMobileContextAction(); });
+    button.on("pointerup", () => button.setScale(1));
+    button.on("pointerupoutside", () => button.setScale(1));
+    button.on("pointerout", () => button.setScale(1));
     this.mobileContextLabel = label;
     this.language.onChange(() => label.setFontFamily(this.language.getFontFamily()));
     return button;
@@ -1428,8 +1435,8 @@ export class FarmScene extends Phaser.Scene {
     }
   }
 
-  private createFullscreenButton(): void {
-    this.fullscreenIcon = this.createIconButton(626, 22, "ui_icon_expand", "hud.tip.fullscreen",
+  private createFullscreenButton(x = 626, y = 22): void {
+    this.fullscreenIcon = this.createIconButton(x, y, "ui_icon_expand", "hud.tip.fullscreen",
       () => this.scale.toggleFullscreen());
 
     this.scale.on("enterfullscreen", this.handleFullscreenEntered, this);
