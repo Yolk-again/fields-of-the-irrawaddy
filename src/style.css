@@ -189,7 +189,7 @@ h1 {
   .orientation-overlay {
     position: fixed;
     inset: 0;
-    z-index: 10000;
+    z-index: 10030;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -733,4 +733,796 @@ body.foi-touch-device.foi-in-game .mobile-game-hud {
   position: absolute;
   top: max(8px, env(safe-area-inset-top));
   right: max(8px, env(safe-area-inset-right));
+}
+
+/* ================= IRRAWADDY TITLE SCREEN REDESIGN ================= */
+.title-screen {
+  --title-forest: #173d31;
+  --title-deep: #102b25;
+  --title-teak: #4a3021;
+  --title-gold: #d9b36e;
+  --title-cream: #f6e8c4;
+  place-items: center;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: clamp(12px, 2.4vw, 30px);
+  background:
+    radial-gradient(circle at 76% 13%, rgba(255, 220, 142, 0.8) 0 4.2%, rgba(255, 220, 142, 0.14) 4.4% 11%, transparent 25%),
+    linear-gradient(180deg, #d99b63 0%, #b9a36e 25%, #7eaa79 52%, #3f704e 76%, #183d31 100%);
+}
+
+.title-screen::before {
+  inset: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(180deg, transparent 0 46%, rgba(23, 61, 49, 0.08) 46.2% 100%),
+    repeating-linear-gradient(176deg, transparent 0 42px, rgba(247, 224, 161, 0.06) 43px 45px, transparent 46px 77px);
+  opacity: 1;
+}
+
+.title-screen::after {
+  right: -5%;
+  bottom: -1px;
+  left: -5%;
+  width: 110%;
+  height: 34%;
+  background:
+    repeating-linear-gradient(174deg, transparent 0 18px, rgba(233, 202, 130, 0.12) 19px 21px, transparent 22px 36px),
+    linear-gradient(180deg, #48704a 0%, #244f3d 68%, #15372e 100%);
+  clip-path: polygon(0 34%, 12% 20%, 24% 30%, 38% 8%, 51% 26%, 67% 12%, 82% 28%, 100% 8%, 100% 100%, 0 100%);
+  opacity: 0.94;
+}
+
+.title-screen-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1.04fr) minmax(300px, 0.96fr);
+  grid-template-areas:
+    "heading landscape"
+    "saves saves"
+    "footer footer";
+  align-items: center;
+  gap: clamp(14px, 2vw, 24px) clamp(22px, 3vw, 38px);
+  width: min(1120px, 100%);
+  max-height: calc(100% - 4px);
+  padding: clamp(22px, 3vw, 38px);
+  overflow-y: auto;
+  border: 2px solid rgba(224, 190, 119, 0.94);
+  background:
+    linear-gradient(135deg, rgba(34, 66, 47, 0.97), rgba(17, 43, 36, 0.95)),
+    var(--title-forest);
+  box-shadow:
+    0 0 0 5px rgba(31, 49, 34, 0.58),
+    0 20px 70px rgba(13, 29, 22, 0.38),
+    inset 0 0 0 5px rgba(217, 179, 110, 0.13),
+    inset 0 0 0 8px rgba(12, 34, 28, 0.35);
+  scrollbar-color: #b58c50 #1d3d31;
+}
+
+.title-screen-content::before,
+.title-screen-content::after {
+  position: absolute;
+  z-index: 2;
+  right: 10px;
+  left: 10px;
+  height: 5px;
+  content: "";
+  pointer-events: none;
+  background: repeating-linear-gradient(90deg, #d5ae69 0 9px, transparent 9px 15px, #d5ae69 15px 18px, transparent 18px 26px);
+  opacity: 0.72;
+}
+
+.title-screen-content::before { top: 8px; }
+.title-screen-content::after { bottom: 8px; }
+
+.title-screen-heading {
+  grid-area: heading;
+  min-width: 0;
+  padding: 8px 0 8px clamp(0px, 1vw, 10px);
+  text-align: left;
+  text-shadow: 2px 3px 0 rgba(8, 28, 22, 0.6);
+}
+
+.title-screen-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 9px;
+  color: #e9c985;
+  font-size: clamp(8px, 1vw, 11px);
+  font-weight: 800;
+  letter-spacing: 0.2em;
+}
+
+.title-screen-eyebrow::before,
+.title-screen-eyebrow::after {
+  width: clamp(18px, 3vw, 34px);
+  height: 1px;
+  content: "";
+  background: #c6a264;
+}
+
+.title-screen-burmese {
+  margin: 0 0 5px;
+  color: #f1d49a;
+  font-family: "Noto Sans Myanmar", "Noto Sans", sans-serif;
+  font-size: clamp(14px, 1.7vw, 20px);
+  font-weight: 600;
+  line-height: 1.6;
+  letter-spacing: 0.015em;
+}
+
+.title-screen-heading h2 {
+  margin: 0;
+  color: #fff1d2;
+  font-family: Georgia, "Noto Sans", serif;
+  font-size: clamp(28px, 4.5vw, 54px);
+  font-weight: 900;
+  letter-spacing: 0.045em;
+  line-height: 1.03;
+  text-wrap: balance;
+  text-shadow: 3px 4px 0 #422e1f, 5px 6px 0 rgba(9, 26, 21, 0.55);
+}
+
+.title-screen-title-break { display: none; }
+
+.title-screen-subtitle {
+  margin: 12px 0 4px;
+  color: #f4e5c6;
+  font-size: clamp(12px, 1.4vw, 16px);
+  font-weight: 600;
+  letter-spacing: 0.015em;
+}
+
+.title-screen-intro {
+  margin: 8px 0 0;
+  color: #d4dcb9;
+  font-family: "Noto Sans Myanmar", "Noto Sans", sans-serif;
+  font-size: clamp(9px, 1vw, 12px);
+  line-height: 1.8;
+}
+
+.title-screen-landscape {
+  grid-area: landscape;
+  position: relative;
+  min-width: 0;
+  height: clamp(190px, 27vh, 270px);
+  align-self: stretch;
+  overflow: hidden;
+  isolation: isolate;
+  border: 2px solid rgba(224, 190, 119, 0.88);
+  border-radius: 5px 18px 5px 18px;
+  background: #53774b;
+  box-shadow:
+    0 0 0 4px rgba(13, 34, 25, 0.42),
+    0 12px 28px rgba(5, 20, 14, 0.34),
+    inset 0 0 0 3px rgba(255, 233, 180, 0.18);
+  transform: translateZ(0);
+}
+
+.title-landscape-photo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 54%;
+  filter: saturate(1.08) contrast(1.035) brightness(0.97);
+  transform: scale(1.025);
+}
+
+.title-landscape-photo-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(20, 44, 33, 0.34) 0%, rgba(20, 44, 33, 0.04) 30%, transparent 48%, rgba(12, 34, 25, 0.75) 100%),
+    linear-gradient(105deg, rgba(20, 43, 31, 0.15), transparent 58%, rgba(18, 35, 26, 0.12));
+}
+
+.title-screen-landscape::before {
+  position: absolute;
+  z-index: 2;
+  inset: 8px;
+  content: "";
+  border: 1px solid rgba(250, 224, 169, 0.66);
+  border-radius: 2px 12px 2px 12px;
+  pointer-events: none;
+  box-shadow: inset 0 0 24px rgba(15, 38, 27, 0.12);
+}
+
+.title-landscape-photo-topline {
+  position: absolute;
+  z-index: 3;
+  top: 17px;
+  left: 18px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: calc(100% - 36px);
+  padding: 6px 10px 5px;
+  border: 1px solid rgba(243, 216, 158, 0.48);
+  border-radius: 2px;
+  color: #fff0cf;
+  background: rgba(24, 53, 39, 0.63);
+  box-shadow: 0 3px 12px rgba(8, 25, 18, 0.18);
+  font-size: clamp(7px, 0.78vw, 9px);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  line-height: 1.5;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+}
+
+.title-landscape-photo-mark { color: #efd08e; font-size: 11px; }
+.title-landscape-photo-separator { color: #e6c17c; opacity: 0.9; }
+
+.title-landscape-photo-caption {
+  position: absolute;
+  z-index: 3;
+  right: 20px;
+  bottom: 18px;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  pointer-events: none;
+  text-shadow: 0 2px 5px rgba(6, 22, 15, 0.55);
+}
+
+.title-landscape-photo-caption-burmese {
+  color: #fff0c8;
+  font-family: "Noto Sans Myanmar", "Noto Sans", sans-serif;
+  font-size: clamp(12px, 1.4vw, 16px);
+  font-weight: 600;
+  line-height: 1.65;
+}
+
+.title-landscape-photo-caption-english {
+  color: #e7c989;
+  font-size: clamp(7px, 0.8vw, 9px);
+  font-weight: 900;
+  letter-spacing: 0.2em;
+}
+
+.title-landscape-photo-corner {
+  position: absolute;
+  z-index: 3;
+  width: 17px;
+  height: 17px;
+  pointer-events: none;
+  border-color: rgba(255, 226, 169, 0.9);
+  border-style: solid;
+}
+
+.title-landscape-photo-corner-tl {
+  top: 7px;
+  left: 7px;
+  border-width: 2px 0 0 2px;
+}
+
+.title-landscape-photo-corner-br {
+  right: 7px;
+  bottom: 7px;
+  border-width: 0 2px 2px 0;
+}
+
+.title-screen-saves {
+  grid-area: saves;
+  min-width: 0;
+}
+
+.title-screen-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin: 0 0 11px;
+  text-align: center;
+}
+
+.title-screen-section-heading > div { flex: 0 0 auto; }
+
+.title-screen-section-heading h3 {
+  margin: 0;
+  color: #f0d69f;
+  font-size: clamp(10px, 1.2vw, 13px);
+  font-weight: 900;
+  letter-spacing: 0.22em;
+}
+
+.title-screen-section-heading p {
+  margin: 3px 0 0;
+  color: #bbc9ad;
+  font-size: clamp(9px, 1vw, 11px);
+}
+
+.title-screen-section-rule {
+  width: min(18%, 150px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #b68b50);
+}
+
+.title-screen-section-rule:last-child { transform: scaleX(-1); }
+
+.save-slot-grid {
+  grid-area: unset;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(10px, 1.5vw, 17px);
+}
+
+.save-slot-card {
+  position: relative;
+  min-height: clamp(132px, 19vh, 164px);
+  padding: clamp(12px, 1.5vw, 17px);
+  border: 2px solid #a88955;
+  border-radius: 3px;
+  background:
+    linear-gradient(145deg, rgba(247, 231, 191, 0.98), rgba(222, 202, 156, 0.98));
+  box-shadow:
+    inset 0 0 0 3px rgba(255, 250, 225, 0.58),
+    inset 0 -5px 0 rgba(112, 80, 42, 0.12),
+    0 5px 0 #102d25,
+    0 8px 18px rgba(5, 21, 16, 0.2);
+}
+
+.save-slot-card::before,
+.save-slot-card::after {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  content: "";
+  border-color: #b18b4e;
+  border-style: solid;
+  opacity: 0.8;
+}
+
+.save-slot-card::before {
+  top: 5px;
+  left: 5px;
+  border-width: 1px 0 0 1px;
+}
+
+.save-slot-card::after {
+  right: 5px;
+  bottom: 5px;
+  border-width: 0 1px 1px 0;
+}
+
+.save-slot-title {
+  color: #4a3524;
+  font-size: clamp(11px, 1.3vw, 14px);
+  letter-spacing: 0.12em;
+}
+
+.save-slot-details {
+  min-height: 30px;
+  margin: 8px 0 10px;
+  color: #42533c;
+  font-size: clamp(9px, 1.05vw, 11px);
+}
+
+.save-slot-details.is-empty {
+  color: #6d7659;
+  letter-spacing: 0.16em;
+}
+
+.save-button {
+  min-height: 34px;
+  padding: 7px 9px;
+  border: 2px solid #4a3021;
+  border-radius: 2px;
+  font-size: clamp(9px, 1vw, 11px);
+  letter-spacing: 0.04em;
+  box-shadow: inset 2px 2px 0 rgba(255,255,255,0.22), inset -2px -2px 0 rgba(0,0,0,0.2), 0 3px 0 #5a3b25;
+}
+
+.save-button-primary { background: linear-gradient(180deg, #5e8750, #3d6b43); }
+.save-button-secondary { background: linear-gradient(180deg, #aa8550, #80603b); }
+.save-button-danger { background: linear-gradient(180deg, #a65a43, #813b32); }
+
+.save-button:focus-visible {
+  outline: 3px solid #f1d18d;
+  outline-offset: 3px;
+}
+
+.title-screen-footer {
+  grid-area: footer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 9px 13px;
+  margin: 0;
+  color: #e5ca91;
+  font-size: clamp(8px, 0.9vw, 10px);
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-shadow: none;
+}
+
+.title-screen-footer-mark { color: #d8b26f; }
+
+.title-screen-footer-burmese {
+  color: #b9c6a9;
+  font-family: "Noto Sans Myanmar", "Noto Sans", sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+@media (max-width: 760px) {
+  .title-screen-content {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+    gap: 13px 16px;
+    padding: 22px 18px;
+  }
+
+  .title-screen-heading h2 { font-size: clamp(24px, 4.4vw, 37px); }
+  .title-screen-landscape { height: clamp(148px, 22vh, 190px); }
+  .save-slot-card { min-height: 126px; }
+}
+
+@media (max-width: 700px) and (orientation: portrait) {
+  .title-screen {
+    display: grid !important;
+    place-items: start center;
+    padding: max(14px, env(safe-area-inset-top)) 12px max(14px, env(safe-area-inset-bottom));
+  }
+
+  .title-screen-content {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "heading"
+      "landscape"
+      "saves"
+      "footer";
+    gap: 12px;
+    width: min(100%, 510px);
+    max-height: none;
+    padding: 22px 15px 18px;
+    overflow: visible;
+  }
+
+  .title-screen-heading {
+    padding: 4px 0 0;
+    text-align: center;
+  }
+
+  .title-screen-eyebrow { justify-content: center; font-size: 8px; }
+  .title-screen-burmese { font-size: 17px; }
+  .title-screen-heading h2 { font-size: clamp(25px, 7vw, 35px); }
+  .title-screen-title-break { display: none; }
+  .title-screen-subtitle { margin-top: 7px; font-size: 12px; }
+  .title-screen-intro { margin-top: 4px; font-size: 10px; }
+  .title-screen-landscape { height: clamp(190px, 43vw, 230px); }
+  .title-landscape-photo-topline { top: 13px; left: 14px; gap: 5px; padding: 5px 8px; font-size: 7px; }
+  .title-landscape-photo-caption { right: 16px; bottom: 13px; left: 16px; }
+  .title-landscape-photo-caption-burmese { font-size: 13px; }
+
+  .title-screen-section-heading { margin-bottom: 8px; }
+  .save-slot-grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .save-slot-card { min-height: 0; padding: 11px 13px; }
+  .save-slot-details { min-height: 17px; margin: 5px 0 8px; }
+  .save-slot-actions { gap: 6px; }
+  .save-button { min-height: 39px; font-size: 10px; }
+  .title-screen-footer { gap: 6px 9px; line-height: 1.6; }
+}
+
+@media (max-width: 700px) and (orientation: landscape) {
+  .title-screen { padding: max(8px, env(safe-area-inset-top)) 10px max(8px, env(safe-area-inset-bottom)); }
+  .title-screen-content { gap: 9px 14px; padding: 17px 18px; }
+  .title-screen-heading h2 { font-size: clamp(22px, 4vw, 32px); }
+  .title-screen-burmese { font-size: 14px; }
+  .title-screen-landscape { height: clamp(118px, 27vh, 158px); }
+  .title-landscape-photo-topline { top: 11px; left: 12px; padding: 4px 7px; font-size: 6px; }
+  .title-landscape-photo-caption { right: 14px; bottom: 12px; left: 14px; }
+  .title-landscape-photo-caption-burmese { font-size: 11px; }
+  .save-slot-card { min-height: 105px; padding: 9px; }
+  .save-slot-details { min-height: 22px; margin: 5px 0 7px; }
+  .save-button { min-height: 31px; padding: 5px; font-size: 8px; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .title-screen-landscape { animation: title-landscape-arrive 700ms ease-out both; }
+  .title-landscape-photo { animation: title-photo-arrive 1100ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  .title-screen-heading { animation: title-copy-arrive 600ms ease-out both; }
+  .save-slot-card { animation: title-card-arrive 520ms ease-out both; }
+  .save-slot-card:nth-child(2) { animation-delay: 80ms; }
+  .save-slot-card:nth-child(3) { animation-delay: 160ms; }
+
+  @keyframes title-landscape-arrive {
+    from { opacity: 0; transform: translateY(9px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes title-photo-arrive {
+    from { opacity: 0.65; transform: scale(1.085); }
+    to { opacity: 1; transform: scale(1.025); }
+  }
+
+  @keyframes title-copy-arrive {
+    from { opacity: 0; transform: translateX(-9px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes title-card-arrive {
+    from { opacity: 0; transform: translateY(7px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* Startup loader: a small wheat sheaf spins while Phaser prepares the village. */
+.game-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10020;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(18, 38, 29, 0.88);
+  backdrop-filter: blur(5px);
+  text-align: center;
+}
+
+body.foi-launching .game-loading-overlay {
+  display: flex;
+}
+
+.game-loading-card {
+  display: flex;
+  min-width: min(260px, 88vw);
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 25px 30px;
+  border: 3px solid #2a1a14;
+  outline: 2px solid #d6b36b;
+  background: linear-gradient(145deg, #38533b, #20382d);
+  box-shadow: inset 0 0 0 3px rgba(224, 190, 119, 0.2), 0 12px 40px rgba(0, 0, 0, 0.35);
+  color: #fff1cf;
+  font-family: "Noto Sans", "Noto Sans Myanmar", sans-serif;
+}
+
+.loading-wheat {
+  display: inline-block;
+  font-size: 42px;
+  line-height: 1;
+  transform-origin: 50% 55%;
+  animation: loading-wheat-spin 1.6s linear infinite;
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.28));
+}
+
+.game-loading-card strong {
+  color: #f3d28e;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.game-loading-card > span:not(.loading-wheat):not(.loading-dots) {
+  color: #d7e6c5;
+  font-size: 12px;
+}
+
+.loading-dots {
+  display: inline-flex;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+.loading-dots i {
+  width: 6px;
+  height: 6px;
+  background: #e6c47e;
+  animation: loading-dot-pulse 900ms ease-in-out infinite alternate;
+}
+
+.loading-dots i:nth-child(2) { animation-delay: 180ms; }
+.loading-dots i:nth-child(3) { animation-delay: 360ms; }
+
+@keyframes loading-wheat-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes loading-dot-pulse {
+  from { opacity: 0.35; transform: translateY(0); }
+  to { opacity: 1; transform: translateY(-3px); }
+}
+
+.orientation-card {
+  max-width: 360px;
+}
+
+.orientation-card .orientation-burmese {
+  color: #e7cf9e;
+  font-family: "Noto Sans Myanmar", "Noto Sans", sans-serif;
+  font-size: 12px;
+}
+
+/* The HTML icon rail must not sit on top of the in-game red close control. */
+body.foi-touch-device.foi-in-game.foi-modal-open .mobile-game-hud {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.save-button-slotname {
+  flex: 1;
+  background: linear-gradient(180deg, #8f754a, #695436);
+}
+
+.save-slot-secondary-actions .save-button {
+  min-width: 0;
+  padding-right: 4px;
+  padding-left: 4px;
+  font-size: clamp(6px, 0.95vw, 9px);
+}
+
+.character-creation-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 12500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 10px;
+  background: rgba(11, 25, 19, 0.88);
+  font-family: "Noto Sans", "Noto Sans Myanmar", sans-serif;
+}
+
+.character-creation-overlay.is-open { display: flex; }
+
+.character-creation-card {
+  width: min(470px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 18px;
+  border: 4px solid #2a1a14;
+  outline: 2px solid #d6b36b;
+  background: linear-gradient(145deg, #40583a, #20392d);
+  box-shadow: inset 0 0 0 3px rgba(224, 190, 119, 0.16), 0 12px 40px rgba(0,0,0,.38);
+  color: #fff1cf;
+  text-align: center;
+}
+
+.character-creation-title {
+  margin: 0 0 4px;
+  color: #f3d28e;
+  font-size: 17px;
+  letter-spacing: .06em;
+}
+
+.character-creation-subtitle {
+  margin: 0 0 12px;
+  color: #d7e6c5;
+  font-family: "Noto Sans Myanmar", "Noto Sans", sans-serif;
+  font-size: 11px;
+}
+
+.character-creation-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 76px;
+  margin: 0 auto 10px;
+}
+
+.character-creation-preview img {
+  width: 48px;
+  height: 78px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 3px 0 rgba(0,0,0,.35));
+}
+
+.character-creation-label {
+  display: block;
+  margin: 10px 0 6px;
+  color: #efd08e;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-align: left;
+}
+
+.character-creation-row {
+  display: flex;
+  gap: 8px;
+}
+
+.character-creation-choice,
+.character-creation-color,
+.character-creation-submit {
+  min-height: 36px;
+  border: 2px solid #24170f;
+  color: #fff1cf;
+  font: 700 10px "Noto Sans", "Noto Sans Myanmar", sans-serif;
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow: inset 2px 2px 0 rgba(255,255,255,.16), inset -2px -2px 0 rgba(0,0,0,.2), 0 2px 0 #1b120d;
+}
+
+.character-creation-choice {
+  flex: 1;
+  background: #654a32;
+}
+
+.character-creation-choice[aria-pressed="true"] {
+  border-color: #ffe09a;
+  background: #527b43;
+  box-shadow: inset 0 0 0 2px #d6b36b, 0 2px 0 #1b120d;
+}
+
+.character-creation-color {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 3px;
+  background: #493729;
+  font-size: 8px;
+}
+
+.character-creation-color::before {
+  display: block;
+  width: 18px;
+  height: 8px;
+  margin: 0 auto 4px;
+  border: 1px solid rgba(255,255,255,.45);
+  background: var(--swatch);
+  content: "";
+}
+
+.character-creation-color[aria-pressed="true"] {
+  border-color: #ffe09a;
+  background: #527b43;
+}
+
+.character-creation-name {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 2px solid #9b7047;
+  outline: 1px solid #d6b36b;
+  background: #f5e8c6;
+  color: #34271d;
+  font: 600 15px "Noto Sans", "Noto Sans Myanmar", sans-serif;
+}
+
+.character-creation-submit {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 14px;
+  background: linear-gradient(180deg, #6d9857, #3d6b43);
+  color: #fff8e8;
+  font-size: 11px;
+  letter-spacing: .06em;
+}
+
+.character-creation-note {
+  margin: 9px 0 0;
+  color: #bdcba8;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+@media (max-width: 520px) {
+  .character-creation-card { padding: 13px; }
+  .character-creation-title { font-size: 14px; }
+  .character-creation-row { gap: 5px; }
+  .character-creation-choice { font-size: 9px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-wheat, .loading-dots i { animation: none; }
 }

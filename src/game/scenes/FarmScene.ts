@@ -229,6 +229,10 @@ export class FarmScene extends Phaser.Scene {
       ["farmer_blue_asset", publicAsset("/assets/characters/farmer_blue.png")],
       ["farmer_red_asset", publicAsset("/assets/characters/farmer_red.png")],
       ["farmer_purple_asset", publicAsset("/assets/characters/farmer_purple.png")],
+      ["farmer_female_green_asset", publicAsset("/assets/characters/farmer_female_green.png")],
+      ["farmer_female_blue_asset", publicAsset("/assets/characters/farmer_female_blue.png")],
+      ["farmer_female_red_asset", publicAsset("/assets/characters/farmer_female_red.png")],
+      ["farmer_female_purple_asset", publicAsset("/assets/characters/farmer_female_purple.png")],
       ["ma_thiri_asset", publicAsset("/assets/characters/ma_thiri.png")],
       ["ko_aung_asset", publicAsset("/assets/characters/ko_aung.png")],
       ["monk_asset", publicAsset("/assets/characters/monk.png")],
@@ -247,6 +251,10 @@ export class FarmScene extends Phaser.Scene {
       ["farmer_blue_sheet", publicAsset("/assets/characters/farmer_blue_sheet.png"), 16, 26],
       ["farmer_red_sheet", publicAsset("/assets/characters/farmer_red_sheet.png"), 16, 26],
       ["farmer_purple_sheet", publicAsset("/assets/characters/farmer_purple_sheet.png"), 16, 26],
+      ["farmer_female_green_sheet", publicAsset("/assets/characters/farmer_female_green_sheet.png"), 16, 26],
+      ["farmer_female_blue_sheet", publicAsset("/assets/characters/farmer_female_blue_sheet.png"), 16, 26],
+      ["farmer_female_red_sheet", publicAsset("/assets/characters/farmer_female_red_sheet.png"), 16, 26],
+      ["farmer_female_purple_sheet", publicAsset("/assets/characters/farmer_female_purple_sheet.png"), 16, 26],
       ["ma_thiri_sheet", publicAsset("/assets/characters/ma_thiri_sheet.png"), 16, 26],
       ["ko_aung_sheet", publicAsset("/assets/characters/ko_aung_sheet.png"), 16, 26],
       ["monk_sheet", publicAsset("/assets/characters/monk_sheet.png"), 16, 26],
@@ -376,6 +384,10 @@ export class FarmScene extends Phaser.Scene {
     document.getElementById("app")?.setAttribute("aria-hidden", "false");
     document.getElementById("title-screen")?.classList.add("is-hidden");
     document.getElementById("mobile-game-hud")?.setAttribute("aria-hidden", this.isTouchDevice ? "false" : "true");
+
+    if (!this.loadExistingSave) {
+      this.profile.openCharacterCreation(() => this.saveSystem.completeInitialProfile());
+    }
   }
 
   // ------------------------------------------------------------------
@@ -400,7 +412,10 @@ export class FarmScene extends Phaser.Scene {
 
     const people = [
       "farmer_green_sheet", "farmer_blue_sheet", "farmer_red_sheet",
-      "farmer_purple_sheet", "ma_thiri_sheet", "ko_aung_sheet", "monk_sheet", "kid_sheet"
+      "farmer_purple_sheet",
+      "farmer_female_green_sheet", "farmer_female_blue_sheet",
+      "farmer_female_red_sheet", "farmer_female_purple_sheet",
+      "ma_thiri_sheet", "ko_aung_sheet", "monk_sheet", "kid_sheet"
     ];
     for (const sheet of people) {
       make(`${sheet}-down`, sheet, [0, 1, 2, 3], 8);
@@ -1363,7 +1378,7 @@ export class FarmScene extends Phaser.Scene {
     ).setScrollFactor(0).setDepth(8600).setInteractive();
 
     joystickZone.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      if (this.ui.hasActiveModal() || this.joystickPointerId !== null) return;
+      if ((this.ui.hasActiveModal() && !this.ui.isOpen("house")) || this.joystickPointerId !== null) return;
       this.joystickPointerId = pointer.id;
       this.updateJoystick(pointer);
     });
@@ -1383,6 +1398,7 @@ export class FarmScene extends Phaser.Scene {
       ...actionButtonObjects,
       this.mobileContextButton
     );
+    this.ui.registerRoomControls(base, innerRing, joystickNub, joystickZone, ...actionButtonObjects);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.input.off("pointermove", this.handleJoystickMove, this);
@@ -1417,10 +1433,6 @@ export class FarmScene extends Phaser.Scene {
       outerFrame.setScale(0.94);
       innerFrame.setScale(0.94);
       if (this.ui.hasActiveModal()) return;
-      if (this.getMobileContextTarget()) {
-        this.handleMobileContextAction();
-        return;
-      }
       if (!this.fishing.mobileAction(this.player.x, this.player.y)) {
         this.farming.mobileUseTool();
       }
@@ -1640,17 +1652,20 @@ export class FarmScene extends Phaser.Scene {
     const activeModal = this.ui.getActiveModal();
     if (activeModal !== null) {
       this.animatePlayer(0, 0, false);
-      this.joystickVector = { x: 0, y: 0 };
-      this.joystickPointerId = null;
-      this.joystickNub?.setPosition(this.joystickCenter.x, this.joystickCenter.y);
-      switch (activeModal) {
-        case "market": this.market.update(this.player.x, this.player.y); break;
-        case "inventory": this.inventory.update(this.player.x, this.player.y); break;
-        case "board": this.villageBoard.update(this.player.x, this.player.y); break;
-        case "dialogue": this.village.update(this.player.x, this.player.y); break;
-        case "cooking": this.cooking.update(this.player.x, this.player.y); break;
-        case "house": this.house.update(this.player.x, this.player.y, delta); break;
-        case "chest": this.chest.update(); break;
+      if (activeModal === "house") {
+        this.house.update(this.player.x, this.player.y, delta, this.joystickVector);
+      } else {
+        this.joystickVector = { x: 0, y: 0 };
+        this.joystickPointerId = null;
+        this.joystickNub?.setPosition(this.joystickCenter.x, this.joystickCenter.y);
+        switch (activeModal) {
+          case "market": this.market.update(this.player.x, this.player.y); break;
+          case "inventory": this.inventory.update(this.player.x, this.player.y); break;
+          case "board": this.villageBoard.update(this.player.x, this.player.y); break;
+          case "dialogue": this.village.update(this.player.x, this.player.y); break;
+          case "cooking": this.cooking.update(this.player.x, this.player.y); break;
+          case "chest": this.chest.update(); break;
+        }
       }
       if (this.house.isInside()) {
         // Keep villagers and the shared day clock progressing while the player is indoors.

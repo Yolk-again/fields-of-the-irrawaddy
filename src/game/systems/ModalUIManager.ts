@@ -37,6 +37,9 @@ export class ModalUIManager {
 
   private hudElements: Phaser.GameObjects.GameObject[] = [];
 
+  /** Controls that remain usable inside the walkable home interior on touch devices. */
+  private roomControls: Phaser.GameObjects.GameObject[] = [];
+
   private hudSnapshot: {
     element: Phaser.GameObjects.GameObject;
     wasVisible: boolean;
@@ -74,6 +77,7 @@ export class ModalUIManager {
     this.scene.input.on("pointerdown", this.handleClosePointerDown, this);
     this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scene.input.off("pointerdown", this.handleClosePointerDown, this);
+      document.body.classList.remove("foi-modal-open");
     });
   }
 
@@ -176,6 +180,20 @@ export class ModalUIManager {
     }
   }
 
+  registerRoomControls(...elements: Phaser.GameObjects.GameObject[]): void {
+    for (const element of elements) {
+      if (!this.roomControls.includes(element)) this.roomControls.push(element);
+    }
+    if (this.activeModal !== null) this.setRoomControlsVisible(this.activeModal === "house");
+  }
+
+  private setRoomControlsVisible(visible: boolean): void {
+    this.roomControls.forEach((element, index) => {
+      this.setElementVisible(element, visible);
+      this.setElementDepth(element, 12000 + index);
+    });
+  }
+
   private hideHud(): void {
     this.hudSnapshot = this.hudElements.map(element => ({
       element,
@@ -218,6 +236,8 @@ export class ModalUIManager {
     this.activeModal = id;
     this.backdrop.setVisible(true);
     newPanel.setVisible(true);
+    document.body.classList.add("foi-modal-open");
+    this.setRoomControlsVisible(id === "house");
   }
 
   /** Opens a sub-panel while preserving the previous room/menu underneath it. */
@@ -238,6 +258,8 @@ export class ModalUIManager {
     this.backdrop.setVisible(true);
     newPanel.setDepth(this.PANEL_DEPTH + 1000 + this.modalStack.length * 100);
     newPanel.setVisible(true);
+    document.body.classList.add("foi-modal-open");
+    this.setRoomControlsVisible(false);
   }
 
   close(id: ModalId): void {
@@ -250,11 +272,15 @@ export class ModalUIManager {
       this.panels.get(previous)?.setVisible(true);
       this.closeButtons.get(previous)?.setVisible(true);
       this.backdrop.setVisible(true);
+      document.body.classList.add("foi-modal-open");
+      this.setRoomControlsVisible(previous === "house");
       return;
     }
 
     this.activeModal = null;
     this.backdrop.setVisible(false);
+    this.setRoomControlsVisible(false);
+    document.body.classList.remove("foi-modal-open");
     this.restoreHud();
   }
 

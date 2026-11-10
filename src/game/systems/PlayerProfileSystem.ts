@@ -1,4 +1,3 @@
-
 import Phaser from "phaser";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
@@ -7,12 +6,18 @@ import { createRedCloseButton, modalClosePosition, modalPanel } from "../ui/Pixe
 interface PlayerProfileData {
   name: string;
   outfitIndex: number;
+  gender?: "male" | "female";
 }
+
+type CharacterGender = "male" | "female";
 
 interface Outfit {
   nameKey: string;
-  texture: string;
   color: number;
+  maleAsset: string;
+  maleSheet: string;
+  femaleAsset: string;
+  femaleSheet: string;
 }
 
 export class PlayerProfileSystem {
@@ -22,13 +27,30 @@ export class PlayerProfileSystem {
   private language: LanguageSystem;
 
   private playerName = "Farmer";
+  private gender: CharacterGender = "male";
   private outfitIndex = 0;
 
-  private outfits: Outfit[] = [
-    { nameKey: "profile.outfit.green", texture: "farmer_green_asset", color: 0x4c8c62 },
-    { nameKey: "profile.outfit.blue", texture: "farmer_blue_asset", color: 0x477caf },
-    { nameKey: "profile.outfit.red", texture: "farmer_red_asset", color: 0xa84d3e },
-    { nameKey: "profile.outfit.purple", texture: "farmer_purple_asset", color: 0x79559c }
+  private readonly outfits: Outfit[] = [
+    {
+      nameKey: "profile.outfit.green", color: 0x4c8c62,
+      maleAsset: "farmer_green_asset", maleSheet: "farmer_green_sheet",
+      femaleAsset: "farmer_female_green_asset", femaleSheet: "farmer_female_green_sheet"
+    },
+    {
+      nameKey: "profile.outfit.blue", color: 0x477caf,
+      maleAsset: "farmer_blue_asset", maleSheet: "farmer_blue_sheet",
+      femaleAsset: "farmer_female_blue_asset", femaleSheet: "farmer_female_blue_sheet"
+    },
+    {
+      nameKey: "profile.outfit.red", color: 0xa84d3e,
+      maleAsset: "farmer_red_asset", maleSheet: "farmer_red_sheet",
+      femaleAsset: "farmer_female_red_asset", femaleSheet: "farmer_female_red_sheet"
+    },
+    {
+      nameKey: "profile.outfit.purple", color: 0x79559c,
+      maleAsset: "farmer_purple_asset", maleSheet: "farmer_purple_sheet",
+      femaleAsset: "farmer_female_purple_asset", femaleSheet: "farmer_female_purple_sheet"
+    }
   ];
 
   private playerSprite!: Phaser.GameObjects.Sprite;
@@ -40,12 +62,25 @@ export class PlayerProfileSystem {
   private previewSprite!: Phaser.GameObjects.Image;
   private titleText!: Phaser.GameObjects.Text;
   private renameLabel!: Phaser.GameObjects.Text;
+  private genderLabel!: Phaser.GameObjects.Text;
+  private maleLabel!: Phaser.GameObjects.Text;
+  private femaleLabel!: Phaser.GameObjects.Text;
+  private maleButton!: Phaser.GameObjects.Rectangle;
+  private femaleButton!: Phaser.GameObjects.Rectangle;
   private outfitLabel!: Phaser.GameObjects.Text;
   private instructionText!: Phaser.GameObjects.Text;
   private exitHintText!: Phaser.GameObjects.Text;
+  private outfitButtons: Phaser.GameObjects.Rectangle[] = [];
+  private outfitNumbers: Phaser.GameObjects.Text[] = [];
   private isOpen = false;
   private renameOverlay?: HTMLDivElement;
   private renameInput?: HTMLInputElement;
+  private characterCreationOverlay?: HTMLDivElement;
+  private characterCreationInput?: HTMLInputElement;
+  private characterCreationPreview?: HTMLImageElement;
+  private characterCreationGenderButtons: HTMLButtonElement[] = [];
+  private characterCreationOutfitButtons: HTMLButtonElement[] = [];
+  private characterCreationComplete?: () => void;
   private keyboardWasEnabled: boolean | null = null;
 
   constructor(
@@ -67,11 +102,15 @@ export class PlayerProfileSystem {
     this.ui.registerPanel("profile", this.profilePanel, 350, () => {
       this.isOpen = false;
       if (this.renameOverlay) this.renameOverlay.style.display = "none";
+      if (this.characterCreationOverlay) this.characterCreationOverlay.classList.remove("is-open");
       this.restoreGameKeyboard();
     }, this.closeButton);
 
     this.ui.registerHud(this.nameLabel);
-    this.language.onChange(() => this.updateProfileDisplay());
+    this.language.onChange(() => {
+      this.updateProfileDisplay();
+      this.updateCharacterCreationLabels();
+    });
   }
 
   private createPlayerDetails(): void {
@@ -87,9 +126,20 @@ export class PlayerProfileSystem {
     this.applyOutfit();
   }
 
-  private applyOutfit(): void {
+  private getCurrentSheet(): string {
     const outfit = this.outfits[this.outfitIndex];
-    this.playerSprite.setTexture(outfit.texture.replace("_asset", "_sheet"), 0);
+    return this.gender === "female" ? outfit.femaleSheet : outfit.maleSheet;
+  }
+
+  private getCurrentPortraitAsset(): string {
+    const outfit = this.outfits[this.outfitIndex];
+    return this.gender === "female" ? outfit.femaleAsset : outfit.maleAsset;
+  }
+
+  private applyOutfit(): void {
+    this.playerSprite.anims.stop();
+    this.playerSprite.setTexture(this.getCurrentSheet(), 0);
+    this.playerSprite.setFrame(0);
     this.playerSprite.clearTint();
   }
 
@@ -100,161 +150,156 @@ export class PlayerProfileSystem {
       this.scene.input.off("pointerdown", this.handleProfilePointer, this);
       this.restoreGameKeyboard();
       this.renameOverlay?.remove();
+      this.characterCreationOverlay?.remove();
     });
   }
 
   private handleProfilePointer = (pointer: Phaser.Input.Pointer): void => {
-    if (!this.isOpen || this.ui.getActiveModal() !== "profile") return;
+    if (!this.isOpen || this.ui.getActiveModal() !== "profile" || this.characterCreationOverlay?.classList.contains("is-open")) return;
 
     const x = pointer.x;
     const y = pointer.y;
 
-    if (x >= 235 && x <= 405 && y >= 139 && y <= 175) {
+    if (x >= 230 && x <= 410 && y >= 130 && y <= 164) {
       this.renamePlayer();
       return;
     }
 
-    if (y >= 195 && y <= 237) {
-      const positions = [215, 285, 355, 425];
-      for (let i = 0; i < positions.length; i++) {
-        if (Math.abs(x - positions[i]) <= 25) {
-          this.selectOutfit(i);
+    if (y >= 178 && y <= 211) {
+      if (x >= 188 && x <= 320) this.selectGender("male");
+      else if (x > 320 && x <= 452) this.selectGender("female");
+      return;
+    }
+
+    if (y >= 226 && y <= 263) {
+      const positions = [245, 295, 345, 395];
+      for (let index = 0; index < positions.length; index++) {
+        if (Math.abs(x - positions[index]) <= 19) {
+          this.selectOutfit(index);
           return;
         }
       }
     }
-
   };
 
   private createProfileInterface(): void {
     this.profilePanel = this.scene.add.container(0, 0);
     this.profilePanel.setScrollFactor(0);
 
-    const background = modalPanel(this.scene, 320, 180, 430, 270);
+    const background = modalPanel(this.scene, 320, 180, 470, 310);
 
-    this.titleText = this.scene.add.text(320, 67, "", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "17px",
-      color: "#e6c47e"
+    this.titleText = this.scene.add.text(320, 39, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "16px", color: "#e6c47e", fontStyle: "bold"
     }).setOrigin(0.5);
 
-    const closePosition = modalClosePosition(320, 180, 430, 270);
+    const closePosition = modalClosePosition(320, 180, 470, 310);
     this.closeButton = createRedCloseButton(this.scene, closePosition.x, closePosition.y);
 
-    this.previewSprite = this.scene.add.image(320, 102, this.outfits[this.outfitIndex].texture)
-      .setScale(2);
+    this.previewSprite = this.scene.add.image(320, 83, this.getCurrentPortraitAsset()).setScale(2.35);
 
-    this.nameText = this.scene.add.text(320, 132, "", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
-      color: "#ffffff"
+    this.nameText = this.scene.add.text(320, 119, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#ffffff"
     }).setOrigin(0.5);
 
-    const renameButton = this.scene.add.rectangle(320, 157, 170, 36, 0x527044);
-    renameButton.setStrokeStyle(1, 0xd6b36b);
-    this.renameLabel = this.scene.add.text(320, 157, "", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
-      color: "#ffffff",
-      fontStyle: "bold"
+    const renameButton = this.scene.add.rectangle(320, 147, 170, 31, 0x527044).setStrokeStyle(1, 0xd6b36b);
+    this.renameLabel = this.scene.add.text(320, 147, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#ffffff", fontStyle: "bold"
     }).setOrigin(0.5);
 
-    this.outfitLabel = this.scene.add.text(320, 183, "", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
-      color: "#f0d69e"
+    this.genderLabel = this.scene.add.text(320, 173, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#f0d69e", fontStyle: "bold"
     }).setOrigin(0.5);
 
-    const colorButtons: Phaser.GameObjects.GameObject[] = [];
-    this.outfits.forEach((outfit, index) => {
-      const x = 215 + index * 70;
-      const button = this.scene.add.rectangle(x, 216, 42, 26, outfit.color);
-      button.setStrokeStyle(2, 0xd6b36b);
-      const number = this.scene.add.text(x, 216, String(index + 1), {
-        fontFamily: this.language.getFontFamily(),
-        fontSize: "11px",
-        color: "#ffffff"
+    this.maleButton = this.scene.add.rectangle(253, 195, 124, 30, 0x527044).setStrokeStyle(2, 0xd6b36b);
+    this.femaleButton = this.scene.add.rectangle(387, 195, 124, 30, 0x493729).setStrokeStyle(2, 0x9b7047);
+    this.maleLabel = this.scene.add.text(253, 195, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf", fontStyle: "bold"
+    }).setOrigin(0.5);
+    this.femaleLabel = this.scene.add.text(387, 195, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf", fontStyle: "bold"
+    }).setOrigin(0.5);
+
+    this.outfitLabel = this.scene.add.text(320, 222, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#f0d69e", fontStyle: "bold"
+    }).setOrigin(0.5);
+
+    const swatchColors = [0x4c8c62, 0x477caf, 0xa84d3e, 0x79559c];
+    this.outfitButtons = swatchColors.map((color, index) => {
+      const x = 245 + index * 50;
+      const swatch = this.scene.add.rectangle(x, 246, 35, 25, color).setStrokeStyle(2, 0xd6b36b);
+      const numeral = this.scene.add.text(x, 246, String(index + 1), {
+        fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#ffffff", fontStyle: "bold"
       }).setOrigin(0.5);
-      colorButtons.push(button, number);
+      this.outfitNumbers.push(numeral);
+      return swatch;
     });
 
-    this.outfitText = this.scene.add.text(320, 245, "", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
-      color: "#d6e6c2"
+    this.outfitText = this.scene.add.text(320, 270, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d6e6c2"
     }).setOrigin(0.5);
 
-    this.instructionText = this.scene.add.text(320, 260, "", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "9px",
-      color: "#b9dca3",
-      align: "center",
-      wordWrap: { width: 380 }
+    this.instructionText = this.scene.add.text(320, 289, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#b9dca3", align: "center",
+      wordWrap: { width: 400 }
     }).setOrigin(0.5);
 
-    this.exitHintText = this.scene.add.text(320, 289, "", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
-      color: "#d7e6c5",
-      align: "center"
+    this.exitHintText = this.scene.add.text(320, 307, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d7e6c5", align: "center"
     }).setOrigin(0.5);
 
     this.profilePanel.add([
-      background,
-      this.titleText,
-      this.closeButton,
-      this.previewSprite,
-      this.nameText,
-      renameButton,
-      this.renameLabel,
-      this.outfitLabel,
-      ...colorButtons,
-      this.outfitText,
-      this.instructionText,
-      this.exitHintText
+      background, this.titleText, this.closeButton, this.previewSprite, this.nameText,
+      renameButton, this.renameLabel, this.genderLabel, this.maleButton, this.femaleButton,
+      this.maleLabel, this.femaleLabel, this.outfitLabel, ...this.outfitButtons, ...this.outfitNumbers,
+      this.outfitText, this.instructionText, this.exitHintText
     ]);
 
     this.updateProfileDisplay();
   }
 
   private updateProfileDisplay(): void {
+    if (!this.titleText) return;
     const font = this.language.getFontFamily();
     this.titleText.setText(this.language.t("profile.title"));
     this.nameText.setText(this.language.t("profile.name", { name: this.playerName }));
     this.renameLabel.setText(this.language.t("profile.rename"));
+    this.genderLabel.setText(this.language.t("profile.gender"));
+    this.maleLabel.setText(this.language.t("profile.male"));
+    this.femaleLabel.setText(this.language.t("profile.female"));
     this.outfitLabel.setText(this.language.t("profile.outfit"));
     this.outfitText.setText(this.language.t(this.outfits[this.outfitIndex].nameKey));
     this.instructionText.setText(this.language.t("profile.close"));
     this.exitHintText.setText(this.language.t("common.clickCrossExit"));
-    this.previewSprite.setTexture(this.outfits[this.outfitIndex].texture);
+    this.previewSprite.setTexture(this.getCurrentPortraitAsset());
     this.nameLabel.setText(this.playerName);
+    this.maleButton.setFillStyle(this.gender === "male" ? 0x527044 : 0x493729);
+    this.femaleButton.setFillStyle(this.gender === "female" ? 0x527044 : 0x493729);
+    this.maleButton.setStrokeStyle(2, this.gender === "male" ? 0xf2d28d : 0x9b7047);
+    this.femaleButton.setStrokeStyle(2, this.gender === "female" ? 0xf2d28d : 0x9b7047);
+    this.outfitButtons.forEach((button, index) => {
+      button.setStrokeStyle(index === this.outfitIndex ? 3 : 1, index === this.outfitIndex ? 0xffe09a : 0xd6b36b);
+    });
 
     for (const text of [
-      this.titleText,
-      this.nameText,
-      this.renameLabel,
-      this.outfitLabel,
-      this.outfitText,
-      this.instructionText,
-      this.exitHintText,
-      this.nameLabel
-    ]) {
-      text.setFontFamily(font);
-    }
+      this.titleText, this.nameText, this.renameLabel, this.genderLabel, this.maleLabel,
+      this.femaleLabel, this.outfitLabel, ...this.outfitNumbers, this.outfitText, this.instructionText,
+      this.exitHintText, this.nameLabel
+    ]) text.setFontFamily(font);
+
     if (this.renameOverlay) this.renameOverlay.style.fontFamily = font;
     if (this.renameInput) this.renameInput.style.fontFamily = font;
+    this.updateCharacterCreationPreview();
   }
 
   private createRenameOverlay(): void {
     if (this.renameOverlay) return;
-
     const host = document.getElementById("game-container");
     if (!host) return;
 
     const overlay = document.createElement("div");
     overlay.style.position = "absolute";
     overlay.style.inset = "0";
-    overlay.style.zIndex = "30";
+    overlay.style.zIndex = "13000";
     overlay.style.display = "none";
     overlay.style.alignItems = "center";
     overlay.style.justifyContent = "center";
@@ -267,7 +312,6 @@ export class PlayerProfileSystem {
     form.style.padding = "20px";
     form.style.border = "4px solid #2a1a14";
     form.style.outline = "2px solid #c9993f";
-    form.style.borderRadius = "0";
     form.style.background = "#2d3829";
     form.style.boxShadow = "0 14px 40px rgba(0,0,0,.4)";
     form.style.display = "flex";
@@ -290,15 +334,11 @@ export class PlayerProfileSystem {
     input.style.width = "100%";
     input.style.padding = "11px";
     input.style.border = "1px solid #9b7047";
-    input.style.borderRadius = "0";
     input.style.background = "#f5e8c6";
     input.style.color = "#34271d";
     input.style.fontSize = "16px";
     input.style.boxSizing = "border-box";
     input.style.fontFamily = this.language.getFontFamily();
-    input.style.lineHeight = "1.4";
-    input.style.outline = "2px solid #d6b36b";
-    // Do not let Phaser's WASD/action shortcuts consume characters while typing.
     input.addEventListener("keydown", event => event.stopPropagation());
     input.addEventListener("keyup", event => event.stopPropagation());
     input.addEventListener("keypress", event => event.stopPropagation());
@@ -312,22 +352,18 @@ export class PlayerProfileSystem {
     saveButton.style.flex = "1";
     saveButton.style.padding = "10px";
     saveButton.style.border = "1px solid #d6b36b";
-    saveButton.style.borderRadius = "0";
     saveButton.style.background = "#47734b";
     saveButton.style.color = "white";
     saveButton.style.fontWeight = "700";
-    saveButton.style.cursor = "pointer";
 
     const cancelButton = document.createElement("button");
     cancelButton.type = "button";
     cancelButton.style.flex = "1";
     cancelButton.style.padding = "10px";
     cancelButton.style.border = "1px solid #9b7047";
-    cancelButton.style.borderRadius = "0";
     cancelButton.style.background = "#493629";
     cancelButton.style.color = "#fff1cf";
     cancelButton.style.fontWeight = "700";
-    cancelButton.style.cursor = "pointer";
 
     const updateLabels = (): void => {
       const myanmar = this.language.getLanguage() === "my";
@@ -350,10 +386,7 @@ export class PlayerProfileSystem {
     form.addEventListener("submit", event => {
       event.preventDefault();
       const cleanedName = input.value.trim().replace(/[<>]/g, "").slice(0, 16);
-      if (!cleanedName) {
-        input.focus();
-        return;
-      }
+      if (!cleanedName) { input.focus(); return; }
       this.playerName = cleanedName;
       overlay.style.display = "none";
       this.restoreGameKeyboard();
@@ -369,6 +402,158 @@ export class PlayerProfileSystem {
     this.renameInput = input;
     updateLabels();
     this.language.onChange(updateLabels);
+  }
+
+  private createCharacterCreationOverlay(): void {
+    if (this.characterCreationOverlay) return;
+    const host = document.getElementById("game-container");
+    if (!host) return;
+
+    const overlay = document.createElement("div");
+    overlay.className = "character-creation-overlay";
+
+    const card = document.createElement("form");
+    card.className = "character-creation-card";
+
+    const title = document.createElement("h2");
+    title.className = "character-creation-title";
+    const subtitle = document.createElement("p");
+    subtitle.className = "character-creation-subtitle";
+
+    const previewWrap = document.createElement("div");
+    previewWrap.className = "character-creation-preview";
+    const preview = document.createElement("img");
+    preview.alt = "Character preview";
+    previewWrap.append(preview);
+
+    const genderLabel = document.createElement("label");
+    genderLabel.className = "character-creation-label";
+    const genderRow = document.createElement("div");
+    genderRow.className = "character-creation-row";
+    const maleButton = document.createElement("button");
+    maleButton.type = "button";
+    maleButton.className = "character-creation-choice";
+    const femaleButton = document.createElement("button");
+    femaleButton.type = "button";
+    femaleButton.className = "character-creation-choice";
+    genderRow.append(maleButton, femaleButton);
+
+    const outfitLabel = document.createElement("label");
+    outfitLabel.className = "character-creation-label";
+    const outfitRow = document.createElement("div");
+    outfitRow.className = "character-creation-row";
+    const swatches = ["#4c8c62", "#477caf", "#a84d3e", "#79559c"];
+    const outfitButtons = this.outfits.map((_, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "character-creation-color";
+      button.style.setProperty("--swatch", swatches[index]);
+      button.dataset.index = String(index);
+      outfitRow.append(button);
+      return button;
+    });
+
+    const nameLabel = document.createElement("label");
+    nameLabel.className = "character-creation-label";
+    const input = document.createElement("input");
+    input.className = "character-creation-name";
+    input.type = "text";
+    input.maxLength = 16;
+    input.required = true;
+    input.autocomplete = "off";
+    input.autocapitalize = "words";
+    input.spellcheck = false;
+    input.value = this.playerName;
+    input.addEventListener("keydown", event => event.stopPropagation());
+    input.addEventListener("keyup", event => event.stopPropagation());
+    input.addEventListener("keypress", event => event.stopPropagation());
+
+    const submit = document.createElement("button");
+    submit.type = "submit";
+    submit.className = "character-creation-submit";
+    const note = document.createElement("p");
+    note.className = "character-creation-note";
+
+    maleButton.addEventListener("click", () => this.selectGender("male"));
+    femaleButton.addEventListener("click", () => this.selectGender("female"));
+    outfitButtons.forEach((button, index) => button.addEventListener("click", () => this.selectOutfit(index)));
+
+    card.addEventListener("submit", event => {
+      event.preventDefault();
+      const cleanedName = input.value.trim().replace(/[<>]/g, "").slice(0, 16);
+      if (!cleanedName) { input.focus(); return; }
+      this.playerName = cleanedName;
+      this.updateProfileDisplay();
+      overlay.classList.remove("is-open");
+      this.isOpen = false;
+      this.ui.close("profile");
+      const complete = this.characterCreationComplete;
+      this.characterCreationComplete = undefined;
+      complete?.();
+    });
+
+    card.append(title, subtitle, previewWrap, genderLabel, genderRow, outfitLabel, outfitRow, nameLabel, input, submit, note);
+    overlay.append(card);
+    host.append(overlay);
+
+    this.characterCreationOverlay = overlay;
+    this.characterCreationInput = input;
+    this.characterCreationPreview = preview;
+    this.characterCreationGenderButtons = [maleButton, femaleButton];
+    this.characterCreationOutfitButtons = outfitButtons;
+
+    const updateLabels = (): void => {
+      const myanmar = this.language.getLanguage() === "my";
+      const font = this.language.getFontFamily();
+      card.style.fontFamily = font;
+      title.style.fontFamily = font;
+      subtitle.style.fontFamily = font;
+      genderLabel.style.fontFamily = font;
+      outfitLabel.style.fontFamily = font;
+      nameLabel.style.fontFamily = font;
+      input.style.fontFamily = font;
+      submit.style.fontFamily = font;
+      note.style.fontFamily = font;
+      maleButton.style.fontFamily = font;
+      femaleButton.style.fontFamily = font;
+      outfitButtons.forEach(button => button.style.fontFamily = font);
+      title.textContent = myanmar ? "သင့်လယ်သမားကို ဖန်တီးပါ" : "CREATE YOUR FARMER";
+      subtitle.textContent = myanmar ? "ဧရာဝတီမြစ်ဝှမ်းတွင် သင့်ခရီးစဉ်ကို စတင်ပါ" : "Choose the farmer who will begin your journey";
+      genderLabel.textContent = myanmar ? "ဇာတ်ကောင်ကို ရွေးချယ်ပါ" : "CHOOSE YOUR CHARACTER";
+      maleButton.textContent = myanmar ? "အမျိုးသား" : "MALE FARMER";
+      femaleButton.textContent = myanmar ? "အမျိုးသမီး" : "FEMALE FARMER";
+      outfitLabel.textContent = myanmar ? "အဝတ်အစား အရောင်" : "CHOOSE YOUR OUTFIT";
+      outfitButtons.forEach((button, index) => {
+        const labels = myanmar ? ["အစိမ်း", "အပြာ", "အနီ", "ခရမ်း"] : ["GREEN", "BLUE", "RED", "PURPLE"];
+        button.textContent = labels[index];
+      });
+      nameLabel.textContent = myanmar ? "လယ်သမားအမည်" : "YOUR NAME";
+      input.placeholder = myanmar ? "သင့်အမည်" : "Enter your farmer's name";
+      submit.textContent = myanmar ? "ခရီးစဉ် စတင်မည်" : "BEGIN YOUR JOURNEY";
+      note.textContent = myanmar ? "နောက်ပိုင်းတွင် Profile မှ အမည်နှင့် အဝတ်အစားကို ပြောင်းလဲနိုင်သည်။" : "You can change your name and outfit later from your Profile.";
+    };
+
+    this.language.onChange(updateLabels);
+    updateLabels();
+    this.updateCharacterCreationPreview();
+  }
+
+  private updateCharacterCreationPreview(): void {
+    if (!this.characterCreationPreview) return;
+    const assetFile = this.getCurrentPortraitAsset().replace(/_asset$/, "").replace(/^.*?characters\//, "");
+    this.characterCreationPreview.src = `${import.meta.env.BASE_URL}assets/characters/${assetFile}.png`;
+    this.characterCreationPreview.alt = this.gender === "female" ? "Female farmer preview" : "Male farmer preview";
+    this.characterCreationGenderButtons.forEach((button, index) => {
+      button.setAttribute("aria-pressed", String((index === 0 ? "male" : "female") === this.gender));
+    });
+    this.characterCreationOutfitButtons.forEach((button, index) => {
+      button.setAttribute("aria-pressed", String(index === this.outfitIndex));
+    });
+  }
+
+  private updateCharacterCreationLabels(): void {
+    // Label text and font updates are registered when the overlay is created.
+    this.updateCharacterCreationPreview();
   }
 
   private suspendGameKeyboard(): void {
@@ -396,6 +581,12 @@ export class PlayerProfileSystem {
     this.renameInput.select();
   };
 
+  private selectGender(gender: CharacterGender): void {
+    this.gender = gender;
+    this.applyOutfit();
+    this.updateProfileDisplay();
+  }
+
   private selectOutfit(index: number): void {
     if (index < 0 || index >= this.outfits.length) return;
     this.outfitIndex = index;
@@ -409,12 +600,21 @@ export class PlayerProfileSystem {
     this.updateProfileDisplay();
   }
 
-  private closeProfile = (): void => {
-    this.isOpen = false;
-    if (this.renameOverlay) this.renameOverlay.style.display = "none";
-    this.restoreGameKeyboard();
-    this.ui.close("profile");
-  };
+  /** Opens the mandatory first-world character setup and saves only after confirmation. */
+  openCharacterCreation(onComplete: () => void): void {
+    this.characterCreationComplete = onComplete;
+    this.createCharacterCreationOverlay();
+    if (!this.characterCreationOverlay) {
+      this.characterCreationComplete = undefined;
+      onComplete();
+      return;
+    }
+    this.isOpen = true;
+    this.ui.open("profile");
+    this.characterCreationOverlay.classList.add("is-open");
+    if (this.characterCreationInput) this.characterCreationInput.value = this.playerName;
+    this.updateProfileDisplay();
+  }
 
   isProfileOpen(): boolean {
     return this.isOpen;
@@ -425,9 +625,18 @@ export class PlayerProfileSystem {
     else if (!this.ui.hasActiveModal()) this.openProfile();
   }
 
+  private closeProfile = (): void => {
+    if (this.characterCreationOverlay?.classList.contains("is-open")) return;
+    this.isOpen = false;
+    if (this.renameOverlay) this.renameOverlay.style.display = "none";
+    this.restoreGameKeyboard();
+    this.ui.close("profile");
+  };
+
   getSaveData(): PlayerProfileData {
     return {
       name: this.playerName,
+      gender: this.gender,
       outfitIndex: this.outfitIndex
     };
   }
@@ -438,6 +647,7 @@ export class PlayerProfileSystem {
       : "";
 
     this.playerName = name || "Farmer";
+    this.gender = data.gender === "female" ? "female" : "male";
     this.outfitIndex = Phaser.Math.Clamp(
       Math.floor(Number(data.outfitIndex) || 0),
       0,
@@ -447,5 +657,4 @@ export class PlayerProfileSystem {
     this.applyOutfit();
     this.updateProfileDisplay();
   }
-
 }

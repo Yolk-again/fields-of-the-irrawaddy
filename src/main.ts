@@ -6,7 +6,9 @@ import {
   SAVE_SLOT_COUNT,
   deleteSaveSlot,
   migrateLegacySaveToFirstSlot,
-  readSaveSlotSummary
+  readSaveSlotSummary,
+  getSaveSlotName,
+  setSaveSlotName
 } from "./game/systems/SaveSlotStorage";
 
 interface SelectedSave {
@@ -115,7 +117,7 @@ function renderSaveSlots(): void {
 
     const title = document.createElement("h3");
     title.className = "save-slot-title";
-    title.textContent = `SAVE SLOT ${slotNumber}`;
+    title.textContent = getSaveSlotName(slotNumber);
     card.append(title);
 
     const details = document.createElement("p");
@@ -138,6 +140,9 @@ function renderSaveSlots(): void {
       appendButton(actions, "START NEW GAME", "save-button save-button-primary", () => {
         launchGame(slotNumber, false);
       });
+      appendButton(actions, "RENAME SLOT", "save-button save-button-slotname", () => {
+        renameSaveSlot(slotNumber);
+      });
     } else {
       if (summary.valid) {
         appendButton(actions, "CONTINUE", "save-button save-button-primary", () => {
@@ -152,6 +157,9 @@ function renderSaveSlots(): void {
       appendButton(secondaryActions, "DELETE", "save-button save-button-danger", () => {
         showConfirmation(slotNumber, "delete");
       });
+      appendButton(secondaryActions, "RENAME", "save-button save-button-slotname", () => {
+        renameSaveSlot(slotNumber);
+      });
       actions.append(secondaryActions);
     }
 
@@ -160,13 +168,29 @@ function renderSaveSlots(): void {
   }
 }
 
+function renameSaveSlot(slot: number): void {
+  const currentName = getSaveSlotName(slot);
+  const requestedName = window.prompt("Name this save slot (up to 24 characters):", currentName);
+  if (requestedName === null) return;
+  const cleaned = requestedName.trim().replace(/[<>]/g, "").replace(/\s+/g, " ").slice(0, 24);
+  if (!cleaned) {
+    window.alert("Please enter a name for this save slot.");
+    return;
+  }
+  if (!setSaveSlotName(slot, cleaned)) {
+    window.alert("The save slot name could not be stored in this browser.");
+    return;
+  }
+  renderSaveSlots();
+}
+
 function showConfirmation(slot: number, kind: ConfirmationKind): void {
   if (!confirmation || !confirmationTitle || !confirmationMessage) return;
   pendingConfirmation = { slot, kind };
   confirmationTitle.textContent = kind === "delete" ? "DELETE THIS SAVE?" : "START A NEW GAME?";
   confirmationMessage.textContent = kind === "delete"
-    ? `Are you sure you want to permanently delete Save Slot ${slot}? This cannot be undone.`
-    : `Save Slot ${slot} already contains progress. Starting a new game will permanently replace it.`;
+    ? `Are you sure you want to permanently delete “${getSaveSlotName(slot)}”? This cannot be undone.`
+    : `“${getSaveSlotName(slot)}” already contains progress. Starting a new game will permanently replace it.`;
   if (confirmationAccept) confirmationAccept.textContent = kind === "delete" ? "DELETE SAVE" : "OVERWRITE SAVE";
   confirmation.hidden = false;
   confirmationCancel?.focus();
@@ -200,7 +224,7 @@ function launchGame(slot: number, loadExisting: boolean): void {
 function confirmSaveAction(): void {
   if (!pendingConfirmation) return;
   const { slot, kind } = pendingConfirmation;
-  const deleted = deleteSaveSlot(slot);
+  const deleted = deleteSaveSlot(slot, kind === "delete");
   if (!deleted) {
     if (confirmationMessage) confirmationMessage.textContent = "The browser could not update this save. Check storage permissions and try again.";
     return;

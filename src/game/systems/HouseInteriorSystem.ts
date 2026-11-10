@@ -167,7 +167,8 @@ export class HouseInteriorSystem {
     const cookerArt = this.scene.add.image(502, 166, "cooking_hearth_asset").setScale(1.8);
     this.avatar = this.scene.add.sprite(this.avatarX, this.avatarY, "farmer_green_sheet", 0).setOrigin(0.5, 1).setScale(2);
     this.statusText = this.scene.add.text(320, 310, "", { fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#f0d69e", backgroundColor: "#39271e", padding: { x: 4, y: 2 } }).setOrigin(0.5).setVisible(false);
-    this.roomPromptHitArea = this.scene.add.rectangle(536, 300, 216, 48, 0xffffff, 0.001)
+    this.roomPromptHitArea = this.scene.add.rectangle(320, 245, 250, 42, 0x527044, 0.98)
+      .setStrokeStyle(2, 0xd6b36b, 1)
       .setInteractive({ useHandCursor: true })
       .setVisible(false);
     this.roomPromptHitArea.on("pointerdown", () => {
@@ -177,7 +178,14 @@ export class HouseInteriorSystem {
       this.roomPromptHitArea.setVisible(false);
       this.interact(target);
     });
-    this.roomPrompt = this.scene.add.text(320, 230, "", { fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf", backgroundColor: "#2a1a14", padding: { x: 12, y: 8 }, stroke: "#2a1a14", strokeThickness: 2 }).setOrigin(0.5).setVisible(false);
+    this.roomPrompt = this.scene.add.text(320, 245, "", {
+      fontFamily: this.language.getFontFamily(),
+      fontSize: "9px",
+      color: "#fff1cf",
+      fontStyle: "bold",
+      align: "center",
+      wordWrap: { width: 232 }
+    }).setOrigin(0.5).setVisible(false);
     this.sleepOverlay = this.scene.add.rectangle(320, 180, 640, 360, 0x101827, 1).setAlpha(0);
     const closePos = modalClosePosition(320, 180, 640, 360);
     this.closeButton = createRedCloseButton(this.scene, closePos.x, closePos.y);
@@ -306,9 +314,13 @@ export class HouseInteriorSystem {
     });
   }
 
-  private moveAvatar(delta: number): void {
+  private moveAvatar(delta: number, mobileVector: { x: number; y: number } = { x: 0, y: 0 }): void {
     let dx = Number(this.cursors.left.isDown || this.wasd.A.isDown) * -1 + Number(this.cursors.right.isDown || this.wasd.D.isDown);
     let dy = Number(this.cursors.up.isDown || this.wasd.W.isDown) * -1 + Number(this.cursors.down.isDown || this.wasd.S.isDown);
+    if (this.touchMode) {
+      dx += mobileVector.x;
+      dy += mobileVector.y;
+    }
     const length = Math.hypot(dx, dy);
     if (length > 0) {
       dx /= length; dy /= length;
@@ -348,8 +360,8 @@ export class HouseInteriorSystem {
         this.avatarY = targetPoint.y;
         this.avatar.setPosition(this.avatarX, this.avatarY);
         this.promptTarget = found.target;
-        this.roomPrompt.setText(this.promptTextFor(found.target)).setPosition(536, 300).setVisible(true);
-        this.roomPromptHitArea.setPosition(536, 300).setVisible(true);
+        this.roomPrompt.setText(this.promptTextFor(found.target)).setPosition(320, 245).setVisible(true);
+        this.roomPromptHitArea.setPosition(320, 245).setVisible(true);
         return;
       }
       if (Phaser.Math.Distance.Between(this.avatarX, this.avatarY, targetPoint.x, targetPoint.y) < 92) {
@@ -359,7 +371,12 @@ export class HouseInteriorSystem {
     }
   };
 
-  update(playerX: number, playerY: number, delta = this.scene.game.loop.delta): void {
+  update(
+    playerX: number,
+    playerY: number,
+    delta = this.scene.game.loop.delta,
+    mobileVector: { x: number; y: number } = { x: 0, y: 0 }
+  ): void {
     if (!this.inside) {
       const near = Phaser.Math.Distance.Between(playerX, playerY, this.entrance.x, this.entrance.y) < 76;
       this.outsidePrompt.setVisible(near && !this.ui.hasActiveModal() && !this.touchMode);
@@ -375,13 +392,13 @@ export class HouseInteriorSystem {
       return;
     }
 
-    this.moveAvatar(delta);
+    this.moveAvatar(delta, mobileVector);
     this.promptTarget = this.closestTarget();
     if (this.promptTarget) {
       this.roomPrompt.setText(this.promptTextFor(this.promptTarget));
       if (this.touchMode) {
-        this.roomPrompt.setPosition(536, 300);
-        this.roomPromptHitArea.setPosition(536, 300).setVisible(true);
+        this.roomPrompt.setPosition(320, 245);
+        this.roomPromptHitArea.setPosition(320, 245).setVisible(true);
       } else {
         this.roomPrompt.setPosition(this.avatarX, Math.max(94, this.avatarY - 48));
         this.roomPromptHitArea.setVisible(false);

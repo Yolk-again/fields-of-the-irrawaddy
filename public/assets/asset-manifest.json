@@ -294,6 +294,62 @@
     "bytes": 2755
   },
   {
+    "path": "characters/farmer_female_blue.png",
+    "width": 16,
+    "height": 26,
+    "mode": "RGBA",
+    "bytes": 528
+  },
+  {
+    "path": "characters/farmer_female_blue_sheet.png",
+    "width": 64,
+    "height": 130,
+    "mode": "RGBA",
+    "bytes": 2356
+  },
+  {
+    "path": "characters/farmer_female_green.png",
+    "width": 16,
+    "height": 26,
+    "mode": "RGBA",
+    "bytes": 514
+  },
+  {
+    "path": "characters/farmer_female_green_sheet.png",
+    "width": 64,
+    "height": 130,
+    "mode": "RGBA",
+    "bytes": 2367
+  },
+  {
+    "path": "characters/farmer_female_purple.png",
+    "width": 16,
+    "height": 26,
+    "mode": "RGBA",
+    "bytes": 524
+  },
+  {
+    "path": "characters/farmer_female_purple_sheet.png",
+    "width": 64,
+    "height": 130,
+    "mode": "RGBA",
+    "bytes": 2356
+  },
+  {
+    "path": "characters/farmer_female_red.png",
+    "width": 16,
+    "height": 26,
+    "mode": "RGBA",
+    "bytes": 535
+  },
+  {
+    "path": "characters/farmer_female_red_sheet.png",
+    "width": 64,
+    "height": 130,
+    "mode": "RGBA",
+    "bytes": 2299
+  },
+  {
     "path": "characters/farmer_green.png",
     "width": 16,
     "height": 26,

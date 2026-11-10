@@ -59,6 +59,7 @@ export class SaveSystem {
   private language: LanguageSystem;
 
   private storageKey: string;
+  private profileCreationComplete: boolean;
 
   private statusText!: Phaser.GameObjects.Text;
   private controls: Array<Phaser.GameObjects.Rectangle | Phaser.GameObjects.Text> = [];
@@ -97,6 +98,7 @@ export class SaveSystem {
     this.language = language;
     const safeSlot = Number.isInteger(saveSlot) ? Math.min(3, Math.max(1, saveSlot)) : 1;
     this.storageKey = getSaveSlotStorageKey(safeSlot);
+    this.profileCreationComplete = loadExisting;
 
     this.createInterface();
 
@@ -114,7 +116,7 @@ export class SaveSystem {
       delay: 10000,
       loop: true,
       callback: () => {
-        this.saveGame(undefined, true);
+        if (this.profileCreationComplete) this.saveGame(undefined, true);
       }
     });
 
@@ -139,8 +141,6 @@ export class SaveSystem {
 
     if (loadExisting) {
       this.loadGame();
-    } else {
-      this.saveGame(undefined, true);
     }
   }
 
@@ -287,11 +287,18 @@ export class SaveSystem {
     };
   }
 
+  completeInitialProfile(): void {
+    this.profileCreationComplete = true;
+    this.saveNow();
+  }
+
   saveNow(): void {
+    if (!this.profileCreationComplete) return;
     this.saveGame(this.language.t("common.saved"));
   }
 
   private saveGame(message?: string, silent = false): void {
+    if (!this.profileCreationComplete) return;
     try {
       const saveData = this.createSaveData();
 

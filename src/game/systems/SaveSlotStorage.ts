@@ -8,10 +8,41 @@ export interface SaveSlotSummary {
   playerName: string | null;
 }
 
-export function getSaveSlotStorageKey(slotNumber: number): string {
+function normalizeSlotNumber(slotNumber: number): number {
   const requestedSlot = Number.isFinite(slotNumber) ? Math.floor(slotNumber) : 1;
-  const safeSlot = Math.min(SAVE_SLOT_COUNT, Math.max(1, requestedSlot));
-  return `fields_of_irrawaddy_save_slot_${safeSlot}`;
+  return Math.min(SAVE_SLOT_COUNT, Math.max(1, requestedSlot));
+}
+
+export function getSaveSlotStorageKey(slotNumber: number): string {
+  return `fields_of_irrawaddy_save_slot_${normalizeSlotNumber(slotNumber)}`;
+}
+
+export function getSaveSlotNameStorageKey(slotNumber: number): string {
+  return `fields_of_irrawaddy_slot_name_${normalizeSlotNumber(slotNumber)}`;
+}
+
+export function getSaveSlotName(slotNumber: number): string {
+  const safeSlot = normalizeSlotNumber(slotNumber);
+  const fallback = `FARM ${safeSlot}`;
+  try {
+    const stored = window.localStorage.getItem(getSaveSlotNameStorageKey(safeSlot));
+    const cleaned = typeof stored === "string" ? stored.trim().replace(/[<>]/g, "").slice(0, 24) : "";
+    return cleaned || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export function setSaveSlotName(slotNumber: number, name: string): boolean {
+  const safeSlot = normalizeSlotNumber(slotNumber);
+  const cleaned = name.trim().replace(/[<>]/g, "").replace(/\s+/g, " ").slice(0, 24);
+  if (!cleaned) return false;
+  try {
+    window.localStorage.setItem(getSaveSlotNameStorageKey(safeSlot), cleaned);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function migrateLegacySaveToFirstSlot(): void {
@@ -93,9 +124,10 @@ export function readSaveSlotSummary(slotNumber: number): SaveSlotSummary {
   }
 }
 
-export function deleteSaveSlot(slotNumber: number): boolean {
+export function deleteSaveSlot(slotNumber: number, clearName = true): boolean {
   try {
     window.localStorage.removeItem(getSaveSlotStorageKey(slotNumber));
+    if (clearName) window.localStorage.removeItem(getSaveSlotNameStorageKey(slotNumber));
     return true;
   } catch {
     return false;

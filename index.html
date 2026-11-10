@@ -49,16 +49,57 @@
     <section id="title-screen" class="title-screen" aria-label="Save selection">
       <div class="title-screen-content">
         <header class="title-screen-heading">
-          <p class="title-screen-eyebrow">MYANMAR COUNTRYSIDE ADVENTURE</p>
-          <h2>FIELDS OF THE IRRAWADDY</h2>
+          <p class="title-screen-eyebrow">A MYANMAR COUNTRYSIDE ADVENTURE</p>
+          <p class="title-screen-burmese" lang="my">ဧရာဝတီမြစ်ဝှမ်းဒေသ</p>
+          <h2>FIELDS OF THE<br class="title-screen-title-break"> IRRAWADDY</h2>
           <p class="title-screen-subtitle">A little village. A new beginning.</p>
+          <p class="title-screen-intro" lang="my">မြန်မာ့ကျေးလက်ဘဝ၏ နေ့ရက်သစ်များကို စတင်လိုက်ပါ။</p>
         </header>
-        <div id="save-slot-grid" class="save-slot-grid" aria-label="Choose a save slot">
-          <article class="save-slot-card"><h3 class="save-slot-title">SAVE SLOT 1</h3><p class="save-slot-details is-empty">EMPTY SLOT</p><div class="save-slot-actions"><button type="button" class="save-button save-button-primary" disabled>START NEW GAME</button></div></article>
-          <article class="save-slot-card"><h3 class="save-slot-title">SAVE SLOT 2</h3><p class="save-slot-details is-empty">EMPTY SLOT</p><div class="save-slot-actions"><button type="button" class="save-button save-button-primary" disabled>START NEW GAME</button></div></article>
-          <article class="save-slot-card"><h3 class="save-slot-title">SAVE SLOT 3</h3><p class="save-slot-details is-empty">EMPTY SLOT</p><div class="save-slot-actions"><button type="button" class="save-button save-button-primary" disabled>START NEW GAME</button></div></article>
+
+        <div class="title-screen-landscape title-screen-photo-card">
+          <img
+            class="title-landscape-photo"
+            src="/assets/title/irrawaddy-rice-fields.webp"
+            alt="A farmer crossing a lush green rice field, with hills and a golden pagoda in the distance"
+            fetchpriority="high"
+            decoding="async"
+          >
+          <div class="title-landscape-photo-shade" aria-hidden="true"></div>
+          <div class="title-landscape-photo-topline" aria-hidden="true">
+            <span class="title-landscape-photo-mark">✦</span>
+            <span lang="my">မြန်မာနိုင်ငံ</span>
+            <span class="title-landscape-photo-separator">•</span>
+            <span>IRRAWADDY VALLEY</span>
+          </div>
+          <div class="title-landscape-photo-caption" aria-hidden="true">
+            <span class="title-landscape-photo-caption-burmese" lang="my">စိမ်းလန်းသော လယ်ကွင်းများ</span>
+            <span class="title-landscape-photo-caption-english">LIFE IN THE RICE FIELDS</span>
+          </div>
+          <span class="title-landscape-photo-corner title-landscape-photo-corner-tl" aria-hidden="true"></span>
+          <span class="title-landscape-photo-corner title-landscape-photo-corner-br" aria-hidden="true"></span>
         </div>
-        <p class="title-screen-footer">SELECT A SLOT TO CONTINUE YOUR JOURNEY</p>
+
+        <section class="title-screen-saves" aria-labelledby="save-selection-title">
+          <div class="title-screen-section-heading">
+            <span class="title-screen-section-rule"></span>
+            <div>
+              <h3 id="save-selection-title">YOUR JOURNEY</h3>
+              <p>Choose a place to begin</p>
+            </div>
+            <span class="title-screen-section-rule"></span>
+          </div>
+          <div id="save-slot-grid" class="save-slot-grid" aria-label="Choose a save slot">
+            <article class="save-slot-card"><h3 class="save-slot-title">SAVE SLOT 1</h3><p class="save-slot-details is-empty">EMPTY SLOT</p><div class="save-slot-actions"><button type="button" class="save-button save-button-primary" disabled>START NEW GAME</button></div></article>
+            <article class="save-slot-card"><h3 class="save-slot-title">SAVE SLOT 2</h3><p class="save-slot-details is-empty">EMPTY SLOT</p><div class="save-slot-actions"><button type="button" class="save-button save-button-primary" disabled>START NEW GAME</button></div></article>
+            <article class="save-slot-card"><h3 class="save-slot-title">SAVE SLOT 3</h3><p class="save-slot-details is-empty">EMPTY SLOT</p><div class="save-slot-actions"><button type="button" class="save-button save-button-primary" disabled>START NEW GAME</button></div></article>
+          </div>
+        </section>
+        <footer class="title-screen-footer">
+          <span class="title-screen-footer-mark">✦</span>
+          <span>MADE WITH THE SPIRIT OF MYANMAR</span>
+          <span class="title-screen-footer-burmese" lang="my">မြန်မာ့ကျေးလက်အလှ</span>
+          <span class="title-screen-footer-mark">✦</span>
+        </footer>
       </div>
     </section>
     <div id="save-confirmation" class="save-confirmation" role="dialog" aria-modal="true" aria-labelledby="save-confirmation-title" hidden>
@@ -75,8 +116,18 @@
     <div class="orientation-overlay" role="status" aria-live="polite">
       <div class="orientation-card">
         <div class="orientation-icon">↻</div>
-        <strong>Rotate your phone</strong>
-        <span>Fields of the Irrawaddy is best played in landscape mode.</span>
+        <strong>PLEASE ROTATE YOUR PHONE</strong>
+        <span>Turn your phone sideways to landscape. The title screen will appear automatically.</span>
+        <span class="orientation-burmese" lang="my">ကျေးဇူးပြု၍ ဖုန်းကို အလျားလိုက် လှည့်ပေးပါ။</span>
+      </div>
+    </div>
+
+    <div id="game-loading-overlay" class="game-loading-overlay" role="status" aria-live="polite" aria-label="Loading game">
+      <div class="game-loading-card">
+        <span class="loading-wheat" aria-hidden="true">🌾</span>
+        <strong>PREPARING YOUR VILLAGE</strong>
+        <span lang="my">ရွာလေးကို ပြင်ဆင်နေပါသည်...</span>
+        <span class="loading-dots" aria-hidden="true"><i></i><i></i><i></i></span>
       </div>
     </div>
 
