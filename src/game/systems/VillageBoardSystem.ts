@@ -281,6 +281,10 @@ export class VillageBoardSystem {
     this.updateInterface();
   }
 
+  mobileInteractionDistance(playerX: number, playerY: number): number {
+    return Phaser.Math.Distance.Between(playerX, playerY, this.boardX, this.boardY);
+  }
+
   mobileInteract(playerX: number, playerY: number): boolean {
     if (this.isOpen) {
       this.closeBoard();

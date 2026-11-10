@@ -291,7 +291,7 @@ export class FarmScene extends Phaser.Scene {
     this.createCamera();
 
     this.ui = new ModalUIManager(this);
-    this.help = new HelpSystem(this, this.ui, this.language);
+    this.help = new HelpSystem(this, this.ui, this.language, this.isTouchDevice);
     this.createHUD();
     this.music = new MusicSystem(this, this.ui, this.language, this.isTouchDevice);
     this.music.setMobileHeaderHidden(this.isTouchDevice);
@@ -1417,6 +1417,10 @@ export class FarmScene extends Phaser.Scene {
       outerFrame.setScale(0.94);
       innerFrame.setScale(0.94);
       if (this.ui.hasActiveModal()) return;
+      if (this.getMobileContextTarget()) {
+        this.handleMobileContextAction();
+        return;
+      }
       if (!this.fishing.mobileAction(this.player.x, this.player.y)) {
         this.farming.mobileUseTool();
       }
@@ -1499,12 +1503,48 @@ export class FarmScene extends Phaser.Scene {
     this.joystickNub?.setPosition(this.joystickCenter.x, this.joystickCenter.y);
   }
 
+  private getMobileContextTarget(): "home" | "board" | "market" | "villager" | null {
+    const x = this.player.x;
+    const y = this.player.y;
+
+    if (this.house.canMobileInteract(x, y)) return "home";
+
+    const nearBoard = this.villageBoard.canMobileInteract(x, y);
+    const nearMarket = this.market.canMobileInteract(x, y);
+
+    // The board and market interaction radii overlap in the village square.
+    // Select the nearer landmark so the prompt and the tap always agree.
+    if (nearBoard && nearMarket) {
+      return this.villageBoard.mobileInteractionDistance(x, y) <=
+        this.market.mobileInteractionDistance(x, y) ? "board" : "market";
+    }
+    if (nearBoard) return "board";
+    if (nearMarket) return "market";
+
+    // A nearby villager must not swallow a tap intended for the shop or board.
+    if (this.village.canMobileTalk(x, y)) return "villager";
+    return null;
+  }
+
   private handleMobileTalk(): void {
     if (this.ui.hasActiveModal()) return;
-    if (this.house.mobileInteract(this.player.x, this.player.y)) return;
-    if (this.village.mobileTalk(this.player.x, this.player.y)) return;
-    if (this.villageBoard.mobileInteract(this.player.x, this.player.y)) return;
-    this.market.mobileInteract(this.player.x, this.player.y);
+    const x = this.player.x;
+    const y = this.player.y;
+
+    switch (this.getMobileContextTarget()) {
+      case "home":
+        this.house.mobileInteract(x, y);
+        break;
+      case "board":
+        this.villageBoard.mobileInteract(x, y);
+        break;
+      case "market":
+        this.market.mobileInteract(x, y);
+        break;
+      case "villager":
+        this.village.mobileTalk(x, y);
+        break;
+    }
   }
 
   private handleMobileContextAction(): void {
@@ -1514,21 +1554,14 @@ export class FarmScene extends Phaser.Scene {
 
   private updateMobileContextAction(): void {
     if (!this.isTouchDevice || !this.mobileContextButton) return;
-    const x = this.player.x;
-    const y = this.player.y;
-    const nearHome = this.house.canMobileInteract(x, y);
-    const nearVillager = this.village.canMobileTalk(x, y);
-    const nearBoard = this.villageBoard.canMobileInteract(x, y);
-    const nearMarket = this.market.canMobileInteract(x, y);
-    const labelKey = nearHome
-      ? "mobile.clickOpenHome"
-      : nearVillager
-        ? "mobile.clickTalkVillager"
-        : nearBoard
-          ? "mobile.clickOpenRequests"
-          : nearMarket
-            ? "mobile.clickOpenMarket"
-            : null;
+    const target = this.getMobileContextTarget();
+    const labelKeys = {
+      home: "mobile.clickOpenHome",
+      board: "mobile.clickOpenRequests",
+      market: "mobile.clickOpenMarket",
+      villager: "mobile.clickTalkVillager"
+    } as const;
+    const labelKey = target ? labelKeys[target] : null;
     this.mobileContextButton.setVisible(labelKey !== null);
     if (labelKey) this.mobileContextLabel?.setText(this.language.t(labelKey));
   }

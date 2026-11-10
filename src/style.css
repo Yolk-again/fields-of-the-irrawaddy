@@ -571,7 +571,7 @@ footer {
 }
 
 .mobile-game-hud {
-  position: fixed;
+  position: absolute;
   z-index: 10010;
   top: max(8px, env(safe-area-inset-top));
   right: max(8px, env(safe-area-inset-right));
@@ -703,10 +703,10 @@ body.foi-in-game #app {
   visibility: visible;
 }
 
-/* Keep mobile controls above the Phaser canvas and outside its clipping area. */
+/* Keep the mobile controls above the Phaser canvas inside the fullscreen target. */
 body.foi-touch-device.foi-in-game .mobile-game-hud {
   display: flex !important;
-  position: fixed;
+  position: absolute;
   z-index: 10010;
 }
 
@@ -718,4 +718,19 @@ body.foi-touch-device.foi-in-game .mobile-game-hud {
 .mobile-game-hud img {
   width: clamp(21px, 2.8vw, 26px);
   height: clamp(21px, 2.8vw, 26px);
+}
+
+
+/* Mobile controls are children of #game-container so they remain visible in fullscreen. */
+#game-container > .mobile-game-hud {
+  position: absolute;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+#game-container:fullscreen > .mobile-game-hud,
+#game-container:-webkit-full-screen > .mobile-game-hud {
+  position: absolute;
+  top: max(8px, env(safe-area-inset-top));
+  right: max(8px, env(safe-area-inset-right));
 }

@@ -545,6 +545,10 @@ export class MarketSystem {
     this.updateMoney();
   }
 
+  mobileInteractionDistance(playerX: number, playerY: number): number {
+    return Phaser.Math.Distance.Between(playerX, playerY, this.marketX, this.marketY);
+  }
+
   mobileInteract(playerX: number, playerY: number): boolean {
     if (this.isOpen) { this.closeMarket(); return true; }
     if (this.ui.hasActiveModal()) return false;
