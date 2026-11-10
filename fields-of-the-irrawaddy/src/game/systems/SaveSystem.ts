@@ -15,6 +15,7 @@ import {
   LanguageSystem,
   type Language
 } from "./LanguageSystem";
+import { getSaveSlotStorageKey } from "./SaveSlotStorage";
 
 const WORLD_WIDTH = 1440;
 const WORLD_HEIGHT = 640;
@@ -57,7 +58,7 @@ export class SaveSystem {
   private ui: ModalUIManager;
   private language: LanguageSystem;
 
-  private storageKey = "fields_of_irrawaddy_save_v3";
+  private storageKey: string;
 
   private statusText!: Phaser.GameObjects.Text;
   private controls: Array<Phaser.GameObjects.Rectangle | Phaser.GameObjects.Text> = [];
@@ -75,7 +76,9 @@ export class SaveSystem {
     village: VillageSystem,
     profile: PlayerProfileSystem,
     ui: ModalUIManager,
-    language: LanguageSystem
+    language: LanguageSystem,
+    saveSlot = 1,
+    loadExisting = false
   ) {
     this.scene = scene;
     this.player = player;
@@ -92,6 +95,8 @@ export class SaveSystem {
 
     this.ui = ui;
     this.language = language;
+    const safeSlot = Number.isInteger(saveSlot) ? Math.min(3, Math.max(1, saveSlot)) : 1;
+    this.storageKey = getSaveSlotStorageKey(safeSlot);
 
     this.createInterface();
 
@@ -132,7 +137,11 @@ export class SaveSystem {
       this.updateButtonLabels();
     });
 
-    this.loadGame();
+    if (loadExisting) {
+      this.loadGame();
+    } else {
+      this.saveGame(undefined, true);
+    }
   }
 
   private createInterface(): void {
@@ -307,17 +316,7 @@ export class SaveSystem {
 
   private loadGame(): void {
     try {
-      const currentSave = window.localStorage.getItem(
-        this.storageKey
-      );
-
-      const previousSave = currentSave
-        ? null
-        : window.localStorage.getItem(
-            "fields_of_irrawaddy_save_v1"
-          );
-
-      const raw = currentSave ?? previousSave;
+      const raw = window.localStorage.getItem(this.storageKey);
 
       if (!raw) {
         this.statusText.setText(

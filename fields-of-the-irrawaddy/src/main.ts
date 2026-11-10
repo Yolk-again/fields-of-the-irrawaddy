@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import "./style.css";
 import "./game/assets.css";
 import { FarmScene } from "./game/scenes/FarmScene";
+import { SaveSelectScene } from "./game/scenes/SaveSelectScene";
 
 const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -29,7 +30,17 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
 
-  scene: [FarmScene]
+  scene: [SaveSelectScene, FarmScene],
+
+  // Always force the title / save-selection screen after Phaser has booted.
+  // This protects against another scene being selected as the initial scene
+  // by a browser build or a future change to the scene registration order.
+  callbacks: {
+    postBoot: (game: Phaser.Game): void => {
+      game.scene.stop("FarmScene");
+      game.scene.start("SaveSelectScene");
+    }
+  }
 };
 
 // Load the Myanmar text font before Phaser renders its first Text objects.

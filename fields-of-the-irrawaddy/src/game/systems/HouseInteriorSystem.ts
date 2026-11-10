@@ -34,6 +34,7 @@ export class HouseInteriorSystem {
   private title!: Phaser.GameObjects.Text;
   private statusText!: Phaser.GameObjects.Text;
   private roomPrompt!: Phaser.GameObjects.Text;
+  private roomPromptHitArea!: Phaser.GameObjects.Rectangle;
   private sleepOverlay!: Phaser.GameObjects.Rectangle;
   private enterKey!: Phaser.Input.Keyboard.Key;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -166,20 +167,21 @@ export class HouseInteriorSystem {
     const cookerArt = this.scene.add.image(502, 166, "cooking_hearth_asset").setScale(1.8);
     this.avatar = this.scene.add.sprite(this.avatarX, this.avatarY, "farmer_green_sheet", 0).setOrigin(0.5, 1).setScale(2);
     this.statusText = this.scene.add.text(320, 310, "", { fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#f0d69e", backgroundColor: "#39271e", padding: { x: 4, y: 2 } }).setOrigin(0.5).setVisible(false);
-    this.roomPrompt = this.scene.add.text(320, 230, "", { fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf", backgroundColor: "#2a1a14", padding: { x: 7, y: 4 }, stroke: "#2a1a14", strokeThickness: 2 }).setOrigin(0.5).setVisible(false);
-    if (this.touchMode) {
-      this.roomPrompt.setInteractive(new Phaser.Geom.Rectangle(-88, -18, 176, 36), Phaser.Geom.Rectangle.Contains);
-      this.roomPrompt.on("pointerup", () => {
-        const target = this.promptTarget;
-        if (!target || !this.inside || !this.ui.isOpen("house") || this.sleeping) return;
-        this.roomPrompt.setVisible(false);
-        this.interact(target);
-      });
-    }
+    this.roomPromptHitArea = this.scene.add.rectangle(536, 300, 216, 48, 0xffffff, 0.001)
+      .setInteractive({ useHandCursor: true })
+      .setVisible(false);
+    this.roomPromptHitArea.on("pointerdown", () => {
+      const target = this.promptTarget;
+      if (!target || !this.inside || !this.ui.isOpen("house") || this.sleeping) return;
+      this.roomPrompt.setVisible(false);
+      this.roomPromptHitArea.setVisible(false);
+      this.interact(target);
+    });
+    this.roomPrompt = this.scene.add.text(320, 230, "", { fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf", backgroundColor: "#2a1a14", padding: { x: 12, y: 8 }, stroke: "#2a1a14", strokeThickness: 2 }).setOrigin(0.5).setVisible(false);
     this.sleepOverlay = this.scene.add.rectangle(320, 180, 640, 360, 0x101827, 1).setAlpha(0);
     const closePos = modalClosePosition(320, 180, 640, 360);
     this.closeButton = createRedCloseButton(this.scene, closePos.x, closePos.y);
-    this.panel.add([room, this.title, cookerArt, this.avatar, this.statusText, this.roomPrompt, this.sleepOverlay, this.closeButton]);
+    this.panel.add([room, this.title, cookerArt, this.avatar, this.statusText, this.roomPromptHitArea, this.roomPrompt, this.sleepOverlay, this.closeButton]);
     this.panel.setVisible(false);
     this.updateLanguage();
   }
@@ -218,6 +220,7 @@ export class HouseInteriorSystem {
     this.sleeping = false;
     this.promptTarget = null;
     this.roomPrompt.setVisible(false);
+    this.roomPromptHitArea.setVisible(false);
     this.player.setPosition(this.outsidePosition.x, this.outsidePosition.y).setVisible(true);
     this.enterKey.reset();
   }
@@ -241,10 +244,10 @@ export class HouseInteriorSystem {
   private promptTextFor(target: RoomTarget): string {
     if (this.touchMode) {
       const mobileKeys: Record<RoomTarget, string> = {
-        bed: "mobile.clickToSleep",
-        chest: "mobile.clickToOpen",
-        cooker: "mobile.clickToCook",
-        door: "mobile.clickToExit"
+        bed: "mobile.clickSleepBed",
+        chest: "mobile.clickOpenChest",
+        cooker: "mobile.clickCook",
+        door: "mobile.clickExitHouse"
       };
       return this.language.t(mobileKeys[target]);
     }
@@ -270,6 +273,7 @@ export class HouseInteriorSystem {
     this.closeButton.setVisible(false);
     this.statusText.setText(this.language.t("house.sleeping")).setVisible(true);
     this.roomPrompt.setVisible(false);
+    this.roomPromptHitArea.setVisible(false);
     this.avatar.anims.play(`${this.avatarTexture}-task-sleep`, true);
     this.scene.events.emit("sound-effect", "sleep");
     this.scene.tweens.add({
@@ -345,6 +349,7 @@ export class HouseInteriorSystem {
         this.avatar.setPosition(this.avatarX, this.avatarY);
         this.promptTarget = found.target;
         this.roomPrompt.setText(this.promptTextFor(found.target)).setPosition(536, 300).setVisible(true);
+        this.roomPromptHitArea.setPosition(536, 300).setVisible(true);
         return;
       }
       if (Phaser.Math.Distance.Between(this.avatarX, this.avatarY, targetPoint.x, targetPoint.y) < 92) {
@@ -366,6 +371,7 @@ export class HouseInteriorSystem {
 
     if (this.ui.isOpen("chest") || this.ui.isOpen("cooking")) {
       this.roomPrompt.setVisible(false);
+      this.roomPromptHitArea.setVisible(false);
       return;
     }
 
@@ -373,11 +379,17 @@ export class HouseInteriorSystem {
     this.promptTarget = this.closestTarget();
     if (this.promptTarget) {
       this.roomPrompt.setText(this.promptTextFor(this.promptTarget));
-      if (this.touchMode) this.roomPrompt.setPosition(536, 300);
-      else this.roomPrompt.setPosition(this.avatarX, Math.max(94, this.avatarY - 48));
+      if (this.touchMode) {
+        this.roomPrompt.setPosition(536, 300);
+        this.roomPromptHitArea.setPosition(536, 300).setVisible(true);
+      } else {
+        this.roomPrompt.setPosition(this.avatarX, Math.max(94, this.avatarY - 48));
+        this.roomPromptHitArea.setVisible(false);
+      }
       this.roomPrompt.setVisible(true);
     } else {
       this.roomPrompt.setVisible(false);
+      this.roomPromptHitArea.setVisible(false);
     }
     if (Phaser.Input.Keyboard.JustDown(this.enterKey) && this.promptTarget) {
       const target = this.promptTarget;

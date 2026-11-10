@@ -135,6 +135,7 @@ export class MusicSystem {
     const hitSize = this.mobileLayout ? 38 : 28;
     const frame = pixelPanel(this.scene, x, y, frameSize, frameSize, { fill: 0x4a3324 }).setDepth(8500);
     this.icon = this.scene.add.image(x, y, "ui_icon_note")
+      .setScale(this.mobileLayout ? 1.45 : 1)
       .setScrollFactor(0).setDepth(8501);
     this.button = this.scene.add.rectangle(x, y, hitSize, hitSize, 0xffffff, 0.001)
       .setScrollFactor(0).setDepth(8502)
@@ -147,7 +148,7 @@ export class MusicSystem {
 
     this.button.on("pointerover", () => this.tip.setVisible(true));
     this.button.on("pointerout", () => this.tip.setVisible(false));
-    this.button.on(this.mobileLayout ? "pointerdown" : "pointerup", () => this.openSettings());
+    this.button.on("pointerdown", () => this.openSettings());
     ui.registerHud(frame, this.icon, this.button, this.tip);
     this.headerControls = [frame, this.icon, this.button, this.tip];
     this.refreshButton();

@@ -1,0 +1,16 @@
+START SCREEN FIX
+
+The game now always opens SaveSelectScene before gameplay.
+
+Startup protection:
+- Phaser post-boot explicitly stops FarmScene and opens SaveSelectScene.
+- FarmScene requires the fromSaveSelect flag before creating the farm world.
+- The Continue and New Game buttons pass the selected slot and this flag.
+- If FarmScene is started directly without save-selection data, it redirects to SaveSelectScene.
+
+This applies to desktop and mobile because both versions use the same Phaser startup flow.
+
+Build and run on Windows:
+  npm.cmd install
+  npm.cmd run build
+  npm.cmd run dev
