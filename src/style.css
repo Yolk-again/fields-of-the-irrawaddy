@@ -1,6 +1,6 @@
 
 :root {
-  font-family: "Noto Sans", "Noto Sans Myanmar", "Segoe UI", Arial, sans-serif;
+  font-family: "Noto Sans", "Noto Sans Myanmar", "Myanmar Text", "Leelawadee UI", "Segoe UI", Arial, sans-serif;
   color: #f1ead5;
   background: #19291f;
   font-synthesis: none;
@@ -115,13 +115,15 @@ h1 {
   display: none;
 }
 
-#game-container,
 #game-container canvas {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
+
+/* Keep the canvas gesture-locked for movement while native HTML buttons remain tappable. */
+#game-container { touch-action: auto; }
 
 @media (max-height: 520px) and (pointer: coarse) {
   html,
@@ -644,9 +646,10 @@ body.foi-touch-device.foi-in-game .mobile-game-hud {
 
   .title-screen-content {
     width: min(100%, 430px);
-    max-height: 100%;
+    max-height: none;
+    min-height: 0;
     gap: 12px;
-    overflow-y: auto;
+    overflow: visible;
   }
 
   .title-screen-heading h2 {
@@ -787,9 +790,11 @@ body.foi-touch-device.foi-in-game .mobile-game-hud {
   align-items: center;
   gap: clamp(14px, 2vw, 24px) clamp(22px, 3vw, 38px);
   width: min(1120px, 100%);
-  max-height: calc(100% - 4px);
+  max-height: none;
+  min-height: min(100%, 620px);
+  margin: auto;
   padding: clamp(22px, 3vw, 38px);
-  overflow-y: auto;
+  overflow: visible;
   border: 2px solid rgba(224, 190, 119, 0.94);
   background:
     linear-gradient(135deg, rgba(34, 66, 47, 0.97), rgba(17, 43, 36, 0.95)),
@@ -1387,7 +1392,7 @@ body.foi-touch-device.foi-in-game.foi-modal-open .mobile-game-hud {
   width: min(470px, 100%);
   max-height: 100%;
   overflow-y: auto;
-  padding: 18px;
+  padding: 14px 18px;
   border: 4px solid #2a1a14;
   outline: 2px solid #d6b36b;
   background: linear-gradient(145deg, #40583a, #20392d);
@@ -1414,13 +1419,13 @@ body.foi-touch-device.foi-in-game.foi-modal-open .mobile-game-hud {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 76px;
-  margin: 0 auto 10px;
+  min-height: 58px;
+  margin: 0 auto 7px;
 }
 
 .character-creation-preview img {
   width: 48px;
-  height: 78px;
+  height: 60px;
   object-fit: contain;
   image-rendering: pixelated;
   filter: drop-shadow(0 3px 0 rgba(0,0,0,.35));
@@ -1428,7 +1433,7 @@ body.foi-touch-device.foi-in-game.foi-modal-open .mobile-game-hud {
 
 .character-creation-label {
   display: block;
-  margin: 10px 0 6px;
+  margin: 7px 0 4px;
   color: #efd08e;
   font-size: 10px;
   font-weight: 800;
@@ -1490,8 +1495,8 @@ body.foi-touch-device.foi-in-game.foi-modal-open .mobile-game-hud {
 .character-creation-name {
   box-sizing: border-box;
   width: 100%;
-  min-height: 40px;
-  padding: 8px 10px;
+  min-height: 36px;
+  padding: 7px 10px;
   border: 2px solid #9b7047;
   outline: 1px solid #d6b36b;
   background: #f5e8c6;
@@ -1525,4 +1530,567 @@ body.foi-touch-device.foi-in-game.foi-modal-open .mobile-game-hud {
 
 @media (prefers-reduced-motion: reduce) {
   .loading-wheat, .loading-dots i { animation: none; }
+}
+
+
+/* Native touch targets stay above the Phaser canvas and do not depend on canvas hit testing. */
+.game-menu-button,
+.mobile-context-action {
+  position: absolute;
+  z-index: 40;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  border: 3px solid #2a1a14;
+  border-radius: 0;
+  color: #fff1cf;
+  background: linear-gradient(180deg, #6a4b30, #3b2a1d);
+  box-shadow: inset 2px 2px 0 #a27648, inset -2px -2px 0 #27170f, 0 3px 0 #1a100c;
+  font-family: "Noto Sans", "Noto Sans Myanmar", "Myanmar Text", "Leelawadee UI", sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.35;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: auto;
+  -webkit-tap-highlight-color: rgba(255, 231, 174, .25);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.game-menu-button {
+  top: max(8px, env(safe-area-inset-top));
+  left: max(8px, env(safe-area-inset-left));
+  min-width: 76px;
+  padding: 0 10px;
+}
+
+.game-menu-button span { font-size: 9px; letter-spacing: .08em; }
+.game-menu-button:active { transform: translateY(2px); filter: brightness(1.15); }
+.mobile-context-action:active { transform: translateY(calc(-50% + 2px)); filter: brightness(1.15); }
+body.foi-in-game .game-menu-button { display: flex; }
+
+.mobile-context-action {
+  top: 45.5%;
+  right: max(10px, env(safe-area-inset-right));
+  width: min(196px, 31%);
+  min-height: 48px;
+  padding: 7px 9px;
+  border-color: #2a1a14;
+  background: linear-gradient(180deg, #679052, #3d6b43);
+  box-shadow: inset 2px 2px 0 rgba(230, 255, 214, .25), inset -2px -2px 0 rgba(0, 0, 0, .2), 0 3px 0 #1b120d;
+  transform: translateY(-50%);
+  font-size: clamp(9px, 1.4vw, 12px);
+  text-align: center;
+}
+
+.mobile-context-action[hidden] { display: none !important; }
+body.foi-touch-device.foi-in-game .mobile-context-action { display: flex; }
+body.foi-touch-device.foi-in-game .mobile-context-action[hidden] { display: none !important; }
+
+#game-container > .game-menu-button { z-index: 10020; }
+#game-container > .mobile-context-action { z-index: 10021; }
+
+.game-menu-button:focus-visible,
+.mobile-context-action:focus-visible {
+  outline: 3px solid #ffe49a;
+  outline-offset: 3px;
+}
+
+.title-scroll-cue {
+  position: fixed;
+  z-index: 10003;
+  right: 0;
+  bottom: max(4px, env(safe-area-inset-bottom));
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 18px 12px 7px;
+  color: #fff0c8;
+  background: linear-gradient(180deg, transparent, rgba(13, 39, 31, .96) 32%);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-align: center;
+  text-shadow: 1px 2px 0 #2a1a14;
+  pointer-events: none;
+  animation: title-scroll-pulse 1.4s ease-in-out infinite;
+}
+
+.title-scroll-cue b { color: #f0cf86; font-size: 21px; line-height: 1.05; }
+.title-scroll-cue em {
+  color: #f5dfad;
+  font-family: "Noto Sans Myanmar", "Noto Sans", "Myanmar Text", sans-serif;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+.title-scroll-cue[hidden] { display: none !important; }
+
+@keyframes title-scroll-pulse {
+  0%, 100% { transform: translateY(0); opacity: .8; }
+  50% { transform: translateY(4px); opacity: 1; }
+}
+
+@media (max-width: 760px) {
+  .title-screen-content { min-height: 0; max-height: none; }
+  .title-scroll-cue { font-size: 8px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 700px) and (orientation: landscape) {
+  .game-menu-button { min-width: 42px; width: 42px; padding: 0; }
+  .game-menu-button span { display: none; }
+  .mobile-context-action { top: 48%; width: min(166px, 28%); min-height: 42px; }
+  .title-screen-content { min-height: 0; max-height: none; }
+}
+
+/* Top-right HUD stack: the Menu tile occupies its own row beneath the icon rail. */
+.game-hud-stack {
+  position: absolute;
+  z-index: 10020;
+  top: max(8px, env(safe-area-inset-top));
+  right: max(8px, env(safe-area-inset-right));
+  display: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+
+body.foi-in-game .game-hud-stack { display: flex; }
+
+.game-hud-stack > .mobile-game-hud {
+  position: relative !important;
+  inset: auto !important;
+  display: none;
+  width: auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: clamp(3px, .6vw, 6px);
+  pointer-events: auto;
+}
+
+body.foi-touch-device.foi-in-game .game-hud-stack > .mobile-game-hud {
+  display: flex !important;
+}
+
+.game-hud-stack .mobile-game-hud button,
+.game-menu-button {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  padding: 3px;
+  border: 3px solid #2a1a14;
+  border-radius: 0;
+  color: #fff1cf;
+  background: #4a3324;
+  box-shadow: inset 2px 2px 0 #8a5a34, inset -2px -2px 0 #2a1a14, 0 2px 0 #21150f;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+.game-hud-stack .mobile-game-hud button:active,
+.game-menu-button:active {
+  transform: translateY(1px);
+  background: #6c4b30;
+}
+
+.game-hud-stack .mobile-game-hud img,
+.game-menu-button img {
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.game-menu-button {
+  position: relative !important;
+  inset: auto !important;
+  z-index: 10022;
+  margin: 0;
+  padding: 3px;
+  font-size: 0;
+}
+
+body.foi-in-game:not(.foi-touch-device) .game-hud-stack {
+  /* Desktop canvas icons are scaled with the 16:9 game canvas. Leave a clear
+     full icon-height plus a visible gap before placing the Menu tile. */
+  top: calc(max(8px, env(safe-area-inset-top)) + 84px);
+  gap: 0;
+}
+
+#game-container > .game-hud-stack { position: absolute; }
+#game-container:fullscreen > .game-hud-stack,
+#game-container:-webkit-full-screen > .game-hud-stack {
+  position: absolute;
+  top: max(8px, env(safe-area-inset-top));
+  right: max(8px, env(safe-area-inset-right));
+}
+
+body.foi-in-game:not(.foi-touch-device) #game-container:fullscreen > .game-hud-stack,
+body.foi-in-game:not(.foi-touch-device) #game-container:-webkit-full-screen > .game-hud-stack {
+  top: calc(max(8px, env(safe-area-inset-top)) + 84px);
+}
+
+.game-menu-button:focus-visible,
+.game-hud-stack .mobile-game-hud button:focus-visible {
+  outline: 3px solid #ffe49a;
+  outline-offset: 3px;
+}
+
+/*
+ * Opening sequence: an original top-down pixel-RPG dialogue scene.
+ * The Phaser village remains visible behind the dialogue box while the camera
+ * moves between the player's home, monastery, and market square.
+ */
+.opening-cutscene {
+  position: absolute;
+  z-index: 10030;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  padding: max(10px, env(safe-area-inset-top)) clamp(10px, 2vw, 22px) max(10px, env(safe-area-inset-bottom));
+  color: #fff1cf;
+  background: transparent;
+  font-family: "Noto Sans", "Noto Sans Myanmar", "Myanmar Text", "Leelawadee UI", sans-serif;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  animation: opening-scene-enter .28s steps(4, end) both;
+}
+
+.opening-cutscene-shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(8, 17, 28, .34), transparent 24%, transparent 56%, rgba(5, 12, 22, .40)),
+    radial-gradient(ellipse at center, transparent 42%, rgba(4, 10, 17, .25) 100%);
+}
+
+.opening-cutscene-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: fit-content;
+  max-width: calc(100% - 95px);
+  min-height: 32px;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border: 3px solid #1a2034;
+  outline: 2px solid #d5b36f;
+  background: linear-gradient(180deg, #384762, #202d48);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, .42), inset 0 0 0 2px rgba(235, 218, 174, .14);
+}
+
+.opening-cutscene-chapter-mark { color: #f2d68d; font-size: 10px; }
+.opening-cutscene-chapter {
+  margin: 0;
+  color: #f8e7bd;
+  font-size: clamp(8px, 1.2vw, 11px);
+  font-weight: 900;
+  letter-spacing: .08em;
+  line-height: 1.3;
+  text-shadow: 1px 2px 0 #151c2f;
+}
+
+.opening-cutscene-skip {
+  position: absolute;
+  top: 0;
+  right: -94px;
+  min-height: 32px;
+  padding: 5px 8px;
+  border: 3px solid #1a2034;
+  outline: 2px solid #d5b36f;
+  border-radius: 0;
+  color: #f8e7bd;
+  background: linear-gradient(180deg, #765437, #4b3225);
+  box-shadow: inset 1px 1px 0 rgba(255, 236, 188, .22), 0 3px 0 rgba(0, 0, 0, .4);
+  font: 800 8px/1.25 "Noto Sans", "Noto Sans Myanmar", sans-serif;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.opening-cutscene-skip:active,
+.opening-cutscene-next:active { transform: translateY(2px); filter: brightness(1.12); }
+
+.opening-cutscene-scene-caption {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  margin-top: auto;
+  margin-bottom: 8px;
+  padding: 3px 8px;
+  color: #f0d99e;
+  border: 2px solid rgba(30, 37, 52, .95);
+  background: rgba(22, 31, 48, .82);
+  font-family: "Noto Sans Myanmar", "Noto Sans", "Myanmar Text", sans-serif;
+  font-size: clamp(8px, 1.1vw, 10px);
+  line-height: 1.5;
+  text-shadow: 1px 1px 0 #1b2031;
+}
+
+.opening-cutscene-dialogue {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) 28px;
+  gap: 7px 13px;
+  width: min(100%, 960px);
+  min-height: 158px;
+  max-height: 48%;
+  margin: 0 auto;
+  padding: 11px 12px 8px;
+  border: 4px solid #151d31;
+  outline: 3px solid #e3c27b;
+  background: linear-gradient(180deg, #344663, #202b45 64%, #1b263e);
+  box-shadow: 0 5px 0 rgba(0, 0, 0, .48), inset 0 0 0 2px rgba(255, 239, 196, .18), inset 0 0 0 5px rgba(7, 13, 24, .2);
+  animation: opening-dialogue-pop .22s steps(3, end) both;
+}
+
+.opening-cutscene-portrait-frame {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  display: grid;
+  width: 76px;
+  min-height: 112px;
+  align-self: center;
+  place-items: center;
+  padding: 4px;
+  border: 3px solid #d9b975;
+  background: linear-gradient(180deg, #526483, #27364f);
+  box-shadow: inset 0 0 0 2px #1b263c, 2px 2px 0 #11192a;
+}
+
+.opening-cutscene-portrait {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: 112px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(1px 2px 0 rgba(0, 0, 0, .35));
+}
+
+.opening-cutscene-dialogue-content {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.opening-cutscene-speaker {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  padding: 3px 8px;
+  border: 2px solid #1a2034;
+  color: #fff0c3;
+  background: linear-gradient(180deg, #986c42, #68452e);
+  box-shadow: 1px 2px 0 rgba(0, 0, 0, .3);
+  font-size: clamp(8px, 1.1vw, 10px);
+  font-weight: 900;
+  line-height: 1.25;
+  text-shadow: 1px 1px 0 #382415;
+}
+
+.opening-cutscene-title {
+  margin: 1px 0 0;
+  color: #f2d68d;
+  font-size: clamp(9px, 1.35vw, 12px);
+  font-weight: 900;
+  line-height: 1.35;
+  text-shadow: 1px 2px 0 #131d30;
+}
+
+.opening-cutscene-body {
+  width: 100%;
+  max-width: 780px;
+  margin: 0;
+  color: #fff8e7;
+  font-size: clamp(10px, 1.35vw, 13px);
+  font-weight: 500;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  text-shadow: 1px 1px 0 rgba(8, 13, 24, .82);
+}
+
+.opening-cutscene-dialogue-footer {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+}
+
+.opening-cutscene-progress { display: flex; align-items: center; gap: 5px; }
+.opening-cutscene-dot {
+  width: 7px;
+  height: 7px;
+  border: 1px solid #d9bd82;
+  background: #202a40;
+  box-shadow: 1px 1px 0 #111827;
+}
+.opening-cutscene-dot.is-active { width: 16px; background: #f0d18a; }
+.opening-cutscene-hint { color: #f3dfb2; font-size: 9px; font-weight: 800; }
+
+.opening-cutscene-next {
+  display: grid;
+  width: 30px;
+  height: 26px;
+  min-width: 30px;
+  place-items: center;
+  margin-left: auto;
+  border: 3px solid #151d31;
+  outline: 2px solid #e3c27b;
+  color: #fff2c9;
+  background: linear-gradient(180deg, #729653, #456737);
+  box-shadow: inset 1px 1px 0 rgba(255, 245, 210, .24), 0 2px 0 rgba(0, 0, 0, .4);
+  font: 900 12px/1 "Noto Sans", sans-serif;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+@keyframes opening-scene-enter { from { opacity: 0; } to { opacity: 1; } }
+@keyframes opening-dialogue-pop { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 700px) {
+  .game-hud-stack { gap: 7px; }
+  .game-hud-stack .mobile-game-hud button,
+  .game-menu-button { width: 38px; height: 38px; min-width: 38px; min-height: 38px; flex-basis: 38px; }
+  .game-hud-stack .mobile-game-hud img,
+  .game-menu-button img { width: 22px; height: 22px; }
+  .opening-cutscene { padding: max(7px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)); }
+  .opening-cutscene-header { min-height: 29px; }
+  .opening-cutscene-skip { right: -87px; min-height: 29px; font-size: 7px; }
+  .opening-cutscene-dialogue {
+    grid-template-columns: 62px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) 25px;
+    gap: 5px 8px;
+    min-height: 142px;
+    max-height: 54%;
+    padding: 8px 8px 6px;
+  }
+  .opening-cutscene-portrait-frame { width: 58px; min-height: 88px; }
+  .opening-cutscene-portrait { max-height: 88px; }
+  .opening-cutscene-dialogue-content { gap: 3px; }
+  .opening-cutscene-body { font-size: clamp(9px, 2.5vw, 11px); line-height: 1.55; }
+  .opening-cutscene-title { font-size: clamp(8px, 2.2vw, 10px); }
+  .opening-cutscene-scene-caption { margin-bottom: 5px; font-size: 8px; }
+  .opening-cutscene-dialogue-footer { gap: 6px; }
+  .opening-cutscene-hint { font-size: 8px; }
+}
+
+@media (max-height: 430px) and (orientation: landscape) {
+  .opening-cutscene { padding-block: 5px; }
+  .opening-cutscene-header { min-height: 24px; }
+  .opening-cutscene-skip { min-height: 24px; }
+  .opening-cutscene-dialogue {
+    min-height: 112px;
+    max-height: 42%;
+    grid-template-columns: 54px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) 20px;
+    gap: 4px 8px;
+    padding: 5px 8px;
+  }
+  .opening-cutscene-portrait-frame { width: 50px; min-height: 76px; }
+  .opening-cutscene-portrait { max-height: 76px; }
+  .opening-cutscene-body { font-size: 9px; line-height: 1.45; }
+  .opening-cutscene-scene-caption { margin-bottom: 4px; }
+  .opening-cutscene-next { width: 25px; height: 20px; min-width: 25px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .opening-cutscene,
+  .opening-cutscene-dialogue { animation: none; }
+}
+
+
+/* The return-to-title control belongs to gameplay HUD only, never a modal or story scene. */
+body.foi-modal-open .game-menu-button,
+body.foi-cutscene-active .game-menu-button {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+
+.save-name-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 10004;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  background: rgba(20, 25, 17, 0.82);
+}
+.save-name-dialog[hidden] { display: none; }
+.save-name-card {
+  box-sizing: border-box;
+  width: min(92vw, 390px);
+  padding: clamp(16px, 3vw, 22px);
+  border: 4px solid #2a1a14;
+  outline: 2px solid #d6b36b;
+  background: linear-gradient(145deg, #40583a, #20392d);
+  box-shadow: inset 3px 3px 0 rgba(255,255,255,.1), inset -3px -3px 0 rgba(0,0,0,.2), 0 8px 0 #1b120d;
+  color: #fff1cf;
+  font-family: "Noto Sans", "Noto Sans Myanmar", sans-serif;
+  text-align: center;
+}
+.save-name-kicker {
+  display: block;
+  margin-bottom: 5px;
+  color: #d8bd83;
+  font-family: "Noto Sans Myanmar", "Noto Sans", sans-serif;
+  font-size: 10px;
+}
+.save-name-card h2 { margin: 0 0 8px; color: #f3d28e; font-size: 16px; letter-spacing: .05em; }
+.save-name-card p { margin: 0 0 13px; color: #d7e6c5; font-size: 10px; line-height: 1.45; }
+.save-name-card label { display: block; margin: 0 0 6px; color: #efd08e; font-size: 10px; font-weight: 800; text-align: left; }
+.save-name-card input {
+  box-sizing: border-box; width: 100%; min-height: 42px; padding: 9px 11px;
+  border: 2px solid #9b7047; outline: 1px solid #d6b36b; background: #f5e8c6;
+  color: #34271d; font: 600 15px "Noto Sans", "Noto Sans Myanmar", sans-serif;
+}
+.save-name-card .save-name-error { min-height: 15px; margin: 7px 0 0; color: #ffd0b8; font-size: 9px; text-align: left; }
+.save-name-actions { display: flex; gap: 8px; margin-top: 8px; }
+.save-name-actions .save-button { flex: 1; min-height: 38px; }
+.character-creation-actions { display: flex; gap: 8px; margin-top: 12px; }
+.character-creation-cancel {
+  flex: 0 0 34%; min-height: 42px; border: 2px solid #24170f;
+  background: linear-gradient(180deg, #896548, #62452f); color: #fff1cf;
+  font: 700 10px "Noto Sans", "Noto Sans Myanmar", sans-serif;
+  cursor: pointer; touch-action: manipulation;
+  box-shadow: inset 2px 2px 0 rgba(255,255,255,.16), inset -2px -2px 0 rgba(0,0,0,.2), 0 2px 0 #1b120d;
+}
+.character-creation-actions .character-creation-submit { flex: 1; width: auto; margin-top: 0; }
+.character-creation-cancel:active, .character-creation-submit:active { transform: translateY(1px); }
+@media (max-width: 520px) {
+  .save-name-card { padding: 15px; }
+  .character-creation-actions { gap: 6px; }
+  .character-creation-cancel { flex-basis: 31%; font-size: 9px; }
 }

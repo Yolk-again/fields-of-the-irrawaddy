@@ -42,8 +42,11 @@ export class ChestStorageSystem {
   private columns!: Phaser.GameObjects.Text;
   private quantityHeader!: Phaser.GameObjects.Text;
   private message!: Phaser.GameObjects.Text;
+  private emptyState!: Phaser.GameObjects.Text;
   private exitHint!: Phaser.GameObjects.Text;
   private rowNames: Phaser.GameObjects.Text[] = [];
+  private rowObjects: Phaser.GameObjects.GameObject[][] = [];
+  private visibleRowIndices: number[] = [];
   private playerCounts: Phaser.GameObjects.Text[] = [];
   private chestCounts: Phaser.GameObjects.Text[] = [];
   private putButtons: Phaser.GameObjects.Rectangle[] = [];
@@ -121,14 +124,20 @@ export class ChestStorageSystem {
       this.takeButtons.push(take);
       this.putLabels.push(putLabel);
       this.takeLabels.push(takeLabel);
-      this.panel.add([card, icon, name, bag, chest, decrease, amount, increase, decreaseLabel, increaseLabel, maximum, maximumLabel, put, take, putLabel, takeLabel]);
+      const rowObjects: Phaser.GameObjects.GameObject[] = [card, icon, name, bag, chest, decrease, amount, increase, decreaseLabel, increaseLabel, maximum, maximumLabel, put, take, putLabel, takeLabel];
+      this.rowObjects.push(rowObjects);
+      this.panel.add(rowObjects);
     });
 
+    this.emptyState = this.scene.add.text(320, 190, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "11px", color: "#e6c47e", align: "center",
+      wordWrap: { width: 420 }
+    }).setOrigin(0.5).setVisible(false);
     this.message = this.scene.add.text(320, 322, "", { fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#f0d69e" }).setOrigin(0.5);
     this.exitHint = this.scene.add.text(320, 338, "", { fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d7e6c5" }).setOrigin(0.5);
     const close = modalClosePosition(320, 180, 570, 340);
     this.closeButton = createRedCloseButton(this.scene, close.x, close.y);
-    this.panel.add([this.message, this.exitHint, this.closeButton]);
+    this.panel.add([this.emptyState, this.message, this.exitHint, this.closeButton]);
     this.updateInterface();
   }
 
@@ -163,9 +172,16 @@ export class ChestStorageSystem {
     return amount;
   }
 
+  private visibleRowAt(y: number): number {
+    const slot = this.visibleRowIndices.findIndex((_itemIndex, visibleSlot) =>
+      Math.abs(y - (88 + visibleSlot * 29)) <= 13
+    );
+    return slot < 0 ? -1 : this.visibleRowIndices[slot];
+  }
+
   private handlePointerUp = (pointer: Phaser.Input.Pointer): void => {
     if (!this.isOpen || !this.ui.isOpen("chest")) return;
-    const index = this.rowY.findIndex(y => Math.abs(pointer.y - y) <= 13);
+    const index = this.visibleRowAt(pointer.y);
     if (index < 0) return;
     const item = ITEMS[index].id;
     const step = quantityAdjustmentStep(Boolean((pointer.event as MouseEvent).shiftKey));
@@ -181,7 +197,7 @@ export class ChestStorageSystem {
       this.scene.game.canvas.style.cursor = "default";
       return;
     }
-    const index = this.rowY.findIndex(y => Math.abs(pointer.y - y) <= 13);
+    const index = this.visibleRowAt(pointer.y);
     const overDecrease = index >= 0 && pointer.x >= 330 && pointer.x <= 354;
     const overIncrease = index >= 0 && pointer.x >= 390 && pointer.x <= 414;
     const overMaximum = index >= 0 && pointer.x >= 420 && pointer.x <= 462;
@@ -223,6 +239,25 @@ export class ChestStorageSystem {
     this.exitHint.setText(this.language.t("common.clickCrossExit"));
     this.message.setText(this.messageValue);
     this.rowNames.forEach((text, index) => text.setText(this.language.t(ITEMS[index].key)));
+    this.visibleRowIndices = [];
+    this.rowObjects.forEach((row, index) => {
+      const item = ITEMS[index].id;
+      const visible = this.playerCount(item) > 0 || this.stored[item] > 0;
+      const visibleSlot = this.visibleRowIndices.length;
+      const targetY = 88 + visibleSlot * 29;
+      row.forEach(object => {
+        const display = object as Phaser.GameObjects.GameObject & {
+          x: number;
+          setVisible(value: boolean): unknown;
+          setPosition(x: number, y: number): unknown;
+        };
+        display.setVisible(visible);
+        if (visible) display.setPosition(display.x, targetY);
+      });
+      if (visible) this.visibleRowIndices.push(index);
+    });
+    this.emptyState.setVisible(this.visibleRowIndices.length === 0);
+    this.emptyState.setText(this.language.t("chest.emptyStorage"));
     this.playerCounts.forEach((text, index) => text.setText(String(this.playerCount(ITEMS[index].id))));
     this.chestCounts.forEach((text, index) => text.setText(String(this.stored[ITEMS[index].id])));
     this.amountTexts.forEach((text, index) => {
@@ -235,7 +270,7 @@ export class ChestStorageSystem {
     this.takeLabels.forEach(text => text.setText(this.language.t("chest.take")));
     this.maxLabels.forEach(text => text.setText(this.language.t("chest.max")));
     const font = this.language.getFontFamily();
-    for (const text of [this.title, this.subtitle, this.columns, this.quantityHeader, this.message, this.exitHint, ...this.rowNames, ...this.playerCounts, ...this.chestCounts, ...this.putLabels, ...this.takeLabels, ...this.maxLabels, ...this.amountTexts]) text.setFontFamily(font);
+    for (const text of [this.title, this.subtitle, this.columns, this.quantityHeader, this.emptyState, this.message, this.exitHint, ...this.rowNames, ...this.playerCounts, ...this.chestCounts, ...this.putLabels, ...this.takeLabels, ...this.maxLabels, ...this.amountTexts]) text.setFontFamily(font);
   }
 
   openFromHouse(): void {

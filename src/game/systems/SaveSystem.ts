@@ -266,7 +266,7 @@ export class SaveSystem {
 
   private createSaveData(): GameSaveData {
     return {
-      version: 13,
+      version: 14,
       savedAt: new Date().toISOString(),
 
       player: {

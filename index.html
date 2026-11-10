@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#2a1a14" />
-    <meta name="foi-build" content="netlify-ready-v6-2026-11-10" />
+    <meta name="foi-build" content="opening-story-update-2026-11-10" />
     <title>Fields of the Irrawaddy</title>
     <style>
       html, body { min-height: 100%; }
@@ -32,14 +32,18 @@
       <main>
         <section class="game-panel">
           <div id="game-container">
-            <nav id="mobile-game-hud" class="mobile-game-hud" aria-label="Game controls" aria-hidden="true">
-              <button type="button" data-action="inventory" aria-label="Inventory" title="Inventory"><img src="./assets/ui/icon_bag.png" alt=""></button>
-              <button type="button" data-action="profile" aria-label="Profile" title="Profile"><img src="./assets/ui/icon_person.png" alt=""></button>
-              <button type="button" data-action="language" aria-label="Change language" title="Language"><img src="./assets/ui/icon_globe.png" alt=""></button>
-              <button type="button" data-action="help" aria-label="Help" title="Help"><img src="./assets/ui/icon_help.png" alt=""></button>
-              <button type="button" data-action="audio" aria-label="Audio settings" title="Audio"><img src="./assets/ui/icon_note.png" alt=""></button>
-              <button type="button" data-action="fullscreen" aria-label="Fullscreen" title="Fullscreen"><img src="./assets/ui/icon_expand.png" alt=""></button>
-            </nav>
+            <button id="mobile-context-action" class="mobile-context-action" type="button" hidden>CLICK TO OPEN</button>
+            <div id="game-hud-stack" class="game-hud-stack">
+              <nav id="mobile-game-hud" class="mobile-game-hud" aria-label="Game controls" aria-hidden="true">
+                <button type="button" data-action="inventory" aria-label="Inventory" title="Inventory"><img src="./assets/ui/icon_bag.png" alt=""></button>
+                <button type="button" data-action="profile" aria-label="Profile" title="Profile"><img src="./assets/ui/icon_person.png" alt=""></button>
+                <button type="button" data-action="language" aria-label="Change language" title="Language"><img src="./assets/ui/icon_globe.png" alt=""></button>
+                <button type="button" data-action="help" aria-label="Help" title="Help"><img src="./assets/ui/icon_help.png" alt=""></button>
+                <button type="button" data-action="audio" aria-label="Audio settings" title="Audio"><img src="./assets/ui/icon_note.png" alt=""></button>
+                <button type="button" data-action="fullscreen" aria-label="Fullscreen" title="Fullscreen"><img src="./assets/ui/icon_expand.png" alt=""></button>
+              </nav>
+              <button id="game-menu-button" class="game-menu-button" type="button" aria-label="Return to title screen" title="Menu"><img src="./assets/ui/icon_menu.png" alt=""></button>
+            </div>
           </div>
         </section>
 
@@ -101,6 +105,11 @@
           <span class="title-screen-footer-mark">✦</span>
         </footer>
       </div>
+      <div id="title-scroll-cue" class="title-scroll-cue" aria-hidden="true" hidden>
+        <span>SWIPE UP TO SEE ALL SAVE SLOTS</span>
+        <em lang="my">အောက်သို့ ဆွဲ၍ သိမ်းထားသော ကမ္ဘာများကို ကြည့်ပါ</em>
+        <b>⌄</b>
+      </div>
     </section>
     <div id="save-confirmation" class="save-confirmation" role="dialog" aria-modal="true" aria-labelledby="save-confirmation-title" hidden>
       <div class="save-confirmation-card">
@@ -111,6 +120,21 @@
           <button id="save-confirmation-accept" type="button" class="save-button save-button-danger">CONFIRM</button>
         </div>
       </div>
+    </div>
+
+    <div id="save-name-dialog" class="save-name-dialog" role="dialog" aria-modal="true" aria-labelledby="save-name-title" hidden>
+      <form class="save-name-card" onsubmit="return false">
+        <span class="save-name-kicker" lang="my">သိမ်းဆည်းမှု အမည်</span>
+        <h2 id="save-name-title">NAME THIS SAVE SLOT</h2>
+        <p id="save-name-message">Give this save a name you will recognize later.</p>
+        <label for="save-name-input">SAVE SLOT NAME</label>
+        <input id="save-name-input" type="text" maxlength="24" autocomplete="off" autocapitalize="words" spellcheck="false">
+        <p id="save-name-error" class="save-name-error" aria-live="polite"></p>
+        <div class="save-name-actions">
+          <button id="save-name-cancel" type="button" class="save-button save-button-secondary">CANCEL</button>
+          <button id="save-name-save" type="button" class="save-button save-button-primary">SAVE NAME</button>
+        </div>
+      </form>
     </div>
 
     <div class="orientation-overlay" role="status" aria-live="polite">

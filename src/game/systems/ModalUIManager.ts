@@ -37,6 +37,9 @@ export class ModalUIManager {
 
   private hudElements: Phaser.GameObjects.GameObject[] = [];
 
+  /** Hover labels are transient and must never be restored as visible after a modal closes. */
+  private tooltipElements = new Set<Phaser.GameObjects.GameObject>();
+
   /** Controls that remain usable inside the walkable home interior on touch devices. */
   private roomControls: Phaser.GameObjects.GameObject[] = [];
 
@@ -180,6 +183,13 @@ export class ModalUIManager {
     }
   }
 
+  registerTooltip(...elements: Phaser.GameObjects.GameObject[]): void {
+    for (const element of elements) {
+      this.tooltipElements.add(element);
+      this.setElementVisible(element, false);
+    }
+  }
+
   registerRoomControls(...elements: Phaser.GameObjects.GameObject[]): void {
     for (const element of elements) {
       if (!this.roomControls.includes(element)) this.roomControls.push(element);
@@ -203,13 +213,14 @@ export class ModalUIManager {
     for (const element of this.hudElements) {
       this.setElementVisible(element, false);
     }
+    for (const tooltip of this.tooltipElements) this.setElementVisible(tooltip, false);
   }
 
   private restoreHud(): void {
     for (const entry of this.hudSnapshot) {
       this.setElementVisible(
         entry.element,
-        entry.wasVisible
+        this.tooltipElements.has(entry.element) ? false : entry.wasVisible
       );
     }
 

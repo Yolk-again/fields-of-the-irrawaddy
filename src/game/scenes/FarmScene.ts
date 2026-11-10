@@ -15,6 +15,7 @@ import { ModalUIManager } from "../systems/ModalUIManager";
 import { LanguageSystem } from "../systems/LanguageSystem";
 import { HelpSystem } from "../systems/HelpSystem";
 import { MusicSystem } from "../systems/MusicSystem";
+import { OpeningCutsceneSystem } from "../systems/OpeningCutsceneSystem";
 import { NpcFarmingSystem } from "../systems/NpcFarmingSystem";
 import {
   BACKDROP_TREES, CANAL_REEDS, FARM_DISTRICT, GARDEN_EAST, HARVEST_YARD,
@@ -41,7 +42,7 @@ type Obstacle = {
 interface Wanderer {
   sprite: Phaser.GameObjects.Sprite;
   shadow: Phaser.GameObjects.Ellipse;
-  kind: "chicken" | "duck" | "water_buffalo";
+  kind: "chicken" | "duck" | "cow";
   rect: { x1: number; y1: number; x2: number; y2: number };
   speed: number;
   state: "idle" | "walk";
@@ -87,6 +88,8 @@ export class FarmScene extends Phaser.Scene {
   private ui!: ModalUIManager;
   private language!: LanguageSystem;
   private help!: HelpSystem;
+  private openingCutscene?: OpeningCutsceneSystem;
+  private openingStoryActive = false;
 
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: {
@@ -107,12 +110,52 @@ export class FarmScene extends Phaser.Scene {
   private joystickPointerId: number | null = null;
   private joystickVector = { x: 0, y: 0 };
   private joystickNub?: Phaser.GameObjects.Arc;
-  private mobileContextButton?: Phaser.GameObjects.Container;
-  private mobileContextLabel?: Phaser.GameObjects.Text;
   private readonly joystickCenter = { x: 76, y: 267 };
   private selectedSaveSlot = 1;
   private loadExistingSave = false;
   private enteredThroughSaveSelect = false;
+  private mobileContextPointerId: number | null = null;
+  private chickenCluckTimer = Phaser.Math.Between(8, 15);
+
+  private handleMobileContextPointerDown = (event: PointerEvent): void => {
+    if (!this.isTouchDevice || this.ui?.hasActiveModal()) return;
+    event.stopPropagation();
+    event.preventDefault();
+    const button = event.currentTarget as HTMLButtonElement | null;
+    this.mobileContextPointerId = event.pointerId;
+    try { button?.setPointerCapture(event.pointerId); } catch { /* Pointer capture is optional on older browsers. */ }
+  };
+
+  private handleMobileContextPointerUp = (event: PointerEvent): void => {
+    if (this.mobileContextPointerId !== event.pointerId) return;
+    this.mobileContextPointerId = null;
+    event.stopPropagation();
+    event.preventDefault();
+    const button = event.currentTarget as HTMLButtonElement | null;
+    if (!button || button.hidden || button.disabled) return;
+    const bounds = button.getBoundingClientRect();
+    const releasedInside = event.clientX >= bounds.left && event.clientX <= bounds.right &&
+      event.clientY >= bounds.top && event.clientY <= bounds.bottom;
+    if (releasedInside) this.handleMobileTalk();
+  };
+
+  private handleMobileContextPointerCancel = (event: PointerEvent): void => {
+    if (this.mobileContextPointerId === event.pointerId) this.mobileContextPointerId = null;
+    event.stopPropagation();
+  };
+
+  private handleMobileContextKeyboardClick = (event: MouseEvent): void => {
+    event.stopPropagation();
+    // Pointer taps are handled on pointerup. A click with detail 0 is keyboard/screen-reader activation.
+    if (event.detail === 0 && this.isTouchDevice && !this.ui?.hasActiveModal()) this.handleMobileTalk();
+  };
+
+  private handleGameMenuRequest = (): void => {
+    this.saveSystem?.saveNow();
+    this.music?.shutdown();
+    window.dispatchEvent(new Event("foi-return-to-title"));
+  };
+
   private handleMobileHudAction = (event: Event): void => {
     if (!this.isTouchDevice) return;
     const action = (event as CustomEvent<string>).detail;
@@ -233,6 +276,10 @@ export class FarmScene extends Phaser.Scene {
       ["farmer_female_blue_asset", publicAsset("/assets/characters/farmer_female_blue.png")],
       ["farmer_female_red_asset", publicAsset("/assets/characters/farmer_female_red.png")],
       ["farmer_female_purple_asset", publicAsset("/assets/characters/farmer_female_purple.png")],
+      ["sleep_male_green", publicAsset("/assets/characters/sleep_male_green.png")],
+      ["sleep_male_blue", publicAsset("/assets/characters/sleep_male_blue.png")],
+      ["sleep_male_red", publicAsset("/assets/characters/sleep_male_red.png")],
+      ["sleep_male_purple", publicAsset("/assets/characters/sleep_male_purple.png")],
       ["ma_thiri_asset", publicAsset("/assets/characters/ma_thiri.png")],
       ["ko_aung_asset", publicAsset("/assets/characters/ko_aung.png")],
       ["monk_asset", publicAsset("/assets/characters/monk.png")],
@@ -261,7 +308,7 @@ export class FarmScene extends Phaser.Scene {
       ["kid_sheet", publicAsset("/assets/characters/kid_sheet.png"), 16, 26],
       ["chicken_sheet", publicAsset("/assets/animals/chicken_sheet.png"), 16, 16],
       ["duck_sheet", publicAsset("/assets/animals/duck_sheet.png"), 16, 16],
-      ["water_buffalo_sheet", publicAsset("/assets/animals/water_buffalo_sheet.png"), 44, 30],
+      ["cow_sheet", publicAsset("/assets/animals/cow_sheet.png"), 44, 30],
       ["fx_dust", publicAsset("/assets/fx/dust.png"), 16, 16],
       ["fx_splash", publicAsset("/assets/fx/splash.png"), 16, 16],
       ["fx_sparkle", publicAsset("/assets/fx/sparkle.png"), 16, 16],
@@ -301,7 +348,10 @@ export class FarmScene extends Phaser.Scene {
     this.ui = new ModalUIManager(this);
     this.help = new HelpSystem(this, this.ui, this.language, this.isTouchDevice);
     this.createHUD();
-    this.music = new MusicSystem(this, this.ui, this.language, this.isTouchDevice);
+    this.music = new MusicSystem(
+      this, this.ui, this.language, this.isTouchDevice,
+      this.selectedSaveSlot, this.loadExistingSave
+    );
     this.music.setMobileHeaderHidden(this.isTouchDevice);
 
     this.farming = new FarmingSystem(
@@ -371,6 +421,13 @@ export class FarmScene extends Phaser.Scene {
     this.createResourceHud();
     this.createTouchControls();
     this.applyReadableTextRendering();
+    window.addEventListener("foi-menu-request", this.handleGameMenuRequest);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      window.removeEventListener("foi-menu-request", this.handleGameMenuRequest);
+      this.openingCutscene?.destroy();
+      this.openingCutscene = undefined;
+      this.openingStoryActive = false;
+    });
 
     // tool use -> short swing animation
     this.events.on("player-action", this.playPlayerAction, this);
@@ -386,7 +443,47 @@ export class FarmScene extends Phaser.Scene {
     document.getElementById("mobile-game-hud")?.setAttribute("aria-hidden", this.isTouchDevice ? "false" : "true");
 
     if (!this.loadExistingSave) {
-      this.profile.openCharacterCreation(() => this.saveSystem.completeInitialProfile());
+      this.profile.openCharacterCreation(() => {
+        this.saveSystem.completeInitialProfile();
+        this.openingStoryActive = true;
+        this.openingCutscene = new OpeningCutsceneSystem(
+          this,
+          this.language,
+          () => {
+            this.village.restoreAfterOpeningCutscene();
+            this.cameras.main.stopFollow();
+            this.cameras.main.centerOn(this.player.x, this.player.y);
+            this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+            this.openingStoryActive = false;
+            this.openingCutscene = undefined;
+            this.joystickVector = { x: 0, y: 0 };
+            this.joystickPointerId = null;
+            this.joystickNub?.setPosition(this.joystickCenter.x, this.joystickCenter.y);
+            this.saveSystem.saveNow();
+          },
+          (slideIndex) => {
+            const camera = this.cameras.main;
+            const focusPoints = [
+              { x: this.player.x, y: this.player.y },
+              { x: 760, y: 500 },
+              { x: 910, y: 385 }
+            ];
+            this.village.stageOpeningCutsceneCharacter(slideIndex);
+            const focus = focusPoints[slideIndex] ?? focusPoints[0];
+            camera.stopFollow();
+            camera.pan(focus.x, focus.y, 680, "Sine.easeInOut");
+          },
+          this.profile.getCurrentPortraitPath(),
+          {
+            start: () => this.music.startOpeningCutsceneAudio(),
+            voice: () => this.music.playCutsceneVoice(),
+            stop: () => this.music.stopOpeningCutsceneAudio()
+          }
+        );
+      }, () => {
+        this.music?.shutdown();
+        window.dispatchEvent(new Event("foi-return-to-title"));
+      });
     }
   }
 
@@ -457,8 +554,8 @@ export class FarmScene extends Phaser.Scene {
     make("chicken-peck", "chicken_sheet", [0, 1, 1, 0], 5);
     make("duck-walk", "duck_sheet", [0, 1, 0, 2], 5);
     make("duck-idle", "duck_sheet", [0], 1);
-    make("water_buffalo-walk", "water_buffalo_sheet", [0, 1, 2, 3], 4);
-    make("water_buffalo-idle", "water_buffalo_sheet", [0], 1);
+    make("cow-walk", "cow_sheet", [0, 1, 2, 3], 7);
+    make("cow-idle", "cow_sheet", [0], 1);
 
     make("fx_dust-play", "fx_dust", [0, 1, 2, 3], 12, 0);
     make("fx_splash-play", "fx_splash", [0, 1, 2, 3], 12, 0);
@@ -776,7 +873,7 @@ export class FarmScene extends Phaser.Scene {
       speed: number,
       shadowW: number
     ): void => {
-      const sheetKey = kind === "water_buffalo" ? "water_buffalo_sheet" : `${kind}_sheet`;
+      const sheetKey = kind === "cow" ? "cow_sheet" : `${kind}_sheet`;
       const shadow = this.add.ellipse(x, y - 1, shadowW, Math.max(5, shadowW / 4), 0x1d3015, 0.35)
         .setDepth(y - 0.5);
       const sprite = this.add.sprite(x, y, sheetKey, 0)
@@ -797,9 +894,12 @@ export class FarmScene extends Phaser.Scene {
       this.playIdle(this.animals[this.animals.length - 1]);
     };
 
-    const yard = { x1: 70, y1: 280, x2: 340, y2: 312 };
+    // Chickens can roam the full outdoor map instead of a coop-yard rectangle.
+    // Their path grid rejects buildings, fences, props, ponds and canal water,
+    // but leaves the bridge open so they can cross to the riverbank.
+    const villageRoam = { x1: 16, y1: 16, x2: WORLD_WIDTH - 16, y2: WORLD_HEIGHT - 16 };
     for (const [x, y] of [[120, 292], [170, 304], [245, 288], [300, 306]]) {
-      add("chicken", x, y, yard, 16, 18);
+      add("chicken", x, y, villageRoam, 34, 18);
     }
 
     const canal = { x1: 60, y1: 556, x2: 520, y2: 584 };
@@ -807,13 +907,13 @@ export class FarmScene extends Phaser.Scene {
       add("duck", x, y, canal, 12, 20);
     }
 
-    add("water_buffalo", 730, 408, { x1: 692, y1: 382, x2: 756, y2: 430 }, 9, 64);
+    add("cow", 730, 408, { x1: 660, y1: 360, x2: 800, y2: 468 }, 12, 58);
   }
 
   private playIdle(animal: Wanderer): void {
     if (animal.kind === "chicken") animal.sprite.anims.play("chicken-peck", true);
     else if (animal.kind === "duck") animal.sprite.anims.play("duck-idle", true);
-    else animal.sprite.anims.play("water_buffalo-idle", true);
+    else animal.sprite.anims.play("cow-idle", true);
   }
 
   private chickenCanStand(animal: Wanderer, x: number, y: number): boolean {
@@ -823,6 +923,9 @@ export class FarmScene extends Phaser.Scene {
     const right = x + 5;
     const top = y - 13;
     const bottom = y - 2;
+    const touchingCanal = bottom > 532 && top < 589;
+    const onBridge = left >= 1020 && right <= 1092;
+    if (touchingCanal && !onBridge) return false;
     for (const obstacle of this.obstacles) {
       if (right > obstacle.x && left < obstacle.x + obstacle.width &&
           bottom > obstacle.y && top < obstacle.y + obstacle.height) return false;
@@ -830,80 +933,22 @@ export class FarmScene extends Phaser.Scene {
     return true;
   }
 
-  /** Four-way grid route inside the chicken yard; waypoints preserve every corner. */
+  /** Check a chicken's full footprint along a straight movement segment. */
+  private chickenSegmentClear(animal: Wanderer, x1: number, y1: number, x2: number, y2: number): boolean {
+    const distance = Phaser.Math.Distance.Between(x1, y1, x2, y2);
+    const steps = Math.max(1, Math.ceil(distance / 3));
+    for (let index = 1; index <= steps; index++) {
+      const t = index / steps;
+      const x = Phaser.Math.Linear(x1, x2, t);
+      const y = Phaser.Math.Linear(y1, y2, t);
+      if (!this.chickenCanStand(animal, x, y)) return false;
+    }
+    return true;
+  }
+
+  /** Chickens use the same collision-aware four-way route planner as villagers. */
   private findChickenPath(animal: Wanderer, targetX: number, targetY: number): Array<{ x: number; y: number }> {
-    const step = 8;
-    const columns = Math.floor((animal.rect.x2 - animal.rect.x1) / step) + 1;
-    const rows = Math.floor((animal.rect.y2 - animal.rect.y1) / step) + 1;
-    const total = columns * rows;
-    const pointFor = (index: number): { x: number; y: number } => ({
-      x: animal.rect.x1 + (index % columns) * step,
-      y: animal.rect.y1 + Math.floor(index / columns) * step
-    });
-    const walkable = new Int8Array(total);
-    const isWalkable = (index: number): boolean => {
-      if (walkable[index] !== 0) return walkable[index] === 1;
-      const point = pointFor(index);
-      walkable[index] = this.chickenCanStand(animal, point.x, point.y) ? 1 : -1;
-      return walkable[index] === 1;
-    };
-    const nearestNode = (x: number, y: number): number => {
-      const candidates: Array<{ index: number; distance: number }> = [];
-      for (let index = 0; index < total; index++) {
-        const point = pointFor(index);
-        candidates.push({ index, distance: Math.hypot(point.x - x, point.y - y) });
-      }
-      candidates.sort((a, b) => a.distance - b.distance);
-      return candidates.find(candidate => isWalkable(candidate.index))?.index ?? -1;
-    };
-
-    const start = nearestNode(animal.sprite.x, animal.sprite.y);
-    const goal = nearestNode(targetX, targetY);
-    if (start < 0 || goal < 0 || start === goal) return [];
-    const previous = new Int32Array(total).fill(-1);
-    const visited = new Uint8Array(total);
-    const queue = new Int32Array(total);
-    let head = 0;
-    let tail = 0;
-    queue[tail++] = start;
-    visited[start] = 1;
-    while (head < tail && !visited[goal]) {
-      const current = queue[head++];
-      const col = current % columns;
-      const row = Math.floor(current / columns);
-      const neighbours = [
-        row > 0 ? current - columns : -1,
-        col < columns - 1 ? current + 1 : -1,
-        row < rows - 1 ? current + columns : -1,
-        col > 0 ? current - 1 : -1
-      ];
-      for (const next of neighbours) {
-        if (next < 0 || visited[next] || !isWalkable(next)) continue;
-        visited[next] = 1;
-        previous[next] = current;
-        queue[tail++] = next;
-      }
-    }
-    if (!visited[goal]) return [];
-
-    const indices: number[] = [];
-    for (let node = goal; node !== start && node >= 0; node = previous[node]) indices.push(node);
-    indices.reverse();
-    const full = indices.map(pointFor);
-    const corners: Array<{ x: number; y: number }> = [];
-    let lastDirection = "";
-    for (let index = 0; index < full.length; index++) {
-      const prior = index === 0 ? { x: animal.sprite.x, y: animal.sprite.y } : full[index - 1];
-      const point = full[index];
-      const direction = Math.abs(point.x - prior.x) > Math.abs(point.y - prior.y) ? "h" : "v";
-      const next = full[index + 1];
-      const nextDirection = next
-        ? (Math.abs(next.x - point.x) > Math.abs(next.y - point.y) ? "h" : "v")
-        : "";
-      if (index === full.length - 1 || direction !== nextDirection || direction !== lastDirection) corners.push(point);
-      lastDirection = direction;
-    }
-    return corners;
+    return this.village?.findAnimalRoute(animal.sprite.x, animal.sprite.y, targetX, targetY) ?? [];
   }
 
   private planChickenEscape(animal: Wanderer, threat: { x: number; y: number }): boolean {
@@ -912,8 +957,8 @@ export class FarmScene extends Phaser.Scene {
     let bestScore = -Infinity;
     for (let index = 0; index < 24; index++) {
       const angle = baseAngle + index * (Math.PI * 2 / 24);
-      const targetX = Phaser.Math.Clamp(animal.sprite.x + Math.cos(angle) * 82, animal.rect.x1 + 5, animal.rect.x2 - 5);
-      const targetY = Phaser.Math.Clamp(animal.sprite.y + Math.sin(angle) * 25, animal.rect.y1 + 3, animal.rect.y2 - 3);
+      const targetX = Phaser.Math.Clamp(animal.sprite.x + Math.cos(angle) * 90, animal.rect.x1 + 5, animal.rect.x2 - 5);
+      const targetY = Phaser.Math.Clamp(animal.sprite.y + Math.sin(angle) * 76, animal.rect.y1 + 3, animal.rect.y2 - 3);
       if (Phaser.Math.Distance.Between(animal.sprite.x, animal.sprite.y, targetX, targetY) < 12) continue;
       const path = this.findChickenPath(animal, targetX, targetY);
       if (path.length === 0) continue;
@@ -945,6 +990,20 @@ export class FarmScene extends Phaser.Scene {
 
   private updateAnimals(delta: number): void {
     const dt = Math.min(delta, 50) / 1000;
+    const hour = this.village?.getTimeOfDayHours() ?? 12;
+    this.chickenCluckTimer -= dt;
+    if (hour >= 5.5 && hour < 9.5 && this.chickenCluckTimer <= 0) {
+      const chickens = this.animals.filter(animal => animal.kind === "chicken");
+      if (chickens.length > 0) {
+        const chicken = Phaser.Utils.Array.GetRandom(chickens);
+        this.events.emit("sound-effect", {
+          name: "chicken", x: chicken.sprite.x, y: chicken.sprite.y, maxDistance: 360
+        });
+      }
+      this.chickenCluckTimer = Phaser.Math.Between(12, 24);
+    } else if (hour < 5.5 || hour >= 9.5) {
+      this.chickenCluckTimer = Math.max(this.chickenCluckTimer, 5);
+    }
     const kid = this.village?.getKidPosition();
     for (const animal of this.animals) {
       const sprite = animal.sprite;
@@ -969,14 +1028,26 @@ export class FarmScene extends Phaser.Scene {
 
       if (animal.state === "idle") {
         if (animal.timer <= 0) {
-          animal.tx = Phaser.Math.Between(animal.rect.x1 + 5, animal.rect.x2 - 5);
-          animal.ty = Phaser.Math.Between(animal.rect.y1 + 3, animal.rect.y2 - 3);
-          animal.path = animal.kind === "chicken" ? this.findChickenPath(animal, animal.tx, animal.ty) : [];
+          let foundRoute = animal.kind !== "chicken";
+          for (let attempt = 0; attempt < (animal.kind === "chicken" ? 8 : 1); attempt++) {
+            animal.tx = Phaser.Math.Between(animal.rect.x1 + 5, animal.rect.x2 - 5);
+            animal.ty = Phaser.Math.Between(animal.rect.y1 + 3, animal.rect.y2 - 3);
+            animal.path = animal.kind === "chicken" ? this.findChickenPath(animal, animal.tx, animal.ty) : [];
+            if (animal.kind !== "chicken" || animal.path.length > 0) {
+              foundRoute = true;
+              break;
+            }
+          }
           animal.pathIndex = 0;
-          animal.state = "walk";
-          animal.timer = animal.kind === "chicken" ? 20 : Phaser.Math.FloatBetween(2, 5);
-          if (animal.kind !== "chicken" || animal.path.length > 0) sprite.anims.play(`${animal.kind}-walk`, true);
-          else { animal.state = "idle"; animal.timer = 0.5; }
+          if (foundRoute) {
+            animal.state = "walk";
+            animal.timer = animal.kind === "chicken" ? 20 : Phaser.Math.FloatBetween(2, 5);
+            sprite.anims.play(`${animal.kind}-walk`, true);
+          } else {
+            animal.state = "idle";
+            animal.timer = 0.6;
+            this.playIdle(animal);
+          }
         }
         continue;
       }
@@ -1013,11 +1084,11 @@ export class FarmScene extends Phaser.Scene {
         continue;
       }
 
-      const boost = animal.fleeing && animal.kind === "chicken" ? 3.4 : 1;
+      const boost = animal.fleeing && animal.kind === "chicken" ? 3.0 : 1;
       const step = Math.min(distance, animal.speed * boost * dt);
       const nextX = sprite.x + (dx / distance) * step;
       const nextY = sprite.y + (dy / distance) * step;
-      const canStep = animal.kind !== "chicken" || this.chickenCanStand(animal, nextX, nextY);
+      const canStep = animal.kind !== "chicken" || this.chickenSegmentClear(animal, sprite.x, sprite.y, nextX, nextY);
       if (canStep) {
         sprite.x = nextX;
         sprite.y = nextY;
@@ -1031,17 +1102,26 @@ export class FarmScene extends Phaser.Scene {
         animal.stuckTimer = 0;
         const threat = kid ?? { x: this.player.x, y: this.player.y + 20 };
         if (!this.planChickenEscape(animal, threat)) {
-          animal.tx = Phaser.Math.Clamp(sprite.x + (sprite.x < (animal.rect.x1 + animal.rect.x2) / 2 ? 36 : -36), animal.rect.x1 + 5, animal.rect.x2 - 5);
-          animal.ty = Phaser.Math.Clamp(sprite.y + (sprite.y < (animal.rect.y1 + animal.rect.y2) / 2 ? 12 : -12), animal.rect.y1 + 3, animal.rect.y2 - 3);
-          animal.path = this.findChickenPath(animal, animal.tx, animal.ty);
-          animal.pathIndex = 0;
-          // If the grid cannot produce a route from an awkward edge position,
-          // resume the idle cycle instead of keeping a permanently blocked path.
-          if (animal.path.length === 0) {
+          let recovered = false;
+          for (let attempt = 0; attempt < 10; attempt++) {
+            animal.tx = Phaser.Math.Between(animal.rect.x1 + 8, animal.rect.x2 - 8);
+            animal.ty = Phaser.Math.Between(animal.rect.y1 + 5, animal.rect.y2 - 5);
+            const route = this.findChickenPath(animal, animal.tx, animal.ty);
+            if (route.length === 0) continue;
+            animal.path = route;
+            animal.pathIndex = 0;
+            animal.state = "walk";
+            animal.fleeing = 0;
+            animal.timer = 20;
+            animal.sprite.anims.play("chicken-walk", true);
+            recovered = true;
+            break;
+          }
+          if (!recovered) {
             animal.state = "idle";
             animal.fleeing = 0;
-            animal.timer = 0.2;
-            animal.fleeRepathTimer = 0.2;
+            animal.timer = 0.45;
+            animal.fleeRepathTimer = 0.35;
             this.playIdle(animal);
           }
         }
@@ -1307,8 +1387,9 @@ export class FarmScene extends Phaser.Scene {
 
     hit.on("pointerover", () => { image.setY(y - 1); tip.setVisible(true); });
     hit.on("pointerout", () => { image.setY(y); tip.setVisible(false); });
-    hit.on("pointerdown", action);
+    hit.on("pointerdown", () => { tip.setVisible(false); action(); });
     this.ui.registerHud(frame, image, hit, tip);
+    this.ui.registerTooltip(tip);
     return image;
   }
 
@@ -1388,15 +1469,18 @@ export class FarmScene extends Phaser.Scene {
     this.input.on("pointerupoutside", this.handleJoystickEnd, this);
 
     const actionButtonObjects = this.createMobileActionButton(564, 267);
-    this.mobileContextButton = this.createMobileContextButton(535, 164);
+    const contextAction = document.getElementById("mobile-context-action") as HTMLButtonElement | null;
+    contextAction?.addEventListener("pointerdown", this.handleMobileContextPointerDown, { passive: false });
+    contextAction?.addEventListener("pointerup", this.handleMobileContextPointerUp, { passive: false });
+    contextAction?.addEventListener("pointercancel", this.handleMobileContextPointerCancel);
+    contextAction?.addEventListener("click", this.handleMobileContextKeyboardClick);
 
     this.ui.registerHud(
       base,
       innerRing,
       joystickNub,
       joystickZone,
-      ...actionButtonObjects,
-      this.mobileContextButton
+      ...actionButtonObjects
     );
     this.ui.registerRoomControls(base, innerRing, joystickNub, joystickZone, ...actionButtonObjects);
 
@@ -1404,6 +1488,12 @@ export class FarmScene extends Phaser.Scene {
       this.input.off("pointermove", this.handleJoystickMove, this);
       this.input.off("pointerup", this.handleJoystickEnd, this);
       this.input.off("pointerupoutside", this.handleJoystickEnd, this);
+      contextAction?.removeEventListener("pointerdown", this.handleMobileContextPointerDown);
+      contextAction?.removeEventListener("pointerup", this.handleMobileContextPointerUp);
+      contextAction?.removeEventListener("pointercancel", this.handleMobileContextPointerCancel);
+      contextAction?.removeEventListener("click", this.handleMobileContextKeyboardClick);
+      if (contextAction) contextAction.hidden = true;
+      this.mobileContextPointerId = null;
       this.joystickPointerId = null;
       this.joystickVector = { x: 0, y: 0 };
     });
@@ -1447,35 +1537,6 @@ export class FarmScene extends Phaser.Scene {
 
     this.language.onChange(() => label.setFontFamily(this.language.getFontFamily()));
     return [hitSurface, outerFrame, innerFrame, image, label];
-  }
-
-  private createMobileContextButton(x: number, y: number): Phaser.GameObjects.Container {
-    const button = this.add.container(x, y).setScrollFactor(0).setVisible(false);
-    const background = this.add.rectangle(0, 0, 174, 46, 0x527044, 0.98)
-      .setStrokeStyle(2, 0xd6b36b)
-      .setInteractive({ useHandCursor: true });
-    const label = this.add.text(0, 0, "", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "8px",
-      color: "#fff1cf",
-      fontStyle: "bold",
-      align: "center",
-      wordWrap: { width: 162 }
-    }).setOrigin(0.5);
-    button.add([background, label]);
-    background.on("pointerdown", () => {
-      button.setScale(0.96);
-      this.handleMobileContextAction();
-    });
-    const release = (): void => {
-      button.setScale(1);
-    };
-    background.on("pointerup", release);
-    background.on("pointerupoutside", release);
-    background.on("pointerout", release);
-    this.mobileContextLabel = label;
-    this.language.onChange(() => label.setFontFamily(this.language.getFontFamily()));
-    return button;
   }
 
   private updateJoystick(pointer: Phaser.Input.Pointer): void {
@@ -1559,13 +1620,13 @@ export class FarmScene extends Phaser.Scene {
     }
   }
 
-  private handleMobileContextAction(): void {
-    if (!this.isTouchDevice || this.ui.hasActiveModal()) return;
-    this.handleMobileTalk();
-  }
-
   private updateMobileContextAction(): void {
-    if (!this.isTouchDevice || !this.mobileContextButton) return;
+    const button = document.getElementById("mobile-context-action") as HTMLButtonElement | null;
+    if (!button || !this.isTouchDevice) return;
+    if (this.ui.hasActiveModal()) {
+      button.hidden = true;
+      return;
+    }
     const target = this.getMobileContextTarget();
     const labelKeys = {
       home: "mobile.clickOpenHome",
@@ -1574,8 +1635,11 @@ export class FarmScene extends Phaser.Scene {
       villager: "mobile.clickTalkVillager"
     } as const;
     const labelKey = target ? labelKeys[target] : null;
-    this.mobileContextButton.setVisible(labelKey !== null);
-    if (labelKey) this.mobileContextLabel?.setText(this.language.t(labelKey));
+    button.hidden = labelKey === null;
+    if (labelKey) {
+      button.textContent = this.language.t(labelKey);
+      button.setAttribute("aria-label", this.language.t(labelKey));
+    }
   }
 
   private createFullscreenButton(x = 626, y = 22): void {
@@ -1634,6 +1698,11 @@ export class FarmScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    if (this.openingStoryActive) {
+      this.animatePlayer(0, 0, false);
+      return;
+    }
+
     if (!this.canMoveTo(this.player.x, this.player.y)) {
       this.player.setPosition(320, 330);
     }
@@ -1645,6 +1714,7 @@ export class FarmScene extends Phaser.Scene {
     this.updateLighting();
     this.music.setTimeOfDayHours(this.village.getTimeOfDayHours());
     this.updateResourceHud();
+    this.updateMobileContextAction();
 
     // Farming and daily village requests share the exact same 24-hour game clock.
     this.farming.syncGameDay(this.village.getGameDay(), this.village.getElapsedGameMinutes());
@@ -1680,6 +1750,12 @@ export class FarmScene extends Phaser.Scene {
     this.house.update(this.player.x, this.player.y, delta);
     if (this.ui.hasActiveModal()) return;
 
+    // The market owns E when the player is within its interaction radius.
+    // Run it before villager dialogue so Ko Aung or Ma Thiri cannot consume
+    // the same key press when they are visiting the market square.
+    this.market.update(this.player.x, this.player.y);
+    if (this.ui.hasActiveModal()) return;
+
     this.village.update(this.player.x, this.player.y);
     if (this.ui.hasActiveModal()) return;
 
@@ -1691,8 +1767,6 @@ export class FarmScene extends Phaser.Scene {
 
     this.villageBoard.update(this.player.x, this.player.y);
     if (this.ui.hasActiveModal()) return;
-
-    this.updateMobileContextAction();
 
     // Keep the player at the riverbank while the line is cast so the bobber
     // stays attached to the correct fishing spot until the reel/miss resolves.
@@ -1745,7 +1819,6 @@ export class FarmScene extends Phaser.Scene {
     }
 
     this.player.setDepth(this.player.y + 30);
-    this.market.update(this.player.x, this.player.y);
     if (this.ui.hasActiveModal()) return;
     const fishingConsumesAction = this.fishing.update(this.player.x, this.player.y, delta, false);
     if (!fishingConsumesAction) this.farming.update(this.player.x, this.player.y);

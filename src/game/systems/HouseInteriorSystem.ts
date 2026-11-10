@@ -42,6 +42,7 @@ export class HouseInteriorSystem {
   private avatarX = 320;
   private avatarY = 278;
   private sleeping = false;
+  private sleepBreathTween?: Phaser.Tweens.Tween;
   private promptTarget: RoomTarget | null = null;
   private readonly touchMode = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
   private avatarTexture = "farmer_green_sheet";
@@ -224,6 +225,8 @@ export class HouseInteriorSystem {
 
   private restoreOutside(): void {
     if (!this.inside) return;
+    this.sleepBreathTween?.stop();
+    this.sleepBreathTween = undefined;
     this.inside = false;
     this.sleeping = false;
     this.promptTarget = null;
@@ -282,32 +285,76 @@ export class HouseInteriorSystem {
     this.statusText.setText(this.language.t("house.sleeping")).setVisible(true);
     this.roomPrompt.setVisible(false);
     this.roomPromptHitArea.setVisible(false);
-    this.avatar.anims.play(`${this.avatarTexture}-task-sleep`, true);
     this.scene.events.emit("sound-effect", "sleep");
+
+    const mattress = { x: 155, y: 153 };
+    const originalTexture = this.avatarTexture;
+    this.avatar.anims.play(`${this.avatarTexture}-side`, true);
+    this.avatar.setFlipX(true).setAngle(0).setScale(2);
     this.scene.tweens.add({
-      targets: this.sleepOverlay,
-      alpha: 1,
-      duration: 550,
+      targets: this.avatar,
+      x: mattress.x,
+      y: mattress.y,
+      duration: 520,
       ease: "Sine.easeInOut",
       onComplete: () => {
-        const result = this.village.sleepUntilNextPeriod();
-        this.farming.syncGameDay(result.day, this.village.getElapsedGameMinutes());
-        this.board.update(-10000, -10000);
-        const timeText = `${String(result.hour % 12 || 12).padStart(2, "0")}:00 ${result.hour >= 12 ? "PM" : "AM"}`;
-        this.statusText.setText(this.language.t("house.woke", { time: timeText, day: result.day })).setVisible(true);
-        this.scene.time.delayedCall(3200, () => { if (!this.sleeping) this.statusText.setVisible(false); });
-        this.save.saveNow();
-        this.scene.events.emit("time-skipped");
+        this.avatarX = mattress.x;
+        this.avatarY = mattress.y;
+        const currentSheet = this.getPlayerTexture();
+        const female = currentSheet.startsWith("farmer_female_");
+        const outfit = currentSheet.replace("farmer_", "").replace("_sheet", "");
+        const sleepTexture = female ? currentSheet : `sleep_male_${outfit}`;
+        if (this.scene.textures.exists(sleepTexture)) {
+          this.avatar.anims.stop();
+          if (female) this.avatar.setTexture(sleepTexture, 0);
+          else this.avatar.setTexture(sleepTexture);
+        } else {
+          this.avatar.anims.play(`${originalTexture}-task-sleep`, true);
+        }
+        // The pillow is on the left of the mattress, so the character lies
+        // horizontally with their head turned toward it.
+        this.avatar.setOrigin(0.5, 0.5).setPosition(mattress.x, mattress.y).setAngle(-90).setFlipX(false).setScale(2);
+        this.sleepBreathTween = this.scene.tweens.add({
+          targets: this.avatar,
+          scaleY: { from: 2, to: 2.035 },
+          duration: 900,
+          yoyo: true,
+          repeat: -1,
+          ease: "Sine.easeInOut"
+        });
         this.scene.tweens.add({
           targets: this.sleepOverlay,
-          alpha: 0,
-          duration: 650,
-          delay: 500,
+          alpha: 1,
+          duration: 550,
           ease: "Sine.easeInOut",
           onComplete: () => {
-            this.sleeping = false;
-            this.closeButton.setVisible(true);
-            this.avatar.anims.play(`${this.avatarTexture}-down`, true);
+            const result = this.village.sleepUntilNextPeriod();
+            this.farming.syncGameDay(result.day, this.village.getElapsedGameMinutes());
+            this.board.update(-10000, -10000);
+            const timeText = `${String(result.hour % 12 || 12).padStart(2, "0")}:00 ${result.hour >= 12 ? "PM" : "AM"}`;
+            this.statusText.setText(this.language.t("house.woke", { time: timeText, day: result.day })).setVisible(true);
+            this.scene.time.delayedCall(3200, () => { if (!this.sleeping) this.statusText.setVisible(false); });
+            this.save.saveNow();
+            this.scene.events.emit("time-skipped");
+            this.scene.tweens.add({
+              targets: this.sleepOverlay,
+              alpha: 0,
+              duration: 650,
+              delay: 500,
+              ease: "Sine.easeInOut",
+              onComplete: () => {
+                this.sleepBreathTween?.stop();
+                this.sleepBreathTween = undefined;
+                this.sleeping = false;
+                this.closeButton.setVisible(true);
+                this.avatarTexture = this.getPlayerTexture();
+                this.avatar.setTexture(this.avatarTexture, 0).setOrigin(0.5, 1).setAngle(0).setFlipX(false).setScale(2);
+                this.avatarX = this.targets.bed.x;
+                this.avatarY = this.targets.bed.y;
+                this.avatar.setPosition(this.avatarX, this.avatarY);
+                this.avatar.anims.play(`${this.avatarTexture}-down`, true);
+              }
+            });
           }
         });
       }

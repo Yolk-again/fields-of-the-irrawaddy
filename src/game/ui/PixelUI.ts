@@ -122,7 +122,7 @@ export function createRedCloseButton(
   button.on("pointerout", () => background.setFillStyle(0x9b3d32, 1));
 
   const cross = scene.add.text(0, -1, "×", {
-    fontFamily: "Arial, sans-serif",
+    fontFamily: '"Noto Sans", "Noto Sans Myanmar", "Myanmar Text", sans-serif',
     fontSize: "20px",
     color: "#fff7e8",
     fontStyle: "bold"

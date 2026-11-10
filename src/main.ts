@@ -21,6 +21,7 @@ type ConfirmationKind = "overwrite" | "delete";
 
 let selectedSaveForBoot: SelectedSave | null = null;
 let gameInstance: Phaser.Game | null = null;
+let launchPending = false;
 
 class SaveSlotBootScene extends Phaser.Scene {
   constructor() {
@@ -68,7 +69,17 @@ const confirmationTitle = document.getElementById("save-confirmation-title");
 const confirmationMessage = document.getElementById("save-confirmation-message");
 const confirmationAccept = document.getElementById("save-confirmation-accept");
 const confirmationCancel = document.getElementById("save-confirmation-cancel");
+const saveNameDialog = document.getElementById("save-name-dialog");
+const saveNameTitle = document.getElementById("save-name-title");
+const saveNameMessage = document.getElementById("save-name-message");
+const saveNameInput = document.getElementById("save-name-input") as HTMLInputElement | null;
+const saveNameError = document.getElementById("save-name-error");
+const saveNameCancel = document.getElementById("save-name-cancel");
+const saveNameSave = document.getElementById("save-name-save");
 const mobileHud = document.getElementById("mobile-game-hud");
+const menuButton = document.getElementById("game-menu-button");
+const mobileContextAction = document.getElementById("mobile-context-action") as HTMLButtonElement | null;
+const titleScrollCue = document.getElementById("title-scroll-cue");
 
 const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0 ||
   window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(max-width: 900px)").matches;
@@ -79,6 +90,7 @@ titleScreen?.classList.remove("is-hidden");
 appElement?.setAttribute("aria-hidden", "true");
 
 let pendingConfirmation: { slot: number; kind: ConfirmationKind } | null = null;
+let pendingSaveNameSlot: number | null = null;
 
 function appendButton(
   parent: HTMLElement,
@@ -125,9 +137,10 @@ function renderSaveSlots(): void {
     if (!summary.occupied) {
       details.textContent = "EMPTY SLOT";
     } else if (summary.valid) {
-      const player = summary.playerName ? `${summary.playerName} · ` : "";
+      const player = summary.playerName ? summary.playerName : "FARMER";
+      const farm = summary.farmName ? ` · ${summary.farmName}` : "";
       const savedDate = formatSavedDate(summary.savedAt);
-      details.textContent = `${player}DAY ${summary.day}${savedDate ? ` · ${savedDate}` : ""}`;
+      details.textContent = `${player}${farm} · DAY ${summary.day}${savedDate ? ` · ${savedDate}` : ""}`;
     } else {
       details.textContent = "SAVE DATA UNAVAILABLE";
     }
@@ -166,21 +179,42 @@ function renderSaveSlots(): void {
     card.append(actions);
     saveSlotGrid.append(card);
   }
+  window.requestAnimationFrame(updateTitleScrollCue);
 }
 
 function renameSaveSlot(slot: number): void {
-  const currentName = getSaveSlotName(slot);
-  const requestedName = window.prompt("Name this save slot (up to 24 characters):", currentName);
-  if (requestedName === null) return;
-  const cleaned = requestedName.trim().replace(/[<>]/g, "").replace(/\s+/g, " ").slice(0, 24);
+  if (!saveNameDialog || !saveNameInput || !saveNameTitle || !saveNameMessage) return;
+  pendingSaveNameSlot = slot;
+  saveNameTitle.textContent = "NAME THIS SAVE SLOT";
+  saveNameMessage.textContent = "Give this save a name you will recognize later.";
+  saveNameInput.value = getSaveSlotName(slot);
+  if (saveNameError) saveNameError.textContent = "";
+  saveNameDialog.hidden = false;
+  window.requestAnimationFrame(() => {
+    saveNameInput.focus();
+    saveNameInput.select();
+  });
+}
+
+function closeSaveNameDialog(): void {
+  pendingSaveNameSlot = null;
+  if (saveNameDialog) saveNameDialog.hidden = true;
+  if (saveNameError) saveNameError.textContent = "";
+}
+
+function saveRenamedSlot(): void {
+  if (pendingSaveNameSlot === null || !saveNameInput) return;
+  const cleaned = saveNameInput.value.trim().replace(/[<>]/g, "").replace(/\s+/g, " ").slice(0, 24);
   if (!cleaned) {
-    window.alert("Please enter a name for this save slot.");
+    if (saveNameError) saveNameError.textContent = "Please enter a name before saving.";
+    saveNameInput.focus();
     return;
   }
-  if (!setSaveSlotName(slot, cleaned)) {
-    window.alert("The save slot name could not be stored in this browser.");
+  if (!setSaveSlotName(pendingSaveNameSlot, cleaned)) {
+    if (saveNameError) saveNameError.textContent = "The name could not be saved. Check browser storage permissions.";
     return;
   }
+  closeSaveNameDialog();
   renderSaveSlots();
 }
 
@@ -201,8 +235,9 @@ function closeConfirmation(): void {
   if (confirmation) confirmation.hidden = true;
 }
 
-function launchGame(slot: number, loadExisting: boolean): void {
-  if (gameInstance) return;
+async function launchGame(slot: number, loadExisting: boolean): Promise<void> {
+  if (gameInstance || launchPending) return;
+  launchPending = true;
 
   selectedSaveForBoot = {
     saveSlot: slot,
@@ -212,30 +247,42 @@ function launchGame(slot: number, loadExisting: boolean): void {
 
   document.body.classList.add("foi-launching");
   try {
+    // Wait for both script faces before Phaser paints any canvas text.
+    if (document.fonts) {
+      await Promise.all([
+        document.fonts.load('16px "Noto Sans"').catch(() => []),
+        document.fonts.load('16px "Noto Sans Myanmar"').catch(() => [])
+      ]);
+      await document.fonts.ready;
+    }
     gameInstance = new Phaser.Game(gameConfig);
   } catch (error) {
     selectedSaveForBoot = null;
     document.body.classList.remove("foi-launching");
     console.error("Could not start Fields of the Irrawaddy:", error);
     window.alert("The game could not start. Please refresh the page and try again.");
+  } finally {
+    launchPending = false;
   }
 }
 
 function confirmSaveAction(): void {
   if (!pendingConfirmation) return;
   const { slot, kind } = pendingConfirmation;
-  const deleted = deleteSaveSlot(slot, kind === "delete");
-  if (!deleted) {
-    if (confirmationMessage) confirmationMessage.textContent = "The browser could not update this save. Check storage permissions and try again.";
+  if (kind === "delete") {
+    const deleted = deleteSaveSlot(slot);
+    if (!deleted) {
+      if (confirmationMessage) confirmationMessage.textContent = "The browser could not update this save. Check storage permissions and try again.";
+      return;
+    }
+    closeConfirmation();
+    renderSaveSlots();
     return;
   }
 
+  // Preserve the old world until the new character and farm names are confirmed.
   closeConfirmation();
-  if (kind === "delete") {
-    renderSaveSlots();
-  } else {
-    launchGame(slot, false);
-  }
+  launchGame(slot, false);
 }
 
 function setupMobileHud(): void {
@@ -247,17 +294,62 @@ function setupMobileHud(): void {
       window.dispatchEvent(new CustomEvent("foi-mobile-hud-action", { detail: action }));
     });
   });
+  menuButton?.addEventListener("click", () => {
+    if (!document.body.classList.contains("foi-in-game")) return;
+    window.dispatchEvent(new Event("foi-menu-request"));
+  });
 }
+
+function updateTitleScrollCue(): void {
+  if (!titleScreen || !titleScrollCue) return;
+  const needsScroll = titleScreen.scrollHeight > titleScreen.clientHeight + 8;
+  const atBottom = titleScreen.scrollTop + titleScreen.clientHeight >= titleScreen.scrollHeight - 8;
+  titleScrollCue.toggleAttribute("hidden", !needsScroll || atBottom);
+}
+
+window.addEventListener("resize", updateTitleScrollCue);
+titleScreen?.addEventListener("scroll", updateTitleScrollCue, { passive: true });
+document.querySelector<HTMLImageElement>(".title-landscape-photo")?.addEventListener("load", updateTitleScrollCue);
+window.addEventListener("foi-return-to-title", () => {
+  if (!gameInstance) return;
+  gameInstance.destroy(true);
+  gameInstance = null;
+  document.body.classList.remove("foi-in-game", "foi-launching", "foi-modal-open");
+  appElement?.setAttribute("aria-hidden", "true");
+  mobileHud?.setAttribute("aria-hidden", "true");
+  if (mobileContextAction) mobileContextAction.hidden = true;
+  titleScreen?.classList.remove("is-hidden");
+  if (titleScreen) titleScreen.scrollTop = 0;
+  renderSaveSlots();
+  window.requestAnimationFrame(updateTitleScrollCue);
+  if (document.fullscreenElement && document.exitFullscreen) {
+    void document.exitFullscreen().catch(() => undefined);
+  }
+});
 
 confirmationAccept?.addEventListener("click", confirmSaveAction);
 confirmationCancel?.addEventListener("click", closeConfirmation);
+saveNameSave?.addEventListener("click", saveRenamedSlot);
+saveNameCancel?.addEventListener("click", closeSaveNameDialog);
+saveNameDialog?.addEventListener("click", event => {
+  if (event.target === saveNameDialog) closeSaveNameDialog();
+});
+saveNameInput?.addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    saveRenamedSlot();
+  }
+  event.stopPropagation();
+});
 confirmation?.addEventListener("click", event => {
   if (event.target === confirmation) closeConfirmation();
 });
 
 document.addEventListener("keydown", event => {
   if (event.key === "Escape" && confirmation && !confirmation.hidden) closeConfirmation();
+  if (event.key === "Escape" && saveNameDialog && !saveNameDialog.hidden) closeSaveNameDialog();
 });
 
 renderSaveSlots();
 setupMobileHud();
+window.requestAnimationFrame(updateTitleScrollCue);

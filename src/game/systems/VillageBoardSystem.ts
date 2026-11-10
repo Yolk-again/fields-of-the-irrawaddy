@@ -43,6 +43,10 @@ export class VillageBoardSystem {
   private deliverText!: Phaser.GameObjects.Text;
   private exitHintText!: Phaser.GameObjects.Text;
   private deliverCard!: Phaser.GameObjects.Rectangle;
+  private progressTrack!: Phaser.GameObjects.Rectangle;
+  private progressFill!: Phaser.GameObjects.Rectangle;
+  private rewardCoinIcon!: Phaser.GameObjects.Image;
+  private rewardSeedIcon!: Phaser.GameObjects.Image;
   private readonly touchMode = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
 
   constructor(
@@ -155,12 +159,16 @@ export class VillageBoardSystem {
     this.requestText = this.scene.add.text(185, 128, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "15px", color: "#fff1cf", fontStyle: "bold"
     });
-    this.rewardText = this.scene.add.text(185, 158, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "12px", color: "#f0d69e"
-    });
-    this.statusText = this.scene.add.text(320, 214, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "12px", color: "#d7e6c5", align: "center"
+    this.rewardCoinIcon = this.scene.add.image(205, 169, "coin_asset").setScale(0.95);
+    this.rewardSeedIcon = this.scene.add.image(435, 169, "rice_seed_bag_asset").setScale(0.95);
+    this.rewardText = this.scene.add.text(320, 169, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#f0d69e", fontStyle: "bold", align: "center"
     }).setOrigin(0.5);
+    this.statusText = this.scene.add.text(320, 214, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "11px", color: "#d7e6c5", align: "center", fontStyle: "bold"
+    }).setOrigin(0.5);
+    this.progressTrack = this.scene.add.rectangle(320, 240, 300, 10, 0x263327, 1).setStrokeStyle(1, 0x9b7047);
+    this.progressFill = this.scene.add.rectangle(170, 240, 1, 6, 0x79b35d, 1).setOrigin(0, 0.5);
 
     this.deliverCard = this.scene.add.rectangle(320, 267, 276, 38, 0x527044, 1);
     this.deliverCard.setStrokeStyle(2, 0xd6b36b);
@@ -176,8 +184,8 @@ export class VillageBoardSystem {
 
     this.panel.add([
       background, divider, this.titleText, this.subtitleText, requestCard, riceIcon,
-      this.requestText, this.rewardText, this.statusText,
-      this.deliverCard, this.deliverText, this.exitHintText, this.closeButton
+      this.requestText, this.rewardCoinIcon, this.rewardSeedIcon, this.rewardText, this.statusText,
+      this.progressTrack, this.progressFill, this.deliverCard, this.deliverText, this.exitHintText, this.closeButton
     ]);
     this.updateInterface();
   }
@@ -204,7 +212,7 @@ export class VillageBoardSystem {
   private handleBoardPointerMove = (pointer: Phaser.Input.Pointer): void => {
     if (!this.deliverCard) return;
     if (!this.isOpen || !this.ui.isOpen("board") || this.delivered) {
-      this.deliverCard.setFillStyle(this.delivered ? 0x493629 : 0x527044, 1);
+      // Button color and progress indicator make the required delivery state visible at a glance.
       this.scene.game.canvas.style.cursor = "default";
       return;
     }
@@ -224,20 +232,27 @@ export class VillageBoardSystem {
       coins: this.coinReward,
       seeds: this.seedReward
     }));
+    const riceOwned = this.farming.getRice();
+    const canDeliver = riceOwned >= this.riceRequired;
     this.statusText.setText(this.delivered
       ? this.language.t("board.completed")
-      : this.language.t("board.progress", {
-          current: this.farming.getRice(),
-          required: this.riceRequired
-        }));
-    this.deliverText.setText(this.language.t(this.delivered ? "board.doneButton" : "board.deliverButton"));
+      : this.language.t("board.progress", { current: riceOwned, required: this.riceRequired }));
+    this.statusText.setColor(this.delivered || canDeliver ? "#bce5a4" : "#f2c08f");
+    this.progressFill.setSize(Math.max(1, 300 * Phaser.Math.Clamp(riceOwned / Math.max(1, this.riceRequired), 0, 1)), 6);
+    this.progressFill.setFillStyle(this.delivered ? 0x8d9d72 : canDeliver ? 0x79b35d : 0xc28b4a, 1);
+    this.deliverText.setText(this.language.t(this.delivered
+      ? "board.doneButton"
+      : canDeliver
+        ? "board.deliverButton"
+        : "board.needMoreButton", { amount: Math.max(0, this.riceRequired - riceOwned) }));
+    this.deliverCard.setFillStyle(this.delivered ? 0x493629 : canDeliver ? 0x527044 : 0x6b5034, 1);
     this.exitHintText.setText(this.language.t("board.exitHint"));
 
     for (const text of [this.titleText, this.subtitleText, this.requestText, this.rewardText,
       this.statusText, this.deliverText, this.exitHintText, this.boardLabel, this.promptText]) {
       text.setFontFamily(font);
     }
-    this.deliverCard.setFillStyle(this.delivered ? 0x493629 : 0x527044, 1);
+    // Button color and progress indicator make the required delivery state visible at a glance.
   }
 
   private openBoard(): void {

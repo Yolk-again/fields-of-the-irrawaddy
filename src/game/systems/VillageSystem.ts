@@ -246,7 +246,7 @@ export class VillageSystem {
   private createVillagers(): void {
     this.createVillager("ma", "Ma Thiri", 865, 270, "ma_thiri_asset");
     this.createVillager("ko", "Ko Aung", 735, 270, "ko_aung_asset");
-    this.createVillager("monk", "U Nanda", 1264, 240, "monk_asset");
+    this.createVillager("monk", "Ashin Nanda", 1264, 240, "monk_asset");
     this.createVillager("kid", "Maung Nyi", 865, 275, "kid_asset");
   }
 
@@ -312,7 +312,7 @@ export class VillageSystem {
       .setScale(1.25)
       .setVisible(false);
     const homageText = this.scene.add.text(0, -47, "🙏", {
-      fontFamily: "Arial, sans-serif",
+      fontFamily: this.language.getFontFamily(),
       fontSize: "18px",
       color: "#fff1cf",
       stroke: "#2a1a14",
@@ -513,7 +513,7 @@ export class VillageSystem {
       const home = { x: HOMES.ma.x, y: HOMES.ma.y - 15 };
       if (inRange(6, 8)) return { key: "ma-home-am", activityKey: "village.breakfast", indoors: true, ...home };
       if (inRange(8, 13)) return { key: "ma-field", activityKey: "village.field", indoors: false, x: 910, y: 385, pose: "work", speed: 82, fps: 10 };
-      if (inRange(13, 16)) return { key: "ma-market", activityKey: "village.market", indoors: false, x: 600, y: 290, pose: "none" };
+      if (inRange(13, 16)) return { key: "ma-market", activityKey: "village.market", indoors: false, x: 700, y: 330, pose: "none" };
       if (inRange(16, 18)) return { key: "ma-canal", activityKey: "village.canal", indoors: false, x: 690, y: 500, pose: "sit" };
       if (inRange(18, 22)) return { key: "ma-home-pm", activityKey: "village.home", indoors: true, ...home };
       return { key: "ma-sleep", activityKey: "village.sleep", indoors: true, ...home };
@@ -523,7 +523,7 @@ export class VillageSystem {
       const home = { x: HOMES.ko.x, y: HOMES.ko.y - 15 };
       if (inRange(6, 8)) return { key: "ko-home-am", activityKey: "village.breakfast", indoors: true, ...home };
       if (inRange(8, 13)) return { key: "ko-field", activityKey: "village.field", indoors: false, x: 1160, y: 385, pose: "work", speed: 82, fps: 10 };
-      if (inRange(13, 16)) return { key: "ko-market", activityKey: "village.market", indoors: false, x: 540, y: 292, pose: "none" };
+      if (inRange(13, 16)) return { key: "ko-market", activityKey: "village.market", indoors: false, x: 430, y: 330, pose: "none" };
       if (inRange(16, 18)) return { key: "ko-canal", activityKey: "village.canal", indoors: false, x: 760, y: 500, pose: "sit" };
       if (inRange(18, 22)) return { key: "ko-home-pm", activityKey: "village.home", indoors: true, ...home };
       return { key: "ko-sleep", activityKey: "village.sleep", indoors: true, ...home };
@@ -546,15 +546,15 @@ export class VillageSystem {
 
     // kid
     const home = { x: HOMES.ma.x + 18, y: HOMES.ma.y - 15 };
-    const yard = { x1: 80, y1: 284, x2: 400, y2: 316 };
+    const villagePlayground = { x1: 28, y1: 148, x2: 1412, y2: 540 };
     if (inRange(6, 7)) return { key: "kid-home-am", activityKey: "village.breakfast", indoors: true, ...home };
-    if (inRange(7, 9)) return { key: "kid-chase-am", activityKey: "village.kidChase", indoors: false, x: 300, y: 296, speed: 88, fps: 14, chase: true, wander: yard };
+    if (inRange(7, 9)) return { key: "kid-chase-am", activityKey: "village.kidChase", indoors: false, x: 300, y: 296, speed: 92, fps: 14, chase: true, wander: villagePlayground };
     if (inRange(9, 11.5)) return { key: "kid-school", activityKey: "village.kidSchool", indoors: false, x: 1264, y: 300, pose: "sit", speed: 70, fps: 12 };
     if (inRange(11.5, 12.5)) return { key: "kid-lunch", activityKey: "village.lunch", indoors: true, ...home };
-    if (inRange(12.5, 15)) return { key: "kid-run", activityKey: "village.kidPlay", indoors: false, x: 760, y: 350, speed: 95, fps: 14, wander: { x1: 740, y1: 330, x2: 1000, y2: 500 } };
-    if (inRange(15, 17)) return { key: "kid-chase-pm", activityKey: "village.kidChase", indoors: false, x: 300, y: 296, speed: 88, fps: 14, chase: true, wander: yard };
+    if (inRange(12.5, 15)) return { key: "kid-run", activityKey: "village.kidPlay", indoors: false, x: 760, y: 350, speed: 95, fps: 14, wander: villagePlayground };
+    if (inRange(15, 17)) return { key: "kid-chase-pm", activityKey: "village.kidChase", indoors: false, x: 300, y: 296, speed: 92, fps: 14, chase: true, wander: villagePlayground };
     if (inRange(17, 18.5)) return { key: "kid-skip", activityKey: "village.kidSkip", indoors: false, x: 560, y: 508, pose: "work", speed: 70, fps: 12 };
-    if (inRange(18.5, 20)) return { key: "kid-square", activityKey: "village.kidPlay", indoors: false, x: 520, y: 292, speed: 90, fps: 14, wander: { x1: 420, y1: 280, x2: 700, y2: 312 } };
+    if (inRange(18.5, 20)) return { key: "kid-square", activityKey: "village.kidPlay", indoors: false, x: 520, y: 292, speed: 90, fps: 14, wander: villagePlayground };
     return { key: "kid-sleep", activityKey: "village.sleep", indoors: true, ...home };
   }
 
@@ -1249,27 +1249,27 @@ export class VillageSystem {
   }
 
   private findHomePath(startX: number, startY: number, door: { x: number; y: number }): Waypoint[] {
-    const offsets = [
-      [0, 0], [0, 20], [24, 16], [-24, 16], [36, 0], [-36, 0],
-      [0, 36], [24, 36], [-24, 36], [0, -20], [40, 24], [-40, 24]
-    ] as const;
+    // A resident should visibly reach the doorway, not disappear at a random
+    // nearby point. Try the exact threshold first, then a few tiny approach
+    // offsets that remain on the front step of the house.
+    const offsets = [[0, 0], [0, -6], [-6, 0], [6, 0], [0, 6]] as const;
     let bestPath: Waypoint[] = [];
     let bestScore = Infinity;
     for (const [offsetX, offsetY] of offsets) {
-      const targetX = Phaser.Math.Clamp(door.x + offsetX, 16, 1424);
-      const targetY = Phaser.Math.Clamp(door.y + offsetY, 24, 616);
+      const targetX = door.x + offsetX;
+      const targetY = door.y + offsetY;
       const path = this.findWalkablePath(startX, startY, targetX, targetY);
       if (path.length === 0) continue;
       const end = path[path.length - 1];
       const doorDistance = Phaser.Math.Distance.Between(end.x, end.y, door.x, door.y);
-      if (doorDistance > 58) continue;
+      if (doorDistance > 10) continue;
       let pathLength = 0;
       let from = { x: startX, y: startY };
       for (const point of path) {
         pathLength += Phaser.Math.Distance.Between(from.x, from.y, point.x, point.y);
         from = point;
       }
-      const score = pathLength + doorDistance * 0.35;
+      const score = pathLength + doorDistance * 3;
       if (score < bestScore) { bestScore = score; bestPath = path; }
     }
     return bestPath;
@@ -1286,10 +1286,23 @@ export class VillageSystem {
 
   private planNextWander(villager: Villager, schedule: DailySchedule): boolean {
     if (!schedule.wander) return false;
-    for (let attempt = 0; attempt < 12; attempt++) {
-      const targetX = Phaser.Math.Between(schedule.wander.x1, schedule.wander.x2);
-      const targetY = Phaser.Math.Between(schedule.wander.y1, schedule.wander.y2);
-      const path = this.findWalkablePath(villager.x, villager.y, targetX, targetY);
+    const targets: Array<{ x: number; y: number }> = [];
+    for (let attempt = 0; attempt < 18; attempt++) {
+      targets.push({
+        x: Phaser.Math.Between(schedule.wander.x1, schedule.wander.x2),
+        y: Phaser.Math.Between(schedule.wander.y1, schedule.wander.y2)
+      });
+    }
+    // Stable fallback points are placed along the open village paths. They
+    // prevent repeated random samples in blocked yards from leaving the child
+    // with no valid destination.
+    targets.push(
+      { x: 300, y: 296 }, { x: 520, y: 292 }, { x: 760, y: 350 },
+      { x: 1010, y: 350 }, { x: 1260, y: 300 }, { x: 780, y: 480 },
+      { x: 560, y: 500 }
+    );
+    for (const target of targets) {
+      const path = this.findWalkablePath(villager.x, villager.y, target.x, target.y);
       if (path.length === 0) continue;
       schedule.route = path;
       schedule.repeatRoute = false;
@@ -1318,6 +1331,14 @@ export class VillageSystem {
 
     schedule.route = undefined;
     if (villager.enteringHome && schedule.indoors) {
+      const door = this.doorPosition(villager.id);
+      if (Phaser.Math.Distance.Between(villager.x, villager.y, door.x, door.y) <= 12) {
+        // Finish on the threshold itself so the NPC disappears through the door,
+        // never beside the house or on the opposite side of the wall.
+        villager.x = door.x;
+        villager.y = door.y;
+        villager.container.setPosition(door.x, door.y).setDepth(door.y + 30);
+      }
       this.hideVillagerAtHome(villager);
       return;
     }
@@ -1719,6 +1740,18 @@ export class VillageSystem {
             const endIndex = newPath.length - 1;
             newPath[endIndex] = { ...newPath[endIndex], ...current, x: newPath[endIndex].x, y: newPath[endIndex].y };
             schedule.route = [...newPath, ...later];
+          } else if (schedule.wander) {
+            // A chase route can become unreachable as chickens move around
+            // fences. Drop the stale route and select a fresh walkable patrol.
+            schedule.route = undefined;
+            schedule.repeatRoute = false;
+            villager.chaseCooldown = 0;
+            if (!this.planNextWander(villager, schedule)) {
+              villager.targetX = villager.x;
+              villager.targetY = villager.y;
+              villager.waitTimer = 0.25;
+              this.playNpcAnimation(villager, "play");
+            }
           }
         } else {
           // A free-roaming kid may have picked a blocked random/chase target.
@@ -1726,6 +1759,11 @@ export class VillageSystem {
           if (detour.length > 0) {
             schedule.route = detour;
             schedule.repeatRoute = false;
+          } else if (schedule.wander && !this.planNextWander(villager, schedule)) {
+            villager.targetX = villager.x;
+            villager.targetY = villager.y;
+            villager.waitTimer = 0.25;
+            this.playNpcAnimation(villager, "play");
           }
         }
         villager.routeIndex = 0;
@@ -1744,6 +1782,46 @@ export class VillageSystem {
 
     villager.container.setPosition(villager.x, villager.y);
     villager.container.setDepth(villager.y + 30);
+  }
+
+  /** Shared collision-aware path used by animals so they navigate like villagers. */
+  findAnimalRoute(startX: number, startY: number, targetX: number, targetY: number): { x: number; y: number }[] {
+    return this.findWalkablePath(startX, startY, targetX, targetY).map(({ x, y }) => ({ x, y }));
+  }
+
+  /** Places Ko Aung or Ma Thiri in the foreground for their own opening dialogue. */
+  stageOpeningCutsceneCharacter(slideIndex: number): void {
+    const ko = this.villagers.find(v => v.id === "ko");
+    const ma = this.villagers.find(v => v.id === "ma");
+    for (const villager of [ko, ma]) {
+      if (!villager) continue;
+      villager.container.setVisible(false);
+      villager.promptText.setVisible(false);
+      villager.speechText.setVisible(false);
+      villager.activityText.setAlpha(0);
+      villager.nameText.setAlpha(0);
+    }
+
+    if (slideIndex === 1 && ko) {
+      ko.x = 760; ko.y = 500;
+      ko.container.setPosition(ko.x, ko.y).setDepth(ko.y + 30).setVisible(true);
+      ko.sprite.setFlipX(false).anims.play("ko_aung_sheet-task-rest", true);
+    } else if (slideIndex === 2 && ma) {
+      ma.x = 910; ma.y = 385;
+      ma.container.setPosition(ma.x, ma.y).setDepth(ma.y + 30).setVisible(true);
+      ma.sprite.setFlipX(true).anims.play("ma_thiri_sheet-task-farm", true);
+    }
+  }
+
+  /** Re-evaluate daily schedules after the opening story's temporary staging. */
+  restoreAfterOpeningCutscene(): void {
+    for (const villager of this.villagers) {
+      if (villager.id !== "ko" && villager.id !== "ma") continue;
+      villager.scheduleKey = "";
+      villager.schedule = null;
+      villager.container.setVisible(false);
+    }
+    this.updateClockAndSchedules();
   }
 
   getKidPosition(): { x: number; y: number } | null {

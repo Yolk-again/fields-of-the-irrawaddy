@@ -175,20 +175,6 @@
     "bytes": 440
   },
   {
-    "path": "animals/water_buffalo.png",
-    "width": 44,
-    "height": 30,
-    "mode": "RGBA",
-    "bytes": 668
-  },
-  {
-    "path": "animals/water_buffalo_sheet.png",
-    "width": 176,
-    "height": 30,
-    "mode": "RGBA",
-    "bytes": 882
-  },
-  {
     "path": "buildings/golden_pagoda.png",
     "width": 40,
     "height": 76,
@@ -291,7 +277,7 @@
     "width": 64,
     "height": 130,
     "mode": "RGBA",
-    "bytes": 2755
+    "bytes": 2845
   },
   {
     "path": "characters/farmer_female_blue.png",
@@ -361,7 +347,7 @@
     "width": 64,
     "height": 130,
     "mode": "RGBA",
-    "bytes": 2755
+    "bytes": 2845
   },
   {
     "path": "characters/farmer_purple.png",
@@ -375,7 +361,7 @@
     "width": 64,
     "height": 130,
     "mode": "RGBA",
-    "bytes": 2764
+    "bytes": 2854
   },
   {
     "path": "characters/farmer_red.png",
@@ -389,7 +375,7 @@
     "width": 64,
     "height": 130,
     "mode": "RGBA",
-    "bytes": 2756
+    "bytes": 2845
   },
   {
     "path": "characters/kid.png",
@@ -1118,5 +1104,40 @@
     "height": 38,
     "mode": "RGBA",
     "bytes": 689
+  },
+  {
+    "path": "animals/cow_sheet.png",
+    "width": 176,
+    "height": 30,
+    "mode": "RGBA",
+    "bytes": 810
+  },
+  {
+    "path": "characters/sleep_male_green.png",
+    "width": 16,
+    "height": 26,
+    "mode": "RGBA",
+    "bytes": 330
+  },
+  {
+    "path": "characters/sleep_male_blue.png",
+    "width": 16,
+    "height": 26,
+    "mode": "RGBA",
+    "bytes": 331
+  },
+  {
+    "path": "characters/sleep_male_red.png",
+    "width": 16,
+    "height": 26,
+    "mode": "RGBA",
+    "bytes": 331
+  },
+  {
+    "path": "characters/sleep_male_purple.png",
+    "width": 16,
+    "height": 26,
+    "mode": "RGBA",
+    "bytes": 330
   }
 ]

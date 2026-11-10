@@ -51,6 +51,7 @@ export class CookingSystem {
   private eatText!: Phaser.GameObjects.Text;
   private cardBackgrounds: Phaser.GameObjects.Rectangle[] = [];
   private cardTexts: Phaser.GameObjects.Text[] = [];
+  private recipeStatusBadges: Phaser.GameObjects.Text[] = [];
   private message = "";
 
   constructor(
@@ -107,14 +108,21 @@ export class CookingSystem {
       const card = this.scene.add.rectangle(320, y, 446, 46, 0x40513a, 1).setStrokeStyle(2, 0x9b7047);
       const icon = this.scene.add.image(116, y, recipe.texture).setScale(1.7);
       const title = this.scene.add.text(150, y - 9, "", {
-        fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf", fontStyle: "bold"
+        fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf", fontStyle: "bold",
+        wordWrap: { width: 280 }
       }).setOrigin(0, 0.5);
       const description = this.scene.add.text(150, y + 9, "", {
-        fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d7e6c5"
+        fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d7e6c5",
+        wordWrap: { width: 280 }
       }).setOrigin(0, 0.5);
+      const status = this.scene.add.text(474, y, "", {
+        fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#fff1cf", fontStyle: "bold",
+        backgroundColor: "#527044", padding: { x: 5, y: 3 }, align: "center"
+      }).setOrigin(0.5);
       this.cardBackgrounds.push(card);
       this.cardTexts.push(title, description);
-      this.panel.add([card, icon, title, description]);
+      this.recipeStatusBadges.push(status);
+      this.panel.add([card, icon, title, description, status]);
     });
 
     this.statusText = this.scene.add.text(320, 254, "", {
@@ -142,12 +150,28 @@ export class CookingSystem {
     this.exitText.setText(this.language.t("common.clickCrossExit"));
     this.eatText.setText(this.language.t("cooking.eatButton"));
     this.eatBackground.setFillStyle(0x70532f, 1);
-    for (const text of [this.titleText, this.subtitleText, this.statusText, this.exitText, ...this.cardTexts, this.eatText]) {
+    for (const text of [this.titleText, this.subtitleText, this.statusText, this.exitText, ...this.cardTexts, ...this.recipeStatusBadges, this.eatText]) {
       text.setFontFamily(font);
     }
+    const riceOwned = this.farming.getRice();
     RECIPES.forEach((recipe, index) => {
       this.cardTexts[index * 2].setText(`${index + 1}. ${this.language.t(recipe.titleKey)}  ·  ${this.getMealCount(recipe.id)} ${this.language.t("cooking.owned")}`);
       this.cardTexts[index * 2 + 1].setText(this.language.t(recipe.descriptionKey));
+      const fishOwned = recipe.fish === "any"
+        ? this.fishing.getFishTotal()
+        : this.fishing.getFishCount(recipe.fish);
+      const canCook = riceOwned >= recipe.riceAmount && fishOwned >= recipe.fishAmount;
+      const missingRice = Math.max(0, recipe.riceAmount - riceOwned);
+      const badge = this.recipeStatusBadges[index];
+      badge.setText(this.language.t(canCook
+        ? "cooking.status.ready"
+        : missingRice > 0
+          ? "cooking.status.needRice"
+          : "cooking.status.needFish", { amount: missingRice }));
+      badge.setStyle(canCook
+        ? { color: "#f4ffe9", backgroundColor: "#3e7446" }
+        : { color: "#fff0df", backgroundColor: "#8b4035" });
+      this.cardBackgrounds[index].setFillStyle(canCook ? 0x40513a : 0x383d32, 1);
     });
     this.statusText.setText(this.message || this.ingredientSummary());
   }

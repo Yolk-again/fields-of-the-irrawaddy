@@ -51,6 +51,8 @@ export class MarketSystem {
   private clickHintText!: Phaser.GameObjects.Text;
   private actionCards: Phaser.GameObjects.Rectangle[] = [];
   private actionIcons: Phaser.GameObjects.Image[] = [];
+  private actionStatusBadges: Phaser.GameObjects.Text[] = [];
+  private coinBalanceIcon!: Phaser.GameObjects.Image;
   private promptText!: Phaser.GameObjects.Text;
   private stallLabel!: Phaser.GameObjects.Text;
   private salePanel!: Phaser.GameObjects.Container;
@@ -68,7 +70,7 @@ export class MarketSystem {
   private upgradeMenuOpen = false;
   private readonly touchMode = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
 
-  private readonly cardY = [82, 115, 148, 181, 214, 247, 280];
+  private readonly cardY = [80, 112, 144, 176, 208, 240, 272];
 
   constructor(
     scene: Phaser.Scene,
@@ -145,33 +147,40 @@ export class MarketSystem {
     this.cardY.forEach((y, index) => {
       const card = this.scene.add.rectangle(320, y, 420, 29, fills[index], 1).setStrokeStyle(2, 0x9b7047);
       const icon = this.scene.add.image(145, y, icons[index]).setScale(index === 2 ? 1.35 : 1.15);
-      const text = this.scene.add.text(340, y, "", {
-        fontFamily: this.language.getFontFamily(), fontSize: "7px", color: "#fff1cf", fontStyle: "bold",
-        align: "center", wordWrap: { width: 350 }, lineSpacing: 0
+      const text = this.scene.add.text(178, y, "", {
+        fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#fff1cf", fontStyle: "bold",
+        align: "left", wordWrap: { width: 280 }, lineSpacing: 0
+      }).setOrigin(0, 0.5);
+      const status = this.scene.add.text(492, y, "", {
+        fontFamily: this.language.getFontFamily(), fontSize: "7.5px", color: "#fff1cf", fontStyle: "bold",
+        align: "center", backgroundColor: "#527044", padding: { x: 5, y: 3 }
       }).setOrigin(0.5);
       this.actionCards.push(card);
       this.actionIcons.push(icon);
       this.actionTexts.push(text);
-      this.marketPanel.add([card, icon, text]);
+      this.actionStatusBadges.push(status);
+      this.marketPanel.add([card, icon, text, status]);
     });
 
-    this.clickHintText = this.scene.add.text(320, 300, "", {
+    const balanceCard = this.scene.add.rectangle(320, 302, 230, 24, 0x263b2d, 1).setStrokeStyle(2, 0xd6b36b);
+    this.coinBalanceIcon = this.scene.add.image(232, 302, "coin_asset").setScale(1.1);
+    this.moneyText = this.scene.add.text(342, 302, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "13px", color: "#ffe49a", fontStyle: "bold", align: "center"
+    }).setOrigin(0.5);
+    this.clickHintText = this.scene.add.text(320, 322, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#b9dca3", align: "center"
     }).setOrigin(0.5);
-    this.moneyText = this.scene.add.text(320, 315, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#f0d69e", align: "center"
-    }).setOrigin(0.5);
-    this.messageText = this.scene.add.text(320, 330, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d7e6c5", align: "center",
+    this.messageText = this.scene.add.text(320, 337, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d7e6c5", align: "center",
       wordWrap: { width: 440 }
     }).setOrigin(0.5);
-    this.exitHintText = this.scene.add.text(320, 347, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#d7e6c5", align: "center"
+    this.exitHintText = this.scene.add.text(320, 349, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d7e6c5", align: "center"
     }).setOrigin(0.5);
 
     const closePosition = modalClosePosition(320, 180, 500, 350);
     this.closeButton = createRedCloseButton(this.scene, closePosition.x, closePosition.y);
-    this.marketPanel.add([this.clickHintText, this.moneyText, this.messageText, this.exitHintText, this.closeButton]);
+    this.marketPanel.add([balanceCard, this.coinBalanceIcon, this.moneyText, this.clickHintText, this.messageText, this.exitHintText, this.closeButton]);
     this.createSaleSelector();
     this.marketPanel.add(this.salePanel);
     this.updateInterface();
@@ -329,24 +338,61 @@ export class MarketSystem {
     this.titleText.setText(this.language.t(this.upgradeMenuOpen ? "market.upgradesTitle" : "market.title"));
     if (this.upgradeMenuOpen) {
       this.updateUpgradeMenu();
+      this.updateUpgradeStatuses();
     } else {
-      this.actionTexts[0].setText(this.language.t("market.buy", { cost: SEED_PACK_COST }));
-      this.actionTexts[1].setText(this.language.t("market.sell", { price: 4 + this.farming.getRiceSaleBonus() }));
+      const seeds = this.farming.getSeeds();
+      const rice = this.farming.getRice();
+      const meals = this.cooking.getTotalMeals();
+      const fish = this.fishing.getFishTotal();
+      const goldenWheat = this.farming.getGoldenWheat();
+      this.actionTexts[0].setText(this.language.t("market.buyWithOwned", { cost: SEED_PACK_COST, owned: seeds }));
+      this.actionTexts[1].setText(this.language.t("market.sellRiceWithOwned", { price: 4 + this.farming.getRiceSaleBonus(), owned: rice }));
       this.actionTexts[2].setText(this.fishing.getHasRod() ? this.language.t("market.rodOwned") : this.language.t("market.buyRod", { cost: FISHING_ROD_COST }));
-      this.actionTexts[3].setText(this.language.t("market.sellMeals"));
-      this.actionTexts[4].setText(this.language.t("market.sellFish"));
-      this.actionTexts[5].setText(this.language.t("market.sellGoldenWheat", { price: GOLDEN_WHEAT_PRICE }));
+      this.actionTexts[3].setText(this.language.t("market.sellMealsWithOwned", { owned: meals }));
+      this.actionTexts[4].setText(this.language.t("market.sellFishWithOwned", { owned: fish }));
+      this.actionTexts[5].setText(this.language.t("market.sellGoldenWheatWithOwned", { price: GOLDEN_WHEAT_PRICE, owned: goldenWheat }));
       this.actionTexts[6].setText(this.language.t("market.openUpgrades"));
       const icons = ["rice_seed_bag_asset", "rice_bowl_asset", "fishing_rod_asset", "meal_fish_rice_asset", "fish_silver_barb_asset", "rice_grain_asset", "hoe_asset"];
       this.actionIcons.forEach((icon, index) => icon.setTexture(icons[index]));
+      this.setActionStatus(0, this.coins >= SEED_PACK_COST ? "market.status.ready" : "market.status.need", this.coins >= SEED_PACK_COST ? "good" : "bad", { amount: Math.max(0, SEED_PACK_COST - this.coins) });
+      this.setActionStatus(1, rice > 0 ? "market.status.sell" : "market.status.none", rice > 0 ? "good" : "muted");
+      this.setActionStatus(2, this.fishing.getHasRod() ? "market.status.owned" : this.coins >= FISHING_ROD_COST ? "market.status.ready" : "market.status.need", this.fishing.getHasRod() || this.coins >= FISHING_ROD_COST ? "good" : "bad", { amount: Math.max(0, FISHING_ROD_COST - this.coins) });
+      this.setActionStatus(3, meals > 0 ? "market.status.sell" : "market.status.none", meals > 0 ? "good" : "muted");
+      this.setActionStatus(4, fish > 0 ? "market.status.sell" : "market.status.none", fish > 0 ? "good" : "muted");
+      this.setActionStatus(5, goldenWheat > 0 ? "market.status.sell" : "market.status.none", goldenWheat > 0 ? "good" : "muted");
+      this.setActionStatus(6, "market.status.open", "info");
     }
     this.updateSaleSelector();
     this.exitHintText.setText(this.language.t("market.exitHint"));
     this.clickHintText.setText(this.language.t(this.upgradeMenuOpen ? "market.upgradesClickHint" : "market.clickHint"));
     this.stallLabel.setText(this.language.t("market.stallName"));
     this.promptText.setText(this.language.t("market.prompt"));
-    for (const text of [this.titleText, ...this.actionTexts, this.moneyText, this.messageText, this.exitHintText, this.clickHintText, this.stallLabel, this.promptText]) text.setFontFamily(font);
+    for (const text of [this.titleText, ...this.actionTexts, ...this.actionStatusBadges, this.moneyText, this.messageText, this.exitHintText, this.clickHintText, this.stallLabel, this.promptText]) text.setFontFamily(font);
     this.updateMoney();
+  }
+
+  private setActionStatus(index: number, key: string, tone: "good" | "bad" | "muted" | "info", values: Record<string, string | number> = {}): void {
+    const badge = this.actionStatusBadges[index];
+    if (!badge) return;
+    const palette = {
+      good: { text: "#f4ffe9", background: "#3e7446" },
+      bad: { text: "#fff0df", background: "#8b4035" },
+      muted: { text: "#d8d0bd", background: "#66513b" },
+      info: { text: "#fff1cf", background: "#80603b" }
+    }[tone];
+    badge.setText(this.language.t(key, values));
+    badge.setStyle({ color: palette.text, backgroundColor: palette.background });
+  }
+
+  private updateUpgradeStatuses(): void {
+    UPGRADE_ORDER.forEach((id, index) => {
+      const cost = this.farming.getNextUpgradeCost(id);
+      if (cost === null) this.setActionStatus(index, "market.status.owned", "good");
+      else if (this.coins >= cost) this.setActionStatus(index, "market.status.ready", "good");
+      else this.setActionStatus(index, "market.status.need", "bad", { amount: cost - this.coins });
+    });
+    this.setActionStatus(5, "market.status.info", "info");
+    this.setActionStatus(6, "market.status.back", "muted");
   }
 
   private updateUpgradeMenu(): void {
@@ -407,10 +453,7 @@ export class MarketSystem {
   }
 
   private updateMoney(): void {
-    const text = this.language.getLanguage() === "my"
-      ? `ဒင်္ဂါး ${this.coins} · စပါး ${this.farming.getRice()} · ရွှေစပါး ${this.farming.getGoldenWheat()} · ငါး ${this.fishing.getFishTotal()}`
-      : `COINS ${this.coins} · RICE ${this.farming.getRice()} · GOLD ${this.farming.getGoldenWheat()} · FISH ${this.fishing.getFishTotal()}`;
-    this.moneyText.setText(text);
+    this.moneyText.setText(this.language.t("market.balance", { coins: this.coins }));
   }
 
   private openMarket(): void {

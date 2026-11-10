@@ -22,14 +22,14 @@ interface SoundEffectEvent { name: string; x?: number; y?: number; maxDistance?:
 const MUSIC_PHASES: DayPhase[] = ["dawn", "day", "dusk", "night"];
 const EFFECT_NAMES = [
   "hoe", "plant", "water", "harvest", "dead", "request", "buy", "sell",
-  "talk", "error", "cast", "bite", "catch", "miss", "cook", "eat", "sleep", "footstep"
+  "talk", "error", "cast", "bite", "catch", "miss", "cook", "eat", "sleep", "footstep", "chicken"
 ];
 
 const EFFECT_BASE_GAIN: Record<string, number> = {
   hoe: 0.72, plant: 0.62, water: 0.72, harvest: 0.70, dead: 0.62,
   request: 0.55, buy: 0.62, sell: 0.65, talk: 0.40, error: 0.62,
   cast: 0.70, bite: 0.62, catch: 0.70, miss: 0.63,
-  cook: 0.62, eat: 0.45, sleep: 0.48, footstep: 0.34
+  cook: 0.62, eat: 0.45, sleep: 0.48, footstep: 0.34, chicken: 0.38
 };
 
 export class MusicSystem {
@@ -38,8 +38,9 @@ export class MusicSystem {
   private master: GainNode | null = null;
   private musicBus: GainNode | null = null;
   private effectsBus: GainNode | null = null;
-  private musicVolume = 1;
-  private effectsVolume = 1;
+  // 30% is the first-run starting point. readStoredVolume preserves any later player choice.
+  private musicVolume = 0.3;
+  private effectsVolume = 0.3;
   private started = false;
   private audioReady = false;
   private audioLoadPromise: Promise<void> | null = null;
@@ -47,10 +48,15 @@ export class MusicSystem {
   private listenerX = 320;
   private listenerY = 330;
   private musicBuffers = new Map<DayPhase, AudioBuffer>();
+  private cutsceneMusicBuffer: AudioBuffer | null = null;
   private effectBuffers = new Map<string, AudioBuffer>();
   private currentMusicSource: AudioBufferSourceNode | null = null;
   private currentMusicGain: GainNode | null = null;
   private currentMusicPhase: DayPhase | null = null;
+  private cutsceneMusicSource: AudioBufferSourceNode | null = null;
+  private cutsceneMusicGain: GainNode | null = null;
+  private cutsceneMusicRequested = false;
+  private playbackMode: "profile" | "cutscene" | "world" = "profile";
   private ui: ModalUIManager;
   private settingsPanel!: Phaser.GameObjects.Container;
   private settingsCloseButton!: Phaser.GameObjects.Container;
@@ -72,29 +78,55 @@ export class MusicSystem {
   private language: LanguageSystem;
   private headerControls: Phaser.GameObjects.GameObject[] = [];
   private mobileLayout: boolean;
+  private readonly musicVolumeStorageKey: string;
+  private readonly effectsVolumeStorageKey: string;
+  private readonly activeSources = new Set<AudioBufferSourceNode>();
+  private unlockHandler: (() => void) | null = null;
+  private disposed = false;
 
   constructor(
     scene: Phaser.Scene,
     ui: ModalUIManager,
     language: LanguageSystem,
-    mobileLayout = false
+    mobileLayout = false,
+    saveSlot = 1,
+    loadExistingSave = false
   ) {
     this.scene = scene;
     this.ui = ui;
     this.language = language;
     this.mobileLayout = mobileLayout;
+    // New-game profile setup stays silent. Existing worlds may start their day theme after audio unlock.
+    this.playbackMode = loadExistingSave ? "world" : "profile";
+    const safeSlot = Number.isInteger(saveSlot) && saveSlot >= 1 && saveSlot <= 3 ? saveSlot : 1;
+    this.musicVolumeStorageKey = `${MUSIC_VOLUME_KEY}-slot-${safeSlot}`;
+    this.effectsVolumeStorageKey = `${EFFECTS_VOLUME_KEY}-slot-${safeSlot}`;
+
     try {
       const legacyMuted = window.localStorage.getItem(LEGACY_MUTE_KEY) === "1";
-      this.musicVolume = legacyMuted ? 0 : this.readStoredVolume(MUSIC_VOLUME_KEY, 1);
-      this.effectsVolume = legacyMuted ? 0 : this.readStoredVolume(EFFECTS_VOLUME_KEY, 1);
-      if (legacyMuted) {
-        window.localStorage.setItem(MUSIC_VOLUME_KEY, "0");
-        window.localStorage.setItem(EFFECTS_VOLUME_KEY, "0");
-        window.localStorage.removeItem(LEGACY_MUTE_KEY);
+      if (loadExistingSave) {
+        // Existing worlds keep their own volume choices. Older saves migrate the previous global values once.
+        this.musicVolume = legacyMuted ? 0 : this.readStoredVolume(
+          this.musicVolumeStorageKey,
+          this.readStoredVolume(MUSIC_VOLUME_KEY, 0.3)
+        );
+        this.effectsVolume = legacyMuted ? 0 : this.readStoredVolume(
+          this.effectsVolumeStorageKey,
+          this.readStoredVolume(EFFECTS_VOLUME_KEY, 0.3)
+        );
+        this.saveVolume(this.musicVolumeStorageKey, this.musicVolume);
+        this.saveVolume(this.effectsVolumeStorageKey, this.effectsVolume);
+      } else {
+        // Every new world starts at 30%, including when it overwrites an earlier slot.
+        this.musicVolume = 0.3;
+        this.effectsVolume = 0.3;
+        this.saveVolume(this.musicVolumeStorageKey, this.musicVolume);
+        this.saveVolume(this.effectsVolumeStorageKey, this.effectsVolume);
       }
+      if (legacyMuted) window.localStorage.removeItem(LEGACY_MUTE_KEY);
     } catch {
-      this.musicVolume = 1;
-      this.effectsVolume = 1;
+      this.musicVolume = 0.3;
+      this.effectsVolume = 0.3;
     }
 
     this.createButton(ui);
@@ -108,24 +140,13 @@ export class MusicSystem {
       if (this.musicVolume > 0 || this.effectsVolume > 0) this.start();
       window.removeEventListener("pointerdown", unlock, true);
       window.removeEventListener("keydown", unlock, true);
+      this.unlockHandler = null;
     };
+    this.unlockHandler = unlock;
     window.addEventListener("pointerdown", unlock, true);
     window.addEventListener("keydown", unlock, true);
 
-    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.scene.events.off("sound-effect", this.handleSoundEffect, this);
-      this.scene.input.off("pointerdown", this.handleSliderPointerDown, this);
-      this.scene.input.off("pointermove", this.handleSliderPointerMove, this);
-      this.scene.input.off("pointerup", this.handleSliderPointerUp, this);
-      window.removeEventListener("pointerdown", unlock, true);
-      window.removeEventListener("keydown", unlock, true);
-      try {
-        this.currentMusicSource?.stop();
-      } catch {
-        // The source may already have finished during a crossfade.
-      }
-      void this.ctx?.close();
-    });
+    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
   }
 
   private createButton(ui: ModalUIManager): void {
@@ -148,8 +169,9 @@ export class MusicSystem {
 
     this.button.on("pointerover", () => this.tip.setVisible(true));
     this.button.on("pointerout", () => this.tip.setVisible(false));
-    this.button.on("pointerdown", () => this.openSettings());
+    this.button.on("pointerdown", () => { this.tip.setVisible(false); this.openSettings(); });
     ui.registerHud(frame, this.icon, this.button, this.tip);
+    ui.registerTooltip(this.tip);
     this.headerControls = [frame, this.icon, this.button, this.tip];
     this.refreshButton();
   }
@@ -162,7 +184,7 @@ export class MusicSystem {
 
   private readStoredVolume(key: string, fallback: number): number {
     const stored = window.localStorage.getItem(key);
-    if (stored === null) return fallback;
+    if (stored === null || stored.trim() === "") return fallback;
     const value = Number(stored);
     return Number.isFinite(value) ? Phaser.Math.Clamp(value, 0, 1) : fallback;
   }
@@ -247,19 +269,24 @@ export class MusicSystem {
   }
 
   private setMusicVolume(value: number): void {
+    if (this.disposed) return;
     this.musicVolume = Phaser.Math.Clamp(value, 0, 1);
-    this.saveVolume(MUSIC_VOLUME_KEY, this.musicVolume);
+    this.saveVolume(this.musicVolumeStorageKey, this.musicVolume);
     this.updateSliderVisuals();
     this.applyVolume();
     if (this.musicVolume > 0) {
       if (!this.started) this.start();
-      else if (this.audioReady && (!this.currentMusicSource || this.currentMusicPhase !== this.phase)) this.playMusicTrack(this.phase);
+      else if (this.audioReady && this.playbackMode === "cutscene" && this.cutsceneMusicBuffer) this.playCutsceneMusicTrack();
+      else if (this.audioReady && this.playbackMode === "world" && (!this.currentMusicSource || this.currentMusicPhase !== this.phase)) {
+        this.playMusicTrack(this.phase);
+      }
     }
   }
 
   private setEffectsVolume(value: number): void {
+    if (this.disposed) return;
     this.effectsVolume = Phaser.Math.Clamp(value, 0, 1);
-    this.saveVolume(EFFECTS_VOLUME_KEY, this.effectsVolume);
+    this.saveVolume(this.effectsVolumeStorageKey, this.effectsVolume);
     this.updateSliderVisuals();
     this.applyVolume();
     if (this.effectsVolume > 0 && !this.started) this.start();
@@ -333,14 +360,19 @@ export class MusicSystem {
   }
 
   private start(): void {
+    if (this.disposed) return;
     if (this.started) {
       if (this.ctx?.state === "suspended") {
         void this.ctx.resume().catch(() => undefined);
       }
       this.applyVolume();
       if (!this.audioLoadPromise) this.audioLoadPromise = this.loadAudioAssets();
-      if (this.audioReady && this.musicVolume > 0 && (!this.currentMusicSource || this.currentMusicPhase !== this.phase)) {
-        this.playMusicTrack(this.phase);
+      if (this.audioReady && this.musicVolume > 0) {
+        if (this.playbackMode === "cutscene" && this.cutsceneMusicBuffer) {
+          this.playCutsceneMusicTrack();
+        } else if (this.playbackMode === "world" && (!this.currentMusicSource || this.currentMusicPhase !== this.phase)) {
+          this.playMusicTrack(this.phase);
+        }
       }
       return;
     }
@@ -381,37 +413,122 @@ export class MusicSystem {
       }
     };
 
-    const musicResults = await Promise.all(MUSIC_PHASES.map(async (phase) => {
+    const musicResultsPromise = Promise.all(MUSIC_PHASES.map(async (phase) => {
       const buffer = await decode(`music/${phase}.ogg`);
       return [phase, buffer] as const;
     }));
-    const effectResults = await Promise.all(EFFECT_NAMES.map(async (name) => {
+    const cutsceneMusicPromise = decode("music/cutscene.ogg");
+    const effectResultsPromise = Promise.all(EFFECT_NAMES.map(async (name) => {
       const buffer = await decode(`effects/${name}.ogg`);
       return [name, buffer] as const;
     }));
+    const [musicResults, cutsceneMusic, effectResults] = await Promise.all([
+      musicResultsPromise,
+      cutsceneMusicPromise,
+      effectResultsPromise
+    ]);
 
-    if (this.ctx !== context || context.state === "closed") return;
+    if (this.disposed || this.ctx !== context || context.state === "closed") return;
     for (const [phase, buffer] of musicResults) {
       if (buffer) this.musicBuffers.set(phase, buffer);
     }
     for (const [name, buffer] of effectResults) {
       if (buffer) this.effectBuffers.set(name, buffer);
     }
+    this.cutsceneMusicBuffer = cutsceneMusic;
     this.audioReady = true;
 
-    if (this.musicVolume > 0) this.playMusicTrack(this.phase);
+    if (this.musicVolume > 0) {
+      if (this.playbackMode === "cutscene" && this.cutsceneMusicBuffer) this.playCutsceneMusicTrack();
+      else if (this.playbackMode === "world") this.playMusicTrack(this.phase);
+    }
     const queued = this.pendingEffects.splice(0);
     for (const effect of queued) this.playSoundEffect(effect);
   }
 
+  /** Start the original, softly layered story theme while the opening dialogue is shown. */
+  startOpeningCutsceneAudio(): void {
+    if (this.disposed) return;
+    this.playbackMode = "cutscene";
+    this.cutsceneMusicRequested = true;
+    if (!this.started) this.start();
+    if (this.ctx?.state === "suspended") void this.ctx.resume().catch(() => undefined);
+    if (this.audioReady && this.musicVolume > 0 && this.cutsceneMusicBuffer) this.playCutsceneMusicTrack();
+  }
+
+  /** A restrained RPG-style dialogue blip, throttled by the cutscene typewriter. */
+  playCutsceneVoice(): void {
+    if (this.disposed) return;
+    if (!this.started) this.start();
+    // Do not queue early typewriter blips; a delayed burst is worse than a missed first syllable.
+    if (!this.audioReady || !this.effectBuffers.has("talk")) return;
+    this.playSoundEffect({ name: "talk" });
+  }
+
+  /** Fade back to the current time-of-day theme when the intro ends. */
+  stopOpeningCutsceneAudio(): void {
+    if (this.disposed) return;
+    this.cutsceneMusicRequested = false;
+    this.playbackMode = "world";
+    const source = this.cutsceneMusicSource;
+    const gain = this.cutsceneMusicGain;
+    if (!source || !gain || !this.ctx || this.ctx.state === "closed") {
+      if (this.audioReady && this.musicVolume > 0) this.playMusicTrack(this.phase);
+      return;
+    }
+
+    const context = this.ctx;
+    const now = context.currentTime;
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(Math.max(0.0001, gain.gain.value), now);
+    gain.gain.linearRampToValueAtTime(0.0001, now + 0.45);
+    source.onended = () => {
+      if (this.cutsceneMusicSource !== source) return;
+      this.cutsceneMusicSource = null;
+      this.cutsceneMusicGain = null;
+      if (!this.cutsceneMusicRequested && this.musicVolume > 0) this.playMusicTrack(this.phase);
+    };
+    try { source.stop(now + 0.48); } catch { /* Source may already be stopping. */ }
+  }
+
+  private playCutsceneMusicTrack(): void {
+    if (this.disposed || this.playbackMode !== "cutscene" || !this.ctx || !this.musicBus || !this.cutsceneMusicBuffer || this.ctx.state === "closed") return;
+    if (this.cutsceneMusicSource) return;
+
+    const now = this.ctx.currentTime;
+    const oldSource = this.currentMusicSource;
+    const oldGain = this.currentMusicGain;
+    if (oldSource && oldGain) {
+      oldGain.gain.cancelScheduledValues(now);
+      oldGain.gain.setValueAtTime(Math.max(0.0001, oldGain.gain.value), now);
+      oldGain.gain.linearRampToValueAtTime(0.0001, now + 0.55);
+      try { oldSource.stop(now + 0.58); } catch { /* Ignore an already stopped source. */ }
+    }
+    this.currentMusicSource = null;
+    this.currentMusicGain = null;
+    this.currentMusicPhase = null;
+
+    const source = this.trackSource(this.ctx.createBufferSource());
+    const gain = this.ctx.createGain();
+    source.buffer = this.cutsceneMusicBuffer;
+    source.loop = true;
+    source.connect(gain).connect(this.musicBus);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.linearRampToValueAtTime(0.72, now + 1.8);
+    this.cutsceneMusicSource = source;
+    this.cutsceneMusicGain = gain;
+    source.start(now);
+  }
+
   private playMusicTrack(phase: DayPhase): void {
+    if (this.disposed || this.playbackMode !== "world" || this.cutsceneMusicRequested) return;
     if (!this.ctx || !this.musicBus || this.ctx.state === "closed") return;
     const buffer = this.musicBuffers.get(phase);
     if (!buffer) return;
     if (this.currentMusicPhase === phase && this.currentMusicSource) return;
 
     const now = this.ctx.currentTime;
-    const source = this.ctx.createBufferSource();
+    const source = this.trackSource(this.ctx.createBufferSource());
     const trackGain = this.ctx.createGain();
     source.buffer = buffer;
     source.loop = true;
@@ -453,7 +570,7 @@ export class MusicSystem {
 
     if (nextPhase === this.phase) return;
     this.phase = nextPhase;
-    if (this.musicVolume > 0 && this.audioReady) this.playMusicTrack(nextPhase);
+    if (this.playbackMode === "world" && this.musicVolume > 0 && this.audioReady) this.playMusicTrack(nextPhase);
   }
 
   /** Update the listener anchor every frame so world sounds fade with player distance. */
@@ -469,7 +586,7 @@ export class MusicSystem {
   };
 
   private playSoundEffect(event: SoundEffectEvent): void {
-    if (this.effectsVolume <= 0) return;
+    if (this.disposed || this.effectsVolume <= 0) return;
     if (!this.started) this.start();
     if (!this.ctx || !this.effectsBus || this.ctx.state === "closed") return;
 
@@ -494,7 +611,7 @@ export class MusicSystem {
       pan = Phaser.Math.Clamp(dx / maxDistance, -1, 1) * 0.82 + pan;
     }
 
-    const source = this.ctx.createBufferSource();
+    const source = this.trackSource(this.ctx.createBufferSource());
     const gain = this.ctx.createGain();
     const panner = this.ctx.createStereoPanner();
     const baseGain = EFFECT_BASE_GAIN[effect] ?? 0.58;
@@ -505,4 +622,65 @@ export class MusicSystem {
     source.connect(gain).connect(panner).connect(this.effectsBus);
     source.start();
   }
+  private trackSource(source: AudioBufferSourceNode): AudioBufferSourceNode {
+    this.activeSources.add(source);
+    source.addEventListener("ended", () => {
+      this.activeSources.delete(source);
+      try { source.disconnect(); } catch { /* The source may already be disconnected. */ }
+    }, { once: true });
+    return source;
+  }
+
+  /** Stop every active and crossfading source immediately when this save slot closes. */
+  shutdown(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.pendingEffects.length = 0;
+    this.cutsceneMusicRequested = false;
+    this.activeSlider = null;
+
+    this.scene.events.off("sound-effect", this.handleSoundEffect, this);
+    this.scene.input.off("pointerdown", this.handleSliderPointerDown, this);
+    this.scene.input.off("pointermove", this.handleSliderPointerMove, this);
+    this.scene.input.off("pointerup", this.handleSliderPointerUp, this);
+    if (this.unlockHandler) {
+      window.removeEventListener("pointerdown", this.unlockHandler, true);
+      window.removeEventListener("keydown", this.unlockHandler, true);
+      this.unlockHandler = null;
+    }
+
+    const context = this.ctx;
+    if (context && context.state !== "closed") {
+      const now = context.currentTime;
+      try {
+        if (this.master) {
+          this.master.gain.cancelScheduledValues(now);
+          this.master.gain.setValueAtTime(0, now);
+        }
+      } catch { /* Closing the context is still sufficient if the gain node has ended. */ }
+      for (const source of this.activeSources) {
+        try { source.stop(now); } catch { /* Source may have already ended. */ }
+        try { source.disconnect(); } catch { /* Ignore an already disconnected source. */ }
+      }
+      this.activeSources.clear();
+      try { this.musicBus?.disconnect(); } catch { /* Ignore teardown races. */ }
+      try { this.effectsBus?.disconnect(); } catch { /* Ignore teardown races. */ }
+      try { this.master?.disconnect(); } catch { /* Ignore teardown races. */ }
+      void context.close().catch(() => undefined);
+    }
+
+    this.currentMusicSource = null;
+    this.currentMusicGain = null;
+    this.currentMusicPhase = null;
+    this.cutsceneMusicSource = null;
+    this.cutsceneMusicGain = null;
+    this.ctx = null;
+    this.master = null;
+    this.musicBus = null;
+    this.effectsBus = null;
+    this.audioReady = false;
+    this.started = false;
+    this.audioLoadPromise = null;
+  }
+
 }

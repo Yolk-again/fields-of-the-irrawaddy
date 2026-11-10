@@ -6,6 +6,7 @@ export interface SaveSlotSummary {
   day: number;
   savedAt: string | null;
   playerName: string | null;
+  farmName: string | null;
 }
 
 function normalizeSlotNumber(slotNumber: number): number {
@@ -79,7 +80,8 @@ export function readSaveSlotSummary(slotNumber: number): SaveSlotSummary {
     valid: false,
     day: 1,
     savedAt: null,
-    playerName: null
+    playerName: null,
+    farmName: null
   };
 
   try {
@@ -100,10 +102,10 @@ export function readSaveSlotSummary(slotNumber: number): SaveSlotSummary {
       inventory?: { items?: unknown; collected?: unknown };
       board?: unknown;
       village?: unknown;
-      profile?: { name?: unknown };
+      profile?: { name?: unknown; farmName?: unknown };
     };
 
-    const supportedVersions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+    const supportedVersions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
     const version = typeof data.version === "number" ? data.version : NaN;
     const valid = supportedVersions.includes(version) &&
       !!data.player && Number.isFinite(Number(data.player.x)) && Number.isFinite(Number(data.player.y)) &&
@@ -117,7 +119,8 @@ export function readSaveSlotSummary(slotNumber: number): SaveSlotSummary {
       valid,
       day: Math.max(1, Math.floor(Number(data.farming?.day) || 1)),
       savedAt: typeof data.savedAt === "string" ? data.savedAt : null,
-      playerName: typeof data.profile?.name === "string" ? data.profile.name : null
+      playerName: typeof data.profile?.name === "string" ? data.profile.name : null,
+      farmName: typeof data.profile?.farmName === "string" ? data.profile.farmName : "My Farm"
     };
   } catch {
     return { ...empty, occupied: true };

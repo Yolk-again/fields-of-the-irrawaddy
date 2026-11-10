@@ -26,3 +26,12 @@ AUDIO SETTINGS
 The existing independent background-music and sound-effect sliders are unchanged. Existing localStorage keys and settings are preserved. Music continues through the music bus; gameplay sounds continue through the effects bus.
 
 All audio files are delivered as OGG assets under public/audio. The source project does not need to download or load the SoundFont at runtime; it is used only to render the delivered audio files.
+
+OPENING CUTSCENE AUDIO
+- public/audio/music/cutscene.ogg — original 25-second pastoral story theme, designed to loop softly beneath the introductory dialogue before crossfading back to the current time-of-day theme.
+- The existing talk.ogg effect is used as a subtle retro-RPG dialogue blip during the typewriter text, and is routed through the Sound Effects volume bus.
+
+VOLUME DEFAULTS AND PREFERENCES
+- First-run defaults: Background Music 30%, Sound Effects 30%.
+- Players can freely adjust both sliders at any time.
+- Every adjustment is saved using the existing localStorage keys. Existing player preferences override first-run defaults and are not reset by this update.
