@@ -13,3 +13,6 @@ Animals: chicken/duck 16x16 (3 frames), water buffalo 44x30 (4 frames).
 FX: fx/dust, splash, sparkle (4x 16x16), water_glint (4x 8x8), butterflies (2x 8x8).
 Burmese touches: khamauk hat, longyi, thanaka, gaung baung, stilt houses, kyaung monastery,
 golden zedi, toddy palms, bamboo, banana, lotus pond, water buffalo, rice paddy.
+
+V3 additions: monk + kid sheets (4x5 frames: down, up, side, work, sit), village props (assets/village),
+HUD icons (assets/ui/icon_*.png). Layout lives in src/game/data/villageLayout.ts.

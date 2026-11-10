@@ -1,97 +1,78 @@
 import Phaser from "phaser";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
-import { pixelPanel } from "../ui/PixelUI";
+import { createRedCloseButton, modalClosePosition, modalPanel } from "../ui/PixelUI";
 
+interface HelpCard {
+  title: Phaser.GameObjects.Text;
+  body: Phaser.GameObjects.Text;
+  titleKey: string;
+  bodyKey: string;
+}
+
+/** Compact illustrated guide for movement, farming, fishing and cooking. */
 export class HelpSystem {
-  private scene: Phaser.Scene;
   private ui: ModalUIManager;
   private language: LanguageSystem;
-  private helpKey!: Phaser.Input.Keyboard.Key;
   private isOpen = false;
   private panel!: Phaser.GameObjects.Container;
+  private closeButton!: Phaser.GameObjects.Container;
   private titleText!: Phaser.GameObjects.Text;
   private subtitleText!: Phaser.GameObjects.Text;
-  private closeText!: Phaser.GameObjects.Text;
-  private cardTexts: { title: Phaser.GameObjects.Text; body: Phaser.GameObjects.Text; titleKey: string; bodyKey: string }[] = [];
+  private exitHintText!: Phaser.GameObjects.Text;
+  private cardTexts: HelpCard[] = [];
 
   constructor(scene: Phaser.Scene, ui: ModalUIManager, language: LanguageSystem) {
-    this.scene = scene;
     this.ui = ui;
     this.language = language;
-    this.helpKey = this.scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.H);
-    this.createInterface();
-    this.ui.registerPanel("help", this.panel, 400, () => {
-      this.isOpen = false;
-      this.helpKey.reset();
-    });
+    this.createInterface(scene);
+    this.ui.registerPanel("help", this.panel, 400, () => { this.isOpen = false; }, this.closeButton);
     this.language.onChange(() => this.updateInterface());
   }
 
-  private createCard(x: number, y: number, titleKey: string, bodyKey: string, width: number, height: number): void {
-    const background = this.scene.add.rectangle(x, y, width, height, 0x40513a, 0.98);
-    background.setStrokeStyle(1, 0x9b7047);
-
-    const title = this.scene.add.text(x, y - height / 2 + 16, "", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
-      color: "#e6c47e",
-      fontStyle: "bold"
-    }).setOrigin(0.5);
-
-    const body = this.scene.add.text(x, y - height / 2 + 34, "", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "8px",
-      color: "#f5e8c6",
-      align: "center",
-      lineSpacing: 4,
-      wordWrap: { width: width - 20 }
-    }).setOrigin(0.5, 0);
-
-    this.panel.add([background, title, body]);
+  private createCard(scene: Phaser.Scene, x: number, y: number, iconKey: string, titleKey: string, bodyKey: string): void {
+    const width = 160;
+    const height = 86;
+    const background = scene.add.rectangle(x, y, width, height, 0x40513a, 1).setStrokeStyle(2, 0x9b7047);
+    const iconFrame = scene.add.rectangle(x - 56, y, 34, 34, 0x2d3829, 1).setStrokeStyle(1, 0xd6b36b);
+    const icon = scene.add.image(x - 56, y, iconKey).setScale(1.35);
+    const title = scene.add.text(x - 31, y - 20, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#e6c47e", fontStyle: "bold",
+      wordWrap: { width: 120 }
+    }).setOrigin(0, 0.5);
+    const body = scene.add.text(x - 31, y + 1, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#f5e8c6", lineSpacing: 2,
+      wordWrap: { width: 120 }
+    }).setOrigin(0, 0.5);
+    this.panel.add([background, iconFrame, icon, title, body]);
     this.cardTexts.push({ title, body, titleKey, bodyKey });
   }
 
-  private createInterface(): void {
-    this.panel = this.scene.add.container(0, 0).setScrollFactor(0);
-
-    const background = pixelPanel(this.scene, 320, 180, 550, 310, { fill: 0x2d3829, alpha: 1 });
-
-    const topLine = this.scene.add.rectangle(320, 91, 490, 2, 0x9b7047, 0.8);
-
-    this.titleText = this.scene.add.text(320, 48, "", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "18px",
-      color: "#e6c47e",
-      fontStyle: "bold"
+  private createInterface(scene: Phaser.Scene): void {
+    this.panel = scene.add.container(0, 0).setScrollFactor(0);
+    const background = modalPanel(scene, 320, 180, 550, 310);
+    const topLine = scene.add.rectangle(320, 91, 490, 2, 0x9b7047, 0.8);
+    this.titleText = scene.add.text(320, 43, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "18px", color: "#e6c47e", fontStyle: "bold"
     }).setOrigin(0.5);
-
-    this.subtitleText = this.scene.add.text(320, 72, "", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "8px",
-      color: "#d7e6c5",
-      align: "center"
+    this.subtitleText = scene.add.text(320, 69, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d7e6c5", align: "center", wordWrap: { width: 450 }
     }).setOrigin(0.5);
-
     this.panel.add([background, topLine, this.titleText, this.subtitleText]);
-    this.createCard(190, 151, "help.moveTitle", "help.moveBody", 245, 112);
-    this.createCard(450, 151, "help.villageTitle", "help.villageBody", 245, 112);
-    this.createCard(320, 257, "help.farmTitle", "help.farmBody", 505, 76);
 
-    const closeBackground = this.scene.add.rectangle(320, 319, 130, 24, 0x79382e, 1);
-    closeBackground.setStrokeStyle(1, 0xd6b36b);
-    closeBackground.setInteractive({ useHandCursor: true });
-    closeBackground.on("pointerdown", this.close);
+    this.createCard(scene, 145, 139, "ui_icon_hand", "help.moveTitle", "help.moveBody");
+    this.createCard(scene, 320, 139, "ui_icon_sprout", "help.farmTitle", "help.farmBody");
+    this.createCard(scene, 495, 139, "fish_silver_barb_asset", "help.fishingTitle", "help.fishingBody");
+    this.createCard(scene, 145, 239, "ui_icon_talk", "help.villageTitle", "help.villageBody");
+    this.createCard(scene, 320, 239, "cooking_hearth_asset", "help.cookingTitle", "help.cookingBody");
+    this.createCard(scene, 495, 239, "ui_icon_bed", "help.houseTitle", "help.houseBody");
 
-    this.closeText = this.scene.add.text(320, 319, "", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "9px",
-      color: "#fff1cf",
-      fontStyle: "bold"
+    this.exitHintText = scene.add.text(320, 318, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d7e6c5", align: "center"
     }).setOrigin(0.5);
-
-    this.panel.add([closeBackground, this.closeText]);
-
+    const closePosition = modalClosePosition(320, 180, 550, 310);
+    this.closeButton = createRedCloseButton(scene, closePosition.x, closePosition.y);
+    this.panel.add([this.exitHintText, this.closeButton]);
     this.updateInterface();
   }
 
@@ -99,12 +80,8 @@ export class HelpSystem {
     const font = this.language.getFontFamily();
     this.titleText.setText(this.language.t("help.title"));
     this.subtitleText.setText(this.language.t("help.subtitle"));
-    this.closeText.setText(this.language.t("help.close"));
-
-    for (const text of [this.titleText, this.subtitleText, this.closeText]) {
-      text.setFontFamily(font);
-    }
-
+    this.exitHintText.setText(this.language.t("common.clickCrossExit"));
+    for (const text of [this.titleText, this.subtitleText, this.exitHintText]) text.setFontFamily(font);
     for (const card of this.cardTexts) {
       card.title.setText(this.language.t(card.titleKey));
       card.body.setText(this.language.t(card.bodyKey));
@@ -119,22 +96,6 @@ export class HelpSystem {
     this.updateInterface();
     this.ui.open("help");
   }
-
-  private close = (): void => {
-    this.isOpen = false;
-    this.ui.close("help");
-    this.helpKey.reset();
-  };
-
-  mobileToggle(): void {
-    if (this.isOpen) this.close();
-    else this.open();
-  }
-
-  update(): void {
-    if (Phaser.Input.Keyboard.JustDown(this.helpKey)) {
-      if (this.isOpen) this.close();
-      else this.open();
-    }
-  }
+  private close = (): void => { this.isOpen = false; this.ui.close("help"); };
+  mobileToggle(): void { if (this.isOpen) this.close(); else this.open(); }
 }

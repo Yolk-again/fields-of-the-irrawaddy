@@ -48,68 +48,146 @@ def mango_tree(W, H, seed, fruit=True, lean=0):
 
 
 def toddy_palm(W, H, seed, trunk_h=None, lean=1):
+    """A recognisable toddy palm: long ringed trunk, fan crown and drooping fronds."""
     rnd = random.Random(seed)
     s = Spr(W, H)
-    s.shadow_ellipse(W // 2 + 1, H - 3, 9, 3, 75)
-    pal = Ramp("#5aa040")
-    th = trunk_h or (H - 18)
-    bx = W // 2
-    topx = bx + lean * 2
+    s.shadow_ellipse(W // 2, H - 3, max(8, W // 4), 3, 72)
+    bark = Ramp("#986039")
+    leaf = Ramp("#4d913a")
+    leaf_hi = Ramp("#80be50")
+    base_x = W // 2
+    crown_y = max(9, H - (trunk_h or (H - 18)) - 3)
+    crown_x = base_x + lean * 2
+    th = H - crown_y - 5
+
+    # The trunk tapers slightly toward the crown and has irregular bark rings.
     for i in range(th):
-        t = i / th
-        x = int(bx + (topx - bx) * (t ** 1.5))
-        y = H - 3 - i
-        w = 4 if t < 0.15 else 3 if t < 0.85 else 3
-        s.rect(x - 1, y, w, 1, TRUNK.m if i % 4 else TRUNK.d1)
-        s.p(x - 1, y, TRUNK.l1); s.p(x - 1 + w - 1, y, TRUNK.d1)
-    cy = H - 3 - th
-    # fan crown: drooping fronds
-    angles = [-165, -140, -115, -90, -65, -40, -15, 15, 165, 190]
-    for a in angles:
-        ang = math.radians(a)
-        L = rnd.randint(int(W * 0.34), int(W * 0.46))
-        px, py = topx, cy
-        for k in range(L):
-            t = k / L
-            px = topx + math.cos(ang) * k
-            py = cy + math.sin(ang) * k * 0.55 + (t ** 2) * 9
-            c = pal.l1 if t < 0.35 else pal.m if t < 0.7 else pal.d1
-            s.p(px, py, c); s.p(px, py + 1, pal.d1)
-            if k % 2 == 0 and 0.15 < t < 0.95:
-                s.p(px, py + 2, pal.m if k % 4 else pal.l1)
-                s.p(px, py - 1, pal.l1)
-    s.ell(topx, cy + 1, 3, 3, pal.d1)
-    s.p(topx - 1, cy + 3, hx("#6b4a2a")); s.p(topx + 1, cy + 3, hx("#6b4a2a")); s.p(topx, cy + 4, hx("#6b4a2a"))
+        t = i / max(1, th - 1)
+        y = H - 4 - i
+        x = round(base_x + (crown_x - base_x) * (t ** 1.4))
+        width = 4 if i < 7 else 3
+        s.rect(x - 1, y, width, 1, bark.m if i % 4 else bark.d1)
+        s.p(x - 1, y, bark.l2 if i % 5 == 0 else bark.l1)
+        s.p(x + width - 2, y, bark.d2)
+        if i % 5 == 0 and i > 5:
+            s.hline(x - 1, y, width, bark.d1)
+            s.p(x, y - 1, bark.l1)
+    s.ell(base_x, H - 3, 5, 2, bark.d1)
+    s.hline(base_x - 3, H - 5, 6, bark.l1)
+
+    # Six separate fronds spread left/right and arch down at their tips.
+    # Each has a clear midrib and alternating leaflets, not a round canopy.
+    fronds = [
+        (-1.00, -0.17, .42), (-.90, -.42, .58), (-.66, -.72, .64),
+        (-.34, -.93, .72), (.02, -1.00, .74), (.40, -.91, .72),
+        (.72, -.66, .62), (.96, -.30, .54), (1.00, -.02, .38)
+    ]
+    for fi, (vx, vy, factor) in enumerate(fronds):
+        length = max(12, int(W * factor))
+        norm = math.hypot(vx, vy)
+        vx, vy = vx / norm, vy / norm
+        nx, ny = -vy, vx
+        previous = None
+        for step in range(length + 1):
+            t = step / length
+            px = crown_x + vx * step
+            py = crown_y + vy * step * .62 + (t * t) * (8 if vy > -.6 else 4)
+            # central rachis
+            rachis = leaf_hi.l2 if t < .28 else leaf_hi.l1
+            s.p(px, py, rachis)
+            s.p(px, py + 1, leaf.d1)
+            if step % 2 == 0 and 2 < step < length - 2:
+                leaflet = max(2, int((1 - t * .35) * (4 if W >= 40 else 3)))
+                for side in (-1, 1):
+                    for k in range(1, leaflet + 1):
+                        # Leaflets point backward along the rib, giving a palm feather silhouette.
+                        lx = round(px + nx * side * k - vx * k * .46)
+                        ly = round(py + ny * side * k - vy * k * .46 + (k * k) * .07)
+                        colour = leaf_hi.l1 if (fi + step + side) % 5 == 0 else leaf.l1 if side < 0 else leaf.m
+                        s.p(lx, ly, colour)
+                        if k > 2: s.p(lx, ly + 1, leaf.d1)
+            previous = (px, py)
+        if previous:
+            s.p(round(previous[0]), round(previous[1]), leaf_hi.l2)
+
+    # New centre spear and small brown toddy nut cluster.
+    s.line(crown_x, crown_y + 1, crown_x + lean, crown_y - 8, leaf_hi.l2)
+    for ox, oy, col in [(-3, 3, "#80502f"), (0, 4, "#9a6033"), (3, 2, "#744326")]:
+        s.ell(crown_x + ox, crown_y + oy, 2, 2, hx(col))
+        s.p(crown_x + ox - 1, crown_y + oy - 1, hx("#d7a45a"))
     s.outline(-0.72)
     return s
 
 
-def banana_plant(W=44, H=44, seed=3):
+def banana_plant(W=48, H=48, seed=3):
+    """Banana plant with clearly separated broad leaves and a small fruit bunch."""
+    rnd = random.Random(seed)
     s = Spr(W, H)
-    s.shadow_ellipse(W // 2, H - 3, 10, 3, 70)
-    leaf = Ramp("#6bb44a")
-    bx, by = W // 2, H - 14
-    s.rect(bx - 2, by, 5, 11, hx("#b9d27a")); s.vline(bx - 2, by, 11, hx("#d8e8a0")); s.vline(bx + 2, by, 11, hx("#8aa85a"))
-    # (ox, up, droop, length)
-    for ox, up, droop, L in [(-1.0, 0.55, 0.9, 20), (1.0, 0.55, 0.9, 20), (-0.55, 1.0, 0.7, 22), (0.55, 1.0, 0.7, 22), (0.0, 1.2, 0.4, 17)]:
-        prev = None
-        for i in range(L * 2 + 1):
-            t = i / (L * 2)
-            x = bx + ox * t * L * 0.95
-            y = by - up * math.sin(t * math.pi * 0.62) * L * 0.9 + droop * (t ** 2) * L * 0.55
-            if prev is not None:
-                tx, ty = x - prev[0], y - prev[1]
-                n = math.hypot(tx, ty) or 1
-                nx, ny = -ty / n, tx / n
-                wd = 4.2 * math.sin(min(1, t * 1.1) * math.pi) ** 0.6
-                for k in range(int(-wd), int(wd) + 1):
-                    px, py = x + nx * k, y + ny * k
-                    edge = abs(k) >= int(wd)
-                    c = leaf.d1 if edge else leaf.l2 if k == 0 else leaf.l1 if k < 0 else leaf.m
-                    s.p(px, py, c)
-            prev = (x, y)
-    s.ell(bx + 4, by + 3, 2, 3, hx("#8a3a6a"))
-    for i in range(3): s.rect(bx + 1 + i * 2, by + 7, 2, 3, hx("#d6d44a"))
+    s.shadow_ellipse(W // 2, H - 3, W // 3, 3, 70)
+    leaf = Ramp("#579b40")
+    leaf_hi = Ramp("#88c653")
+    leaf_deep = Ramp("#3a7835")
+    bx, by = W // 2, H - 13
+
+    # Layer the back leaves first. Each blade is an individual curved lance.
+    blades = [
+        (-1.00, -0.30, 21, 4),
+        (-0.84, -0.70, 23, 4),
+        (-0.48, -0.98, 25, 4),
+        (-0.12, -1.12, 27, 4),
+        (0.28, -1.08, 26, 4),
+        (0.70, -0.82, 24, 4),
+        (1.00, -0.42, 21, 4)
+    ]
+    for leaf_index, (dx, dy, length, width_max) in enumerate(blades):
+        ex = bx + dx * length
+        ey = by + dy * length * .58
+        bend = -1 if leaf_index % 2 else 1
+        centreline = []
+        upper, lower = [], []
+        vx, vy = ex - bx, ey - by
+        norm = math.hypot(vx, vy) or 1
+        nx, ny = -vy / norm, vx / norm
+        for step in range(length + 1):
+            t = step / length
+            cx = bx + vx * t + bend * math.sin(math.pi * t) * 2
+            cy = by + vy * t + (t * t) * (4 if dy > -.5 else 2)
+            width = max(1, math.sin(math.pi * t) * width_max)
+            centreline.append((cx, cy))
+            upper.append((cx + nx * width, cy + ny * width))
+            lower.append((cx - nx * width, cy - ny * width))
+        blade_colour = leaf.m if leaf_index % 2 else leaf_hi.m
+        s.poly(upper + list(reversed(lower)), blade_colour)
+        # Dark edges and a bright midrib keep the shape legible at native resolution.
+        for step, (cx, cy) in enumerate(centreline):
+            t = step / length
+            width = max(1, math.sin(math.pi * t) * width_max)
+            s.p(cx, cy, leaf_hi.l2)
+            if step % 4 == 1 and 3 < step < length - 3:
+                for side in (-1, 1):
+                    exv = round(cx + nx * side * width)
+                    eyv = round(cy + ny * side * width)
+                    s.line(cx, cy, exv, eyv, leaf_deep.m if side > 0 else leaf.l1)
+            if step % 5 == 0 and width > 2:
+                s.p(round(cx + nx * width), round(cy + ny * width), leaf_deep.d1)
+                s.p(round(cx - nx * width), round(cy - ny * width), leaf_hi.l1)
+        s.p(round(ex), round(ey), leaf_hi.l2)
+
+    # Pseudostem and the new rolled leaf in the centre.
+    s.rect(bx - 3, by - 1, 7, 13, hx("#b5c878"))
+    s.vline(bx - 2, by, 11, hx("#d6e49a"))
+    s.vline(bx + 2, by, 11, hx("#829f58"))
+    s.line(bx, by - 2, bx + 1, by - 11, leaf_hi.l2)
+
+    # Small hand of green-gold bananas under the leaves.
+    s.line(bx + 1, by + 1, bx + 3, by + 4, hx("#74502e"))
+    for i in range(3):
+        fx = bx + 1 + i * 3
+        fy = by + 5 + (i % 2)
+        s.ell(fx, fy + 1, 2, 3, hx("#d6c84a"))
+        s.vline(fx - 1, fy, 2, hx("#f0e06a"))
+        s.p(fx, fy + 4, hx("#76502c"))
+    s.ell(bx - 5, by + 1, 2, 3, hx("#8a3a6a"))
     s.outline(-0.72)
     return s
 
@@ -214,10 +292,22 @@ def fence_h_unit():
 
 
 def fence_v_unit():
-    s = Spr(8, 10)
+    """8x14 vertical fence run: two continuous rails with timber tie-posts.
+
+    At 2x scale it covers exactly 16x28 world pixels, so four runs meet
+    cleanly along a 112px farm edge without the old 4px overlaps.
+    """
+    s = Spr(8, 14)
     g = Ramp("#d2b05c")
-    s.rect(2, 0, 3, 10, g.d1)
-    s.rect(1, 1, 4, 4, g.m); s.hline(1, 1, 4, g.l2); s.hline(1, 4, 4, g.d1)
+    # Long rails run along the fence direction, with warm highlights and shade.
+    s.rect(1, 0, 2, 14, g.m); s.vline(1, 0, 14, g.l1); s.vline(2, 0, 14, g.d1)
+    s.rect(5, 0, 2, 14, g.m); s.vline(5, 0, 14, g.l1); s.vline(6, 0, 14, g.d1)
+    # Cross ties at both ends make the next vertical segment join seamlessly.
+    s.rect(0, 0, 8, 2, g.d1); s.hline(0, 0, 8, g.l1)
+    s.rect(0, 12, 8, 2, g.d1); s.hline(0, 12, 8, g.l1)
+    # Small central peg and grain marks add a hand-built bamboo/wood detail.
+    s.rect(3, 5, 2, 4, g.d2); s.vline(3, 5, 4, g.l2)
+    s.p(4, 6, g.l1); s.p(4, 8, g.d1)
     s.outline(-0.72)
     return s
 

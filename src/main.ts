@@ -17,10 +17,10 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
     activePointers: 3
   },
 
-  // Crisp pixel art: nearest-neighbour sampling, no smoothing, whole-pixel positions.
+  // Smooth-pixel-art mode keeps the game's retro art style while allowing
+  // anti-aliased text and softer browser scaling for English and Burmese UI.
   render: {
-    pixelArt: true,
-    antialias: false,
+    smoothPixelArt: true,
     roundPixels: true
   },
 
@@ -32,19 +32,19 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
   scene: [FarmScene]
 };
 
-// Make sure the pixel font is ready before Phaser renders its first Text objects.
+// Load the Myanmar text font before Phaser renders its first Text objects.
 async function boot(): Promise<void> {
   try {
     const wait = new Promise<void>(resolve => window.setTimeout(resolve, 2500));
     await Promise.race([
       Promise.all([
-        document.fonts.load('12px "Pixelify Sans"'),
+        document.fonts.load('12px "Noto Sans"'),
         document.fonts.load('12px "Noto Sans Myanmar"')
       ]),
       wait
     ]);
   } catch {
-    // fall back to the monospace stack silently
+    // fall back to the system sans-serif stack silently
   }
   new Phaser.Game(gameConfig);
 }

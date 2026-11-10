@@ -1,0 +1,332 @@
+import Phaser from "phaser";
+import { LanguageSystem } from "./LanguageSystem";
+import { ModalUIManager } from "./ModalUIManager";
+
+export type FishKind = "silverBarb" | "catfish" | "goldenCarp";
+
+export interface FishingSaveData {
+  rodOwned: boolean;
+  fish: Record<FishKind, number>;
+}
+
+interface FishingSpot {
+  x: number;
+  y: number;
+  waterX: number;
+}
+
+const FISH_KEYS: FishKind[] = ["silverBarb", "catfish", "goldenCarp"];
+
+/** Riverbank fishing with a timed bite-and-reel interaction. */
+export class FishingSystem {
+  private scene: Phaser.Scene;
+  private language: LanguageSystem;
+  private ui: ModalUIManager;
+  private getGameHour: () => number;
+
+  private rodOwned = false;
+  private soundX = 320;
+  private soundY = 330;
+  private fish: Record<FishKind, number> = {
+    silverBarb: 0,
+    catfish: 0,
+    goldenCarp: 0
+  };
+
+  private readonly spots: FishingSpot[] = [
+    { x: 270, y: 507, waterX: 270 },
+    // The former middle spot sat inside the granary's collision footprint.
+    // This bank section below the eastern NPC paddy is open and walkable.
+    { x: 830, y: 507, waterX: 830 },
+    { x: 1210, y: 507, waterX: 1210 }
+  ];
+
+  private castKey!: Phaser.Input.Keyboard.Key;
+  private reelKey!: Phaser.Input.Keyboard.Key;
+  private state: "idle" | "waiting" | "bite" = "idle";
+  private stateTimer = 0;
+  private biteWindow = 0;
+  private biteDelay = 2600;
+  private prompt!: Phaser.GameObjects.Text;
+  private toastText!: Phaser.GameObjects.Text;
+  private line!: Phaser.GameObjects.Graphics;
+  private bobber!: Phaser.GameObjects.Arc;
+  private markers: Phaser.GameObjects.Container[] = [];
+
+  constructor(
+    scene: Phaser.Scene,
+    ui: ModalUIManager,
+    language: LanguageSystem,
+    getGameHour: () => number
+  ) {
+    this.scene = scene;
+    this.ui = ui;
+    this.language = language;
+    this.getGameHour = getGameHour;
+
+    const keyboard = scene.input.keyboard!;
+    this.castKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
+    this.reelKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+
+    this.createFishingSpots();
+    this.createInterface();
+    this.language.onChange(() => this.updateInterface());
+    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.markers.forEach(marker => marker.destroy());
+      this.line.destroy();
+      this.bobber.destroy();
+    });
+  }
+
+  private createFishingSpots(): void {
+    for (const spot of this.spots) {
+      const marker = this.scene.add.container(spot.x, spot.y + 4).setDepth(524);
+      const shadow = this.scene.add.ellipse(0, 0, 23, 7, 0x1d4a4c, 0.45);
+      const ring = this.scene.add.circle(0, -3, 5, 0x6db9bd, 0.7).setStrokeStyle(1, 0xc8e8d6, 0.9);
+      const fishIcon = this.scene.add.image(0, -12, "fish_silver_barb_asset").setScale(1.15);
+      marker.add([shadow, ring, fishIcon]);
+      this.scene.tweens.add({
+        targets: ring,
+        alpha: { from: 0.35, to: 0.9 },
+        scale: { from: 0.85, to: 1.18 },
+        duration: 1100,
+        yoyo: true,
+        repeat: -1
+      });
+      this.markers.push(marker);
+    }
+  }
+
+  private createInterface(): void {
+    this.prompt = this.scene.add.text(320, 292, "", {
+      fontFamily: this.language.getFontFamily(),
+      fontSize: "10px",
+      color: "#fff1cf",
+      backgroundColor: "#2a1a14",
+      padding: { x: 7, y: 4 },
+      align: "center"
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(7000).setVisible(false);
+
+    this.toastText = this.scene.add.text(320, 264, "", {
+      fontFamily: this.language.getFontFamily(),
+      fontSize: "11px",
+      color: "#ffe18a",
+      backgroundColor: "#2a1a14",
+      padding: { x: 7, y: 4 },
+      align: "center"
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(7001).setAlpha(0);
+
+    this.line = this.scene.add.graphics().setDepth(530);
+    this.bobber = this.scene.add.circle(0, 0, 4, 0xd45d45, 1)
+      .setStrokeStyle(1, 0xf5e6bc, 1)
+      .setDepth(531)
+      .setVisible(false);
+
+    this.ui.registerHud(this.prompt, this.toastText);
+    this.updateInterface();
+  }
+
+  private updateInterface(): void {
+    this.prompt.setFontFamily(this.language.getFontFamily());
+    this.toastText.setFontFamily(this.language.getFontFamily());
+  }
+
+  getHasRod(): boolean {
+    return this.rodOwned;
+  }
+
+  grantFishingRod(): void {
+    this.rodOwned = true;
+    this.showToast(this.language.t("fishing.rodPurchased"));
+  }
+
+  getFishCount(kind: FishKind): number {
+    return this.fish[kind];
+  }
+
+  getFishTotal(): number {
+    return FISH_KEYS.reduce((sum, key) => sum + this.fish[key], 0);
+  }
+
+  getFishCounts(): Record<FishKind, number> {
+    return { ...this.fish };
+  }
+
+  addFish(kind: FishKind, amount = 1): void {
+    this.fish[kind] += Math.max(0, Math.floor(amount));
+  }
+
+  removeFish(kind: FishKind, amount = 1): boolean {
+    const safeAmount = Math.max(0, Math.floor(amount));
+    if (this.fish[kind] < safeAmount) return false;
+    this.fish[kind] -= safeAmount;
+    return true;
+  }
+
+  removeAnyFish(amount = 1): boolean {
+    const safeAmount = Math.max(0, Math.floor(amount));
+    if (this.getFishTotal() < safeAmount) return false;
+    let left = safeAmount;
+    // Use common fish first so rarer catfish/carp remain available for recipes.
+    for (const kind of ["silverBarb", "catfish", "goldenCarp"] as FishKind[]) {
+      const take = Math.min(this.fish[kind], left);
+      this.fish[kind] -= take;
+      left -= take;
+      if (left <= 0) break;
+    }
+    return true;
+  }
+
+  isBusy(): boolean {
+    return this.state !== "idle";
+  }
+
+  private nearestSpot(playerX: number, playerY: number): FishingSpot | null {
+    let best: FishingSpot | null = null;
+    let bestDistance = 74;
+    for (const spot of this.spots) {
+      const distance = Phaser.Math.Distance.Between(playerX, playerY, spot.x, spot.y);
+      if (distance < bestDistance) {
+        best = spot;
+        bestDistance = distance;
+      }
+    }
+    return best;
+  }
+
+  private beginCast(playerX: number, playerY: number, spot: FishingSpot): void {
+    this.state = "waiting";
+    this.stateTimer = 0;
+    this.biteWindow = 0;
+    this.biteDelay = 1900 + (spot.x % 5) * 340 + Math.random() * 900;
+    this.line.clear();
+    this.line.lineStyle(1, 0x4a3424, 0.95);
+    this.line.beginPath();
+    this.line.moveTo(playerX, playerY + 2);
+    this.line.lineTo(spot.waterX, 558);
+    this.line.strokePath();
+    this.bobber.setPosition(spot.waterX, 558).setVisible(true);
+    this.soundX = spot.waterX;
+    this.soundY = 558;
+    this.prompt.setText(this.language.t("fishing.waiting"));
+    this.prompt.setVisible(true);
+    this.scene.events.emit("player-action", "fish");
+    this.scene.events.emit("sound-effect", { name: "cast", x: this.soundX, y: this.soundY, maxDistance: 245 });
+  }
+
+  private pickFish(): FishKind {
+    const hour = ((this.getGameHour() % 24) + 24) % 24;
+    const roll = Math.random();
+    if (hour < 6 || hour >= 18) {
+      if (roll < 0.48) return "catfish";
+      if (roll < 0.74) return "goldenCarp";
+      return "silverBarb";
+    }
+    if (hour >= 6 && hour < 9 || hour >= 16 && hour < 18) {
+      if (roll < 0.34) return "goldenCarp";
+      if (roll < 0.57) return "catfish";
+      return "silverBarb";
+    }
+    if (roll < 0.20) return "goldenCarp";
+    if (roll < 0.38) return "catfish";
+    return "silverBarb";
+  }
+
+  private catchFish(): void {
+    const kind = this.pickFish();
+    this.addFish(kind);
+    this.scene.events.emit("player-action", "fish");
+    this.scene.events.emit("sound-effect", { name: "catch", x: this.soundX, y: this.soundY, maxDistance: 245 });
+    this.showToast(this.language.t(`fishing.caught.${kind}`));
+    this.finishCast();
+  }
+
+  private finishCast(): void {
+    this.state = "idle";
+    this.stateTimer = 0;
+    this.biteWindow = 0;
+    this.line.clear();
+    this.bobber.setVisible(false);
+    this.prompt.setVisible(false);
+  }
+
+  private showToast(message: string): void {
+    this.toastText.setText(message);
+    this.scene.tweens.killTweensOf(this.toastText);
+    this.toastText.setAlpha(1);
+    this.scene.tweens.add({
+      targets: this.toastText,
+      alpha: 0,
+      delay: 1800,
+      duration: 500
+    });
+  }
+
+  /** Returns true while fishing consumes SPACE so farming cannot use the tool. */
+  update(playerX: number, playerY: number, delta: number, modalOpen = false): boolean {
+    if (modalOpen) {
+      this.prompt.setVisible(false);
+      return false;
+    }
+
+    if (this.state === "waiting") {
+      this.stateTimer += Math.min(delta, 50);
+      this.bobber.setY(558 + Math.sin(this.scene.time.now / 220) * 1.5);
+      if (this.stateTimer >= this.biteDelay) {
+        this.state = "bite";
+        this.stateTimer = 0;
+        this.biteWindow = 2300;
+        this.prompt.setText(this.language.t("fishing.bite"));
+        this.scene.events.emit("sound-effect", { name: "bite", x: this.soundX, y: this.soundY, maxDistance: 245 });
+      }
+      return true;
+    }
+
+    if (this.state === "bite") {
+      this.stateTimer += Math.min(delta, 50);
+      this.bobber.setY(558 + Math.sin(this.scene.time.now / 75) * 3);
+      if (Phaser.Input.Keyboard.JustDown(this.reelKey)) {
+        this.catchFish();
+        return true;
+      }
+      if (this.stateTimer >= this.biteWindow) {
+        this.scene.events.emit("sound-effect", { name: "miss", x: this.soundX, y: this.soundY, maxDistance: 245 });
+        this.showToast(this.language.t("fishing.missed"));
+        this.finishCast();
+      }
+      return true;
+    }
+
+    const spot = this.nearestSpot(playerX, playerY);
+    if (!spot) {
+      this.prompt.setVisible(false);
+      return false;
+    }
+
+    if (!this.rodOwned) {
+      this.prompt.setText(this.language.t("fishing.needRod"));
+      this.prompt.setVisible(true);
+      return false;
+    }
+
+    this.prompt.setText(this.language.t("fishing.castHint"));
+    this.prompt.setVisible(true);
+    if (Phaser.Input.Keyboard.JustDown(this.castKey)) {
+      this.beginCast(playerX, playerY, spot);
+      return true;
+    }
+    return false;
+  }
+
+  getSaveData(): FishingSaveData {
+    return { rodOwned: this.rodOwned, fish: { ...this.fish } };
+  }
+
+  loadSaveData(data?: FishingSaveData): void {
+    if (!data) return;
+    this.rodOwned = data.rodOwned === true;
+    for (const key of FISH_KEYS) {
+      this.fish[key] = Math.max(0, Math.floor(Number(data.fish?.[key]) || 0));
+    }
+  }
+}

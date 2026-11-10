@@ -19,7 +19,7 @@ export class CraftingSystem {
   private ui: ModalUIManager;
   private language: LanguageSystem;
 
-  private benchX = 435;
+  private benchX = 440;
   private benchY = 250;
   private isOpen = false;
 
@@ -88,7 +88,7 @@ export class CraftingSystem {
 
     this.workbenchLabel = this.scene.add.text(
       this.benchX,
-      166,
+      224,
       this.language.t("craft.workbenchName"),
       {
         fontFamily: this.language.getFontFamily(),
@@ -97,7 +97,7 @@ export class CraftingSystem {
         backgroundColor: "#34271d",
         padding: { x: 5, y: 3 }
       }
-    ).setOrigin(0.5).setDepth(259);
+    ).setOrigin(0.5).setDepth(259).setVisible(false);
   }
 
   private createControls(): void {
@@ -124,8 +124,8 @@ export class CraftingSystem {
   private createInterface(): void {
     this.promptText = this.scene.add.text(
       this.benchX,
-      192,
-      this.language.t("craft.prompt"),
+      158,
+      `${this.language.t("craft.workbenchName")} · C`,
       {
         fontFamily: this.language.getFontFamily(),
         fontSize: "10px",
@@ -133,7 +133,7 @@ export class CraftingSystem {
         backgroundColor: "#34271d",
         padding: { x: 5, y: 4 }
       }
-    ).setOrigin(0.5).setDepth(160).setVisible(false);
+    ).setOrigin(0.5).setDepth(260).setVisible(false);
 
     this.craftingPanel = this.scene.add.container(0, 0);
     this.craftingPanel.setScrollFactor(0);
@@ -221,7 +221,7 @@ export class CraftingSystem {
     });
 
     this.closeText.setText(this.language.t("craft.close"));
-    this.promptText.setText(this.language.t("craft.prompt"));
+    this.promptText.setText(`${this.language.t("craft.workbenchName")} · C`);
     this.workbenchLabel.setText(this.language.t("craft.workbenchName"));
     this.resultText.setText(this.language.t(this.resultKey));
 
@@ -402,7 +402,7 @@ export class CraftingSystem {
 
     if (this.ui.hasActiveModal()) return false;
     const distance = Phaser.Math.Distance.Between(playerX, playerY, this.benchX, this.benchY);
-    if (distance < 90) {
+    if (distance < 75) {
       this.openCrafting();
       return true;
     }
@@ -423,8 +423,10 @@ export class CraftingSystem {
     }
 
     const distance = Phaser.Math.Distance.Between(playerX, playerY, this.benchX, this.benchY);
-    const nearBench = distance < 90;
+    const nearBench = distance < 75;
     this.promptText.setVisible(nearBench);
+    this.workbenchLabel.setVisible(false);
+    this.promptText.setText(`${this.language.t("craft.workbenchName")} · C`);
 
     if (nearBench && Phaser.Input.Keyboard.JustDown(this.craftKey)) {
       this.openCrafting();

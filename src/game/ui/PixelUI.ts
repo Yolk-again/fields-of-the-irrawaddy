@@ -1,8 +1,5 @@
 import Phaser from "phaser";
 
-/** Pixel-art font stack. Pixelify Sans is loaded from Google Fonts in index.html. */
-export const PIXEL_FONT = '"Pixelify Sans", "Press Start 2P", monospace';
-
 export const PALETTE = {
   outline: 0x2a1a14,
   woodDark: 0x5e3b22,
@@ -19,6 +16,34 @@ export interface PixelPanelOptions {
   fill?: number;
   alpha?: number;
   shadow?: boolean;
+}
+
+/** Shared body color and frame for every modal tab. */
+export function modalPanel(
+  scene: Phaser.Scene,
+  cx: number,
+  cy: number,
+  w: number,
+  h: number
+): Phaser.GameObjects.Graphics {
+  return pixelPanel(scene, cx, cy, w, h, {
+    fill: PALETTE.panelGreen,
+    alpha: 1
+  });
+}
+
+/** Place the close control just inside the actual top-right panel corner. */
+export function modalClosePosition(
+  cx: number,
+  cy: number,
+  w: number,
+  h: number
+): { x: number; y: number } {
+  const inset = 17;
+  return {
+    x: Math.round(cx + w / 2 - inset),
+    y: Math.round(cy - h / 2 + inset)
+  };
 }
 
 /**
@@ -75,4 +100,34 @@ export function pixelPanel(
   g.fillRect(x + w - 4, y + h - 4, 2, 2);
 
   return g;
+}
+
+/** A compact red close control shared by modal panels.
+ * The click is handled centrally by ModalUIManager using the same position,
+ * rather than relying on a nested child GameObject's pointer event.
+ */
+export function createRedCloseButton(
+  scene: Phaser.Scene,
+  x: number,
+  y: number
+): Phaser.GameObjects.Container {
+  const button = scene.add.container(x, y).setScrollFactor(0);
+  button.setInteractive(
+    new Phaser.Geom.Rectangle(-20, -20, 40, 40),
+    Phaser.Geom.Rectangle.Contains
+  );
+  const background = scene.add.rectangle(0, 0, 24, 24, 0x9b3d32, 1);
+  background.setStrokeStyle(2, PALETTE.goldBright);
+  button.on("pointerover", () => background.setFillStyle(0xc45142, 1));
+  button.on("pointerout", () => background.setFillStyle(0x9b3d32, 1));
+
+  const cross = scene.add.text(0, -1, "×", {
+    fontFamily: "Arial, sans-serif",
+    fontSize: "20px",
+    color: "#fff7e8",
+    fontStyle: "bold"
+  }).setOrigin(0.5);
+
+  button.add([background, cross]);
+  return button;
 }

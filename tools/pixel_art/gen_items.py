@@ -1,27 +1,60 @@
 """16x16 item/tool icons, crop growth stages, FX sheets and UI bits."""
 from pxlib import *
-from gen_buildings import TEAK, WOOD, BAMBOO, GOLD, STONE
+from gen_buildings import WOOD, GOLD
 
 OUTC = hx("#2a1a14")
 METAL = Ramp("#aab4ba")
 
 
 def icon_hoe():
+    """Detailed 16px iron field hoe with a broad, flat blade and timber haft."""
     s = Spr(16, 16)
-    s.line(2, 14, 11, 5, WOOD.m); s.line(3, 14, 12, 5, WOOD.l1)
-    s.poly([(10, 2), (14, 3), (14, 7), (12, 6), (11, 4)], METAL.m)
-    s.line(10, 2, 14, 3, METAL.l2); s.line(14, 3, 14, 7, METAL.d1)
-    s.outline(-0.72); return s
+    wood = Ramp("#9b6035")
+    iron = Ramp("#aebbc3")
+    # Long wooden shaft; dark outline, warm grain and a wrapped lower grip.
+    s.line(2, 14, 10, 6, OUTC)
+    s.line(3, 14, 10, 7, wood.d2)
+    s.line(3, 13, 10, 6, wood.m)
+    s.line(4, 13, 10, 7, wood.l1)
+    s.line(2, 12, 4, 14, wood.d1)
+    s.p(3, 12, wood.l2)
+    # Socket and a broad rectangular hoe blade (not a pickaxe point).
+    s.poly([(8, 4), (10, 2), (14, 3), (15, 5), (13, 8), (9, 7), (7, 6)], OUTC)
+    s.poly([(9, 4), (11, 3), (14, 4), (14, 5), (12, 7), (9, 6)], iron.d1)
+    s.poly([(10, 3), (12, 3), (14, 4), (13, 5), (10, 5)], iron.m)
+    s.line(11, 3, 14, 4, iron.l2)
+    s.line(13, 5, 12, 7, iron.d2)
+    s.poly([(8, 5), (10, 4), (11, 6), (9, 8), (7, 7)], wood.d1)
+    s.p(9, 5, wood.l1)
+    s.outline(-0.72)
+    return s
 
 
 def icon_seed_bag():
+    """Folded kraft-paper seed packet with a rice sprig and visible grain."""
     s = Spr(16, 16)
-    b = Ramp("#c9a56a")
-    s.ell(8, 10, 5, 5, b.m); s.ell(7, 9, 3, 3, b.l1); s.hline(5, 14, 7, b.d1)
-    s.rect(6, 3, 5, 3, b.m); s.hline(5, 6, 7, hx("#b0392c"))
-    s.p(5, 3, b.m); s.p(11, 3, b.m); s.p(4, 2, b.l1); s.p(12, 2, b.l1)
-    s.rect(7, 9, 3, 3, hx("#6bc04a")); s.p(8, 8, hx("#9ae06a")); s.p(7, 9, hx("#9ae06a"))
-    s.outline(-0.72); return s
+    paper = Ramp("#c49a5c")
+    ink = hx("#49301f")
+    leaf = Ramp("#5c9d42")
+    grain = Ramp("#e4c36b")
+    # Packet silhouette and shaded paper body.
+    s.poly([(3, 4), (12, 4), (14, 6), (13, 14), (4, 15), (2, 13), (2, 6)], ink)
+    s.poly([(4, 5), (11, 5), (13, 7), (12, 13), (4, 14), (3, 12), (3, 7)], paper.m)
+    s.vline(4, 7, 6, paper.l1)
+    s.vline(11, 7, 5, paper.d1)
+    s.hline(5, 13, 6, paper.d2)
+    # Folded top flap and a short red-brown string seal.
+    s.poly([(3, 4), (6, 2), (12, 3), (14, 6), (10, 5), (5, 5)], paper.l1)
+    s.line(4, 4, 11, 4, paper.l2)
+    s.p(8, 5, hx("#9a4932")); s.p(8, 6, hx("#d9ad61"))
+    # Rice sprig emblem, gold grains and tiny printed detail.
+    s.line(8, 12, 8, 8, leaf.d1)
+    s.line(8, 10, 6, 8, leaf.m); s.line(8, 9, 10, 7, leaf.l1)
+    s.p(5, 8, leaf.l2); s.p(11, 7, leaf.l2)
+    s.p(7, 7, grain.l1); s.p(9, 6, grain.m); s.p(10, 9, grain.l2)
+    s.hline(6, 12, 5, hx("#846039"))
+    s.outline(-0.72)
+    return s
 
 
 def icon_watering_can():
@@ -35,54 +68,28 @@ def icon_watering_can():
 
 
 def icon_sickle():
+    """Curved rice sickle with a bright sharpened inner edge and wood grip."""
     s = Spr(16, 16)
-    s.rect(2, 11, 4, 3, WOOD.m); s.hline(2, 11, 4, WOOD.l1)
-    for i, (x, y) in enumerate([(6, 11), (7, 9), (8, 7), (10, 5), (12, 4), (13, 5)]):
-        s.p(x, y, METAL.l1); s.p(x, y + 1, METAL.m); s.p(x + 1, y + 1, METAL.d1)
-    s.p(13, 6, METAL.d1)
-    s.outline(-0.72); return s
-
-
-def icon_wood():
-    s = Spr(16, 16)
-    for (x, y) in ((1, 9), (6, 9), (3, 4), (8, 4) if False else (10, 4)):
-        pass
-    for (x, y) in ((2, 8), (8, 8), (5, 3)):
-        s.ell(x + 3, y + 3, 3, 3, hx("#8a5a34")); s.ell(x + 3, y + 3, 2, 2, hx("#e0b878")); s.p(x + 3, y + 3, hx("#a87a4c")); s.p(x + 2, y + 2, hx("#c8985c"))
-    s.rect(1, 10, 14, 2, hx("#b0392c")); s.hline(1, 10, 14, hx("#d65a4a"))
-    s.outline(-0.72); return s
-
-
-def icon_bamboo():
-    s = Spr(16, 16)
-    g = Ramp("#5fa244")
-    for x in (3, 6, 9, 12):
-        s.rect(x, 2, 3, 12, g.m); s.vline(x, 2, 12, g.l1); s.vline(x + 2, 2, 12, g.d1)
-        s.hline(x, 6, 3, g.d2); s.hline(x, 11, 3, g.d2)
-    s.rect(2, 8, 13, 2, hx("#d9b45f")); s.hline(2, 8, 13, hx("#f0d070"))
-    s.outline(-0.72); return s
-
-
-def icon_herbs():
-    s = Spr(16, 16)
-    for ang, c in ((-50, "#4a9a3a"), (-20, "#6bc04a"), (10, "#4a9a3a"), (40, "#6bc04a"), (-80, "#6bc04a")):
-        a = math.radians(ang - 90 + 90)
-        for k in range(9):
-            x = 8 + math.sin(math.radians(ang)) * k * 0.9
-            y = 12 - math.cos(math.radians(ang)) * k
-            s.p(x, y, hx(c)); s.p(x + 1, y, hx(c)); 
-            if k > 4: s.p(x - 1, y, hx("#9ae06a"))
-    s.rect(7, 11, 3, 4, hx("#b0392c")); s.hline(7, 11, 3, hx("#d65a4a"))
-    s.outline(-0.72); return s
-
-
-def icon_coconut():
-    s = Spr(16, 16)
-    s.ell(8, 8, 6, 6, hx("#7a4a2a")); s.ell(7, 7, 4, 4, hx("#9a6a3c")); s.p(5, 5, hx("#c8985c")); s.p(6, 4, hx("#c8985c"))
-    for x, y in ((6, 9), (9, 9), (7, 11)): s.p(x, y, hx("#2a1710")); s.p(x + 1, y, hx("#2a1710"))
-    s.hline(4, 12, 8, hx("#5a3418"))
-    s.outline(-0.72); return s
-
+    wood = Ramp("#986039")
+    iron = Ramp("#aebbc3")
+    # Handle first so the blade socket naturally overlaps its upper end.
+    s.line(8, 8, 14, 14, OUTC)
+    s.line(9, 9, 14, 14, wood.d2)
+    s.line(9, 8, 13, 13, wood.m)
+    s.line(10, 8, 13, 12, wood.l1)
+    s.poly([(12, 12), (15, 14), (14, 16), (11, 14), (10, 12)], OUTC)
+    s.poly([(12, 13), (14, 14), (13, 15), (11, 13)], wood.m)
+    s.p(12, 13, wood.l2)
+    # Crescent blade, broad at the socket and tapering to a sharp tip.
+    s.poly([(8, 9), (5, 8), (3, 6), (1, 3), (2, 1), (5, 1), (8, 2), (11, 4), (14, 7), (14, 9), (12, 8), (10, 6), (8, 5), (6, 4), (5, 4), (6, 6), (8, 7), (10, 8)], OUTC)
+    s.poly([(7, 8), (4, 6), (2, 3), (3, 2), (5, 2), (8, 3), (11, 5), (13, 8), (12, 8), (10, 6), (8, 5), (6, 5), (7, 7), (9, 8)], iron.d1)
+    s.poly([(3, 3), (5, 3), (8, 4), (11, 6), (12, 8), (10, 7), (8, 6), (6, 5), (4, 5)], iron.m)
+    s.line(3, 3, 5, 3, iron.l2)
+    s.line(5, 4, 8, 5, iron.l1)
+    s.line(10, 7, 12, 9, iron.d2)
+    s.poly([(7, 8), (9, 8), (10, 10), (8, 10), (7, 9)], iron.d2)
+    s.outline(-0.72)
+    return s
 
 def icon_coin():
     s = Spr(16, 16)
@@ -111,6 +118,88 @@ def icon_rice_grain():
         for k in range(3): s.p(1 + i * 3 + (k % 2), 2 + k * 2, g.l2)
     s.rect(3, 11, 10, 2, hx("#9a6a3a"))
     s.outline(-0.72); return s
+
+
+def icon_fishing_rod():
+    """16px bamboo fishing rod with a fine line and curved hook."""
+    s = Spr(16, 16)
+    bamboo = Ramp("#a9773e")
+    line = hx("#d8e4dc")
+    iron = Ramp("#aebbc3")
+    # Tapered bamboo pole and darker grip.
+    s.line(1, 14, 11, 2, OUTC)
+    s.line(2, 14, 11, 2, bamboo.d2)
+    s.line(3, 13, 10, 3, bamboo.m)
+    s.line(3, 12, 9, 3, bamboo.l1)
+    s.p(2, 14, bamboo.d1); s.p(3, 13, bamboo.l2)
+    # Fine fishing line hangs from the tip and ends in a small hook.
+    s.line(11, 2, 13, 7, line)
+    s.line(13, 7, 13, 10, line)
+    s.line(13, 10, 11, 12, iron.m)
+    s.p(10, 12, iron.l1)
+    s.outline(-0.72)
+    return s
+
+
+def fish_icon(kind="silver_barb"):
+    """Distinct small river-fish icons for the inventory and fishing markers."""
+    palettes = {
+        "silver_barb": ("#8fa8a9", "#c7d4c9", "#526f78", "#e7d9a1"),
+        "catfish": ("#7d7880", "#b6a8a0", "#45414d", "#e6bd84"),
+        "golden_carp": ("#c18a35", "#f0c85a", "#80502c", "#ffe9a0"),
+    }
+    body, light, dark, fin = palettes.get(kind, palettes["silver_barb"])
+    s = Spr(16, 16)
+    body_c, light_c, dark_c, fin_c = map(hx, (body, light, dark, fin))
+    # Tail, fins and body are layered so the fish reads clearly at 16px.
+    s.poly([(2, 7), (0, 4), (0, 10)], dark_c)
+    s.poly([(2, 7), (1, 5), (1, 9)], fin_c)
+    s.poly([(5, 6), (7, 3), (10, 5), (8, 7)], dark_c)
+    s.poly([(6, 9), (9, 9), (11, 12), (7, 11)], dark_c)
+    s.ell(8, 7, 6, 3, dark_c)
+    s.ell(8, 6, 5, 2, body_c)
+    s.hline(5, 5, 6, light_c)
+    s.p(11, 6, hx("#fff1cf")); s.p(12, 6, dark_c)
+    s.p(13, 7, hx("#2a1a14"))
+    s.line(5, 8, 10, 8, fin_c)
+    if kind == "catfish":
+        s.line(12, 6, 14, 4, dark_c); s.line(12, 7, 15, 8, dark_c)
+        s.p(13, 4, light_c); s.p(14, 8, light_c)
+    elif kind == "golden_carp":
+        s.p(7, 6, hx("#fff0a0")); s.p(9, 7, hx("#e9a83a")); s.p(10, 6, hx("#fff0a0"))
+        s.line(4, 6, 4, 8, dark_c)
+    else:
+        s.p(7, 6, hx("#edf5e8")); s.p(9, 7, hx("#dce6da"))
+    s.outline(-0.72)
+    return s
+
+
+def meal_icon(kind="fish_rice"):
+    """16px top-down serving bowl with recipe-specific fish/broth garnish."""
+    s = Spr(16, 16)
+    bowl = Ramp("#d7d9d2")
+    rim = hx("#3d6680")
+    s.ell(8, 8, 7, 5, hx("#2a1a14"))
+    s.ell(8, 7, 6, 4, bowl.m)
+    s.ell(8, 6, 5, 3, hx("#f3ead0"))
+    s.hline(3, 8, 10, rim); s.hline(4, 10, 8, rim)
+    s.hline(5, 12, 6, bowl.d1)
+    if kind == "mohinga":
+        s.ell(8, 6, 4, 2, hx("#d99a3d"))
+        s.hline(5, 6, 6, hx("#f0c66a"))
+        s.p(6, 5, hx("#fff0bd")); s.p(10, 7, hx("#a94c2d"))
+        s.p(8, 4, hx("#5c9d42")); s.p(9, 5, hx("#5c9d42"))
+    elif kind == "fish_curry":
+        s.ell(8, 6, 4, 2, hx("#b9562f"))
+        s.p(6, 5, hx("#f0bd54")); s.p(9, 6, hx("#f4d27c"))
+        s.p(11, 5, hx("#5c9d42")); s.p(5, 7, hx("#fff0bd"))
+    else:
+        for x, y in ((5, 6), (7, 5), (9, 5), (11, 6), (7, 7), (9, 7)):
+            s.p(x, y, hx("#fffdf0"))
+        s.poly([(5, 6), (7, 5), (8, 7), (6, 8)], hx("#c28b45"))
+        s.p(6, 6, hx("#f0c66a")); s.p(10, 7, hx("#5c9d42"))
+    s.outline(-0.72)
+    return s
 
 
 # --------------------------- crops ---------------------------------

@@ -10,7 +10,7 @@ WATER = Ramp("#4aa0bf")
 PADDY = Ramp("#7fb0a6")
 MUD = Ramp("#7a5a3a")
 
-K_GRASS, K_PATH, K_WATER, K_BANK, K_PADDY, K_BUND, K_PLAZA = range(7)
+K_GRASS, K_PATH, K_WATER, K_BANK, K_PADDY, K_BUND, K_PLAZA, K_MUD = range(8)
 
 
 def grass_px(x, y, coarse, fine):
@@ -46,31 +46,51 @@ def build_ground(W=720, H=320):
             for x in range(max(0, x0), min(W, x1)):
                 kind[y][x] = k
 
-    # ---- paths (organic edges)
+    # ---- roads (organic edges)
     for x in range(W):
         top = 135 + int(wob[0][x] * 3); bot = 157 - int(wob[1][x] * 3)
         for y in range(top, bot):
             kind[y][x] = K_PATH
-    for y in range(102, 158):
-        l = 87 + int(wob[2][y % W] * 2); r = 107 - int(wob[3][y % W] * 2)
-        for x in range(l, r):
-            kind[y][x] = K_PATH
-    for y in range(155, 262):
-        l = 516 + int(wob[4][y % W] * 2); r = 540 - int(wob[5][y % W] * 2)
-        for x in range(l, r):
-            kind[y][x] = K_PATH
-    # stone plaza before the monastery / zedi
-    for y in range(108, 132):
-        for x in range(575, 705):
-            if (x - 640) ** 2 / 66 ** 2 + (y - 120) ** 2 / 13 ** 2 < 1:
-                kind[y][x] = K_PLAZA
+    stubs = [  # native x0, y0, x1, y1
+        (86, 122, 106, 158),    # player home door
+        (346, 122, 366, 137),   # Ko Aung door
+        (414, 122, 434, 137),   # Ma Thiri door
+        (620, 112, 644, 137),   # monastery gate
+        (152, 157, 178, 180),   # farm-plot gate
+        (280, 157, 298, 168),   # paddy access
+        (385, 157, 407, 240),   # road to west farm lane
+        (405, 154, 620, 171),   # shared farm access path behind NPC plots
+        (620, 133, 642, 171),   # path continues through the monastery gate
+        (516, 155, 540, 262),   # bridge road
+    ]
+    for i, (x0, y0, x1, y1) in enumerate(stubs):
+        for y in range(y0, y1):
+            l = x0 + int(wob[(2 + i) % 8][y % W] * 2); r = x1 - int(wob[(3 + i) % 8][y % W] * 2)
+            for x in range(l, r):
+                kind[y][x] = K_PATH
+
+    def rounded_plaza(cx, cy, half_w, half_h, radius, k):
+        # Compact stone forecourts with softened corners, not isolated oval pads.
+        for y in range(max(0, cy - half_h), min(H, cy + half_h + 1)):
+            for x in range(max(0, cx - half_w), min(W, cx + half_w + 1)):
+                dx = max(0, abs(x - cx) - (half_w - radius))
+                dy = max(0, abs(y - cy) - (half_h - radius))
+                if dx * dx + dy * dy <= radius * radius:
+                    # A few chipped edge pixels blend the paving into the turf.
+                    edge = max(abs(x - cx) / half_w, abs(y - cy) / half_h)
+                    if edge > .90 and rnd.random() < .08:
+                        continue
+                    kind[y][x] = k
+
+    rounded_plaza(268, 119, 64, 21, 8, K_PLAZA)   # village market square
+    rounded_plaza(650, 120, 66, 20, 8, K_PLAZA)   # monastery forecourt
     # ---- canal + banks
     fill(0, 259, W, 264, K_BANK)
     fill(0, 264, W, 297, K_WATER)
     fill(0, 297, W, 302, K_BANK)
     # ---- paddy
-    fill(212, 165, 349, 237, K_BUND)
-    fill(215, 168, 346, 234, K_PADDY)
+    fill(212, 165, 334, 237, K_BUND)
+    fill(215, 168, 331, 234, K_PADDY)
 
     img = Spr(W, H)
     px = img.im.load()
@@ -108,6 +128,9 @@ def build_ground(W=720, H=320):
                 px[x, y] = c
             elif k == K_BUND:
                 px[x, y] = DIRT.m
+            elif k == K_MUD:
+                n = fine[y][x]
+                px[x, y] = MUD.d1 if n < .35 else MUD.l1 if n > .8 else MUD.m
 
     # path edge: darker rim where path touches grass + ragged grass fringe
     for y in range(1, H - 1):
@@ -155,19 +178,19 @@ def build_ground(W=720, H=320):
                 if 0 <= base - i < H: px[x, base - i] = GRASS.l1 if i % 2 else GRASS.m
             if base - hgt >= 0: px[x, base - hgt] = hx("#8a5a34")
     # paddy: bund shading + water streaks + furrows between plant rows
-    for x in range(212, 349):
+    for x in range(212, 334):
         px[x, 165] = DIRT.l2; px[x, 166] = DIRT.l1; px[x, 167] = DIRT.m
         px[x, 235] = DIRT.d1; px[x, 236] = DIRT.d2; px[x, 234] = DIRT.m
     for y in range(165, 237):
         px[212, y] = DIRT.l1; px[213, y] = DIRT.m
-        px[347, y] = DIRT.d1; px[348, y] = DIRT.d2
+        px[332, y] = DIRT.d1; px[333, y] = DIRT.d2
     for r in range(7):
         yy = 177 + r * 11 - 5
-        for x in range(217, 345):
+        for x in range(217, 333):
             if kind[yy][x] == K_PADDY:
                 px[x, yy] = PADDY.d1 if (x // 6) % 2 else PADDY.d2
     for _ in range(95):
-        x = rnd.randint(217, 336); y = rnd.randint(170, 232)
+        x = rnd.randint(217, 323); y = rnd.randint(170, 232)
         L = rnd.randint(2, 6)
         for i in range(L):
             if kind[y][x + i] == K_PADDY: px[x + i, y] = PADDY.l2

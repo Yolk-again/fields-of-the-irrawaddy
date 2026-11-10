@@ -1,0 +1,29 @@
+FIELDS OF THE IRRAWADDY — HOME INTERIOR GUIDE
+
+ENTERING YOUR HOME
+Walk to the front of the player's wooden house and press E when the
+ENTER YOUR HOME prompt appears.
+
+MOVING INSIDE
+Use W A S D or the arrow keys to walk around the room. Move near a piece
+of furniture and press E, or click it when close enough.
+
+BED — SLEEP
+- Sleep from 06:00–11:59: wake at 18:00 the same day.
+- Sleep from 12:00–18:59: wake at 21:00 the same day.
+- Sleep from 19:00–05:59: wake at 07:00 the next in-game day.
+Sleeping advances the same village clock used by crops, NPC routines,
+daily requests, lighting, and ambient audio.
+
+STORAGE CHEST
+Use STORE to move all of a listed item from your backpack into the chest.
+Use TAKE to move the stored stack back to your backpack. The chest saves
+its contents automatically with the rest of your game. It stores rice seeds,
+harvested rice, Silver Barb, River Catfish, Golden Carp, and cooked meals.
+
+COOKING HEARTH
+The cooking hearth is inside the house. Press E beside it to open recipes.
+Existing fish-and-rice recipes, meal storage, and meal buffs are preserved.
+
+EXIT
+Use ESC or the red close control to return to the village outside.

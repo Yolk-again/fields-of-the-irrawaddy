@@ -1,0 +1,59 @@
+FIELDS OF THE IRRAWADDY — FISHING & COOKING QUICK GUIDE
+
+GETTING STARTED
+- Visit the Village Market and choose action 3 to buy a Fishing Rod for 35 coins.
+- The Backpack shows rod ownership, total fish, fish species, rice, and cooked meals.
+- Three fish markers are placed along accessible sections of the riverbank.
+
+FISHING
+- Stand close to a riverbank fish marker.
+- Press F to cast the line.
+- Wait for the bite message, then press SPACE during the bite window to reel in.
+- The player stays in place while a line is cast so the line and bobber remain connected.
+- Fish availability changes with the in-game time. Catfish are more common at night; the morning and late afternoon have improved golden-carp chances.
+- A meal eaten with Q at the cooking hearth improves fishing luck until the next in-game day.
+
+FISH SPECIES AND RAW MARKET VALUES
+- Silver Barb: 4 coins each.
+- River Catfish: 6 coins each.
+- Golden Carp: 8 coins each.
+- At the Village Market, action 5 sells all fish currently in the Backpack.
+
+ENTERING YOUR HOME
+- Walk to the front door of the player's wooden house and press E.
+- Inside, use W A S D or the arrow keys to move between the bed, storage chest, and cooker.
+- Press E near furniture to use it. Press ESC or click the red cross to leave the house.
+
+SLEEPING
+- Sleep between 06:00 and 11:59 to wake at 18:00 the same in-game day.
+- Sleep between 12:00 and 18:59 to wake at 21:00 the same in-game day.
+- Sleep from 19:00 through the pre-dawn hours to wake at 07:00 the next day.
+- Sleeping advances the shared clock, NPC schedules, crop growth, requests, lighting, and ambience.
+
+COOKING
+- The cooking hearth is now inside the player's house, on the right side of the room.
+- Walk near the hearth and press E to open the cooking menu.
+- Click a recipe card or press 1, 2, or 3 to prepare it.
+- Press Q or click the Eat button to consume one cooked meal and receive the fishing-luck bonus until the next day.
+
+RECIPES
+- Fish & Rice Bowl: any 1 fish + 2 harvested rice; sells for 20 coins.
+- River Catfish Mohinga: 1 River Catfish + 3 harvested rice; sells for 24 coins.
+- Golden Carp Curry: 1 Golden Carp + 2 harvested rice; sells for 20 coins.
+
+VILLAGE MARKET CONTROLS
+- 1: Buy 5 rice seeds for 10 coins.
+- 2: Sell all harvested rice for 5 coins each.
+- 3: Buy a Fishing Rod for 35 coins.
+- 4: Sell all cooked meals (each recipe has its own sale value).
+- 5: Sell all raw fish at the species prices above.
+- You can also click any action card directly.
+
+HOME STORAGE CHEST
+- Use STORE to move a full backpack stack into the chest and TAKE to retrieve it.
+- The chest stores rice seeds, harvested rice, Silver Barb, River Catfish, Golden Carp, and cooked meals.
+- Chest contents are saved with the rest of the game.
+
+SAVING
+- The Fishing Rod, all fish counts, cooked meal counts, the meal buff day, and chest contents are saved with the rest of the game.
+- Existing saves remain loadable; saves from before Fishing & Cooking simply begin with no rod, fish, or cooked meals.

@@ -1,6 +1,6 @@
 
 :root {
-  font-family: "Pixelify Sans", "Noto Sans Myanmar", "Segoe UI", Arial, sans-serif;
+  font-family: "Noto Sans", "Noto Sans Myanmar", "Segoe UI", Arial, sans-serif;
   color: #f1ead5;
   background: #19291f;
   font-synthesis: none;
@@ -99,7 +99,9 @@ h1 {
   display: block;
   width: 100% !important;
   height: 100% !important;
-  image-rendering: pixelated;
+  /* Let the browser smooth the final canvas scale so text stays readable.
+     Phaser still uses nearest-neighbour sampling for the pixel-art textures. */
+  image-rendering: auto;
 }
 
 .game-information {

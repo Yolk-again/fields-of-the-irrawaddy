@@ -3,8 +3,11 @@ import Phaser from "phaser";
 
 import { FarmingSystem } from "./FarmingSystem";
 import { MarketSystem } from "./MarketSystem";
+import { FishingSystem } from "./FishingSystem";
+import { CookingSystem } from "./CookingSystem";
+import { ChestStorageSystem } from "./ChestStorageSystem";
 import { InventorySystem } from "./InventorySystem";
-import { CraftingSystem } from "./CraftingSystem";
+import { VillageBoardSystem } from "./VillageBoardSystem";
 import { VillageSystem } from "./VillageSystem";
 import { PlayerProfileSystem } from "./PlayerProfileSystem";
 import { ModalUIManager } from "./ModalUIManager";
@@ -27,8 +30,11 @@ interface GameSaveData {
 
   farming: ReturnType<FarmingSystem["getSaveData"]>;
   market: ReturnType<MarketSystem["getSaveData"]>;
+  fishing?: ReturnType<FishingSystem["getSaveData"]>;
+  cooking?: ReturnType<CookingSystem["getSaveData"]>;
+  chest?: ReturnType<ChestStorageSystem["getSaveData"]>;
   inventory: ReturnType<InventorySystem["getSaveData"]>;
-  crafting: ReturnType<CraftingSystem["getSaveData"]>;
+  board?: ReturnType<VillageBoardSystem["getSaveData"]>;
   village: ReturnType<VillageSystem["getSaveData"]>;
   profile?: ReturnType<PlayerProfileSystem["getSaveData"]>;
   language?: Language;
@@ -40,8 +46,11 @@ export class SaveSystem {
 
   private farming: FarmingSystem;
   private market: MarketSystem;
+  private fishing: FishingSystem;
+  private cooking: CookingSystem;
+  private chest: ChestStorageSystem;
   private inventory: InventorySystem;
-  private crafting: CraftingSystem;
+  private board: VillageBoardSystem;
   private village: VillageSystem;
   private profile: PlayerProfileSystem;
 
@@ -57,8 +66,11 @@ export class SaveSystem {
     player: Phaser.GameObjects.Container,
     farming: FarmingSystem,
     market: MarketSystem,
+    fishing: FishingSystem,
+    cooking: CookingSystem,
+    chest: ChestStorageSystem,
     inventory: InventorySystem,
-    crafting: CraftingSystem,
+    board: VillageBoardSystem,
     village: VillageSystem,
     profile: PlayerProfileSystem,
     ui: ModalUIManager,
@@ -69,8 +81,11 @@ export class SaveSystem {
 
     this.farming = farming;
     this.market = market;
+    this.fishing = fishing;
+    this.cooking = cooking;
+    this.chest = chest;
     this.inventory = inventory;
-    this.crafting = crafting;
+    this.board = board;
     this.village = village;
     this.profile = profile;
 
@@ -93,9 +108,7 @@ export class SaveSystem {
       delay: 10000,
       loop: true,
       callback: () => {
-        this.saveGame(
-          this.language.t("save.auto")
-        );
+        this.saveGame(undefined, true);
       }
     });
 
@@ -142,7 +155,7 @@ export class SaveSystem {
       "",
       {
         fontFamily: this.language.getFontFamily(),
-        fontSize: "9px",
+        fontSize: "10px",
         color: "#e6c47e",
         backgroundColor: "#34271d",
         padding: { x: 4, y: 3 }
@@ -233,7 +246,7 @@ export class SaveSystem {
 
   private createSaveData(): GameSaveData {
     return {
-      version: 3,
+      version: 11,
       savedAt: new Date().toISOString(),
 
       player: {
@@ -243,15 +256,22 @@ export class SaveSystem {
 
       farming: this.farming.getSaveData(),
       market: this.market.getSaveData(),
+      fishing: this.fishing.getSaveData(),
+      cooking: this.cooking.getSaveData(),
+      chest: this.chest.getSaveData(),
       inventory: this.inventory.getSaveData(),
-      crafting: this.crafting.getSaveData(),
+      board: this.board.getSaveData(),
       village: this.village.getSaveData(),
       profile: this.profile.getSaveData(),
       language: this.language.getLanguage()
     };
   }
 
-  private saveGame(message?: string): void {
+  saveNow(): void {
+    this.saveGame(this.language.t("common.saved"));
+  }
+
+  private saveGame(message?: string, silent = false): void {
     try {
       const saveData = this.createSaveData();
 
@@ -260,9 +280,11 @@ export class SaveSystem {
         JSON.stringify(saveData)
       );
 
-      this.statusText.setText(
-        message ?? this.language.t("common.saved")
-      );
+      if (!silent) {
+        this.statusText.setText(
+          message ?? this.language.t("common.saved")
+        );
+      }
     } catch (error) {
       this.statusText.setText(
         this.language.t("common.saveFailed")
@@ -305,7 +327,7 @@ export class SaveSystem {
       const data = parsed as GameSaveData;
 
       if (
-        ![1, 2, 3].includes(data.version) ||
+        ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(data.version) ||
         !data.player ||
         !Number.isFinite(data.player.x) ||
         !Number.isFinite(data.player.y) ||
@@ -315,7 +337,7 @@ export class SaveSystem {
         !data.inventory ||
         !data.inventory.items ||
         !Array.isArray(data.inventory.collected) ||
-        !data.crafting ||
+        (data.version >= 4 && !data.board) ||
         !data.village
       ) {
         throw new Error(
@@ -337,11 +359,16 @@ export class SaveSystem {
 
       this.player.setPosition(x, y);
 
-      this.farming.loadSaveData(data.farming);
-      this.market.loadSaveData(data.market);
-      this.inventory.loadSaveData(data.inventory);
-      this.crafting.loadSaveData(data.crafting);
+      // Restore the world clock before crop timestamps so saved watering times
+      // are compared against the correct elapsed in-game minute.
       this.village.loadSaveData(data.village);
+      this.farming.loadSaveData(data.farming, data.version < 5);
+      this.market.loadSaveData(data.market);
+      this.fishing.loadSaveData(data.fishing);
+      this.cooking.loadSaveData(data.cooking);
+      this.chest.loadSaveData(data.chest);
+      this.inventory.loadSaveData(data.inventory);
+      if (data.board) this.board.loadSaveData(data.board);
 
       if (data.profile) {
         this.profile.loadSaveData(data.profile);
@@ -367,8 +394,6 @@ export class SaveSystem {
   }
 
   private handleBeforeUnload = (): void => {
-    this.saveGame(
-      this.language.t("save.auto")
-    );
+    this.saveGame(undefined, true);
   };
 }

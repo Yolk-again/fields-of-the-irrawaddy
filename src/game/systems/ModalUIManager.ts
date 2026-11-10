@@ -4,10 +4,14 @@ import Phaser from "phaser";
 export type ModalId =
   | "market"
   | "inventory"
-  | "crafting"
+  | "board"
   | "dialogue"
   | "profile"
-  | "help";
+  | "help"
+  | "cooking"
+  | "house"
+  | "chest"
+  | "audio";
 
 interface DisplayAccess {
   visible: boolean;
@@ -25,10 +29,11 @@ export class ModalUIManager {
     Phaser.GameObjects.Container
   >();
 
-  private closeCallbacks = new Map<
-    ModalId,
-    () => void
-  >();
+  private closeCallbacks = new Map<ModalId, () => void>();
+
+  private closeButtons = new Map<ModalId, Phaser.GameObjects.Container>();
+
+  private closeAreas = new Map<ModalId, { x: number; y: number; width: number; height: number }>();
 
   private hudElements: Phaser.GameObjects.GameObject[] = [];
 
@@ -38,6 +43,9 @@ export class ModalUIManager {
   }[] = [];
 
   private activeModal: ModalId | null = null;
+
+  /** Modal panels opened from a room (for example chest/cooker inside the house). */
+  private modalStack: ModalId[] = [];
 
   private readonly HUD_DEPTH = 5000;
   private readonly BACKDROP_DEPTH = 9000;
@@ -62,7 +70,37 @@ export class ModalUIManager {
       .setVisible(false);
 
     this.backdrop.setInteractive();
+
+    this.scene.input.on("pointerdown", this.handleClosePointerDown, this);
+    this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scene.input.off("pointerdown", this.handleClosePointerDown, this);
+    });
   }
+
+  private requestClose(id: ModalId): void {
+    if (this.activeModal !== id) return;
+    this.closeCallbacks.get(id)?.();
+    if (this.activeModal === id) this.close(id);
+  }
+
+  private handleClosePointerDown = (pointer: Phaser.Input.Pointer): void => {
+    const id = this.activeModal;
+    if (id === null) return;
+
+    const area = this.closeAreas.get(id);
+    if (!area) return;
+
+    const inside = pointer.x >= area.x - area.width / 2 &&
+      pointer.x <= area.x + area.width / 2 &&
+      pointer.y >= area.y - area.height / 2 &&
+      pointer.y <= area.y + area.height / 2;
+
+    if (!inside) return;
+
+    // Fallback hit test for scaled canvases; the close object also calls this
+    // directly from its own pointer event.
+    this.requestClose(id);
+  };
 
   private getAccess(
     element: Phaser.GameObjects.GameObject
@@ -94,10 +132,22 @@ export class ModalUIManager {
     id: ModalId,
     panel: Phaser.GameObjects.Container,
     depth: number,
-    onForceClose: () => void
+    onForceClose: () => void,
+    closeButton?: Phaser.GameObjects.Container
   ): void {
     this.panels.set(id, panel);
     this.closeCallbacks.set(id, onForceClose);
+
+    if (closeButton) {
+      this.closeButtons.set(id, closeButton);
+      this.closeAreas.set(id, {
+        x: closeButton.x,
+        y: closeButton.y,
+        width: 40,
+        height: 40
+      });
+      closeButton.on("pointerdown", () => this.requestClose(id));
+    }
 
     panel
       .setScrollFactor(0)
@@ -150,37 +200,61 @@ export class ModalUIManager {
 
   open(id: ModalId): void {
     const newPanel = this.panels.get(id);
+    if (!newPanel || this.activeModal === id) return;
 
-    if (!newPanel || this.activeModal === id) {
-      return;
-    }
-
+    // A normal modal replaces the current screen and clears any nested room UI.
     if (this.activeModal === null) {
       this.hideHud();
     } else {
-      const oldId = this.activeModal;
-
-      this.panels.get(oldId)?.setVisible(false);
-      this.closeCallbacks.get(oldId)?.();
+      const openIds = [this.activeModal, ...this.modalStack.slice().reverse()];
+      for (const oldId of openIds) {
+        this.panels.get(oldId)?.setVisible(false);
+        this.closeButtons.get(oldId)?.setVisible(true);
+        this.closeCallbacks.get(oldId)?.();
+      }
     }
+    this.modalStack = [];
 
     this.activeModal = id;
-
     this.backdrop.setVisible(true);
     newPanel.setVisible(true);
   }
 
-  close(id: ModalId): void {
-    if (this.activeModal !== id) {
+  /** Opens a sub-panel while preserving the previous room/menu underneath it. */
+  openOver(id: ModalId): void {
+    const newPanel = this.panels.get(id);
+    if (!newPanel || this.activeModal === id) return;
+    if (this.activeModal === null) {
+      this.open(id);
       return;
     }
 
+    const parentId = this.activeModal;
+    // Keep the room visible underneath storage/cooking. Hide its close control
+    // so a click cannot accidentally close the house while a child panel is up.
+    this.closeButtons.get(parentId)?.setVisible(false);
+    this.modalStack.push(parentId);
+    this.activeModal = id;
+    this.backdrop.setVisible(true);
+    newPanel.setDepth(this.PANEL_DEPTH + 1000 + this.modalStack.length * 100);
+    newPanel.setVisible(true);
+  }
+
+  close(id: ModalId): void {
+    if (this.activeModal !== id) return;
     this.panels.get(id)?.setVisible(false);
 
+    const previous = this.modalStack.pop();
+    if (previous) {
+      this.activeModal = previous;
+      this.panels.get(previous)?.setVisible(true);
+      this.closeButtons.get(previous)?.setVisible(true);
+      this.backdrop.setVisible(true);
+      return;
+    }
+
     this.activeModal = null;
-
     this.backdrop.setVisible(false);
-
     this.restoreHud();
   }
 

@@ -2,7 +2,7 @@
 import Phaser from "phaser";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
-import { pixelPanel } from "../ui/PixelUI";
+import { INVENTORY_ITEM_DEFINITIONS, type InventoryItemId } from "../ui/InventoryItems";
 
 type FarmingTool = "hoe" | "seeds" | "water" | "harvest";
 
@@ -13,6 +13,12 @@ interface FarmTile {
   planted: boolean;
   watered: boolean;
   growth: number;
+  dryDays: number;
+  dead: boolean;
+  /** Absolute in-game minute when the current/most recent watering happened. */
+  wateredAtGameMinute: number | null;
+  plantedAtGameMinute: number | null;
+  goldenWheat: boolean;
   base: Phaser.GameObjects.Image;
   crop: Phaser.GameObjects.Image;
 }
@@ -21,11 +27,18 @@ interface FarmSaveData {
   day: number;
   seeds: number;
   rice: number;
+  goldenWheat?: number;
+  mealBoostUntilGameMinute?: number;
   tiles: {
     soil: boolean;
     planted: boolean;
     watered: boolean;
     growth: number;
+    dryDays?: number;
+    dead?: boolean;
+    wateredAtGameMinute?: number | null;
+    plantedAtGameMinute?: number | null;
+    goldenWheat?: boolean;
   }[];
 }
 
@@ -33,15 +46,20 @@ export class FarmingSystem {
   private scene: Phaser.Scene;
   private ui: ModalUIManager;
   private language: LanguageSystem;
+  private getElapsedGameMinutes: () => number;
 
   private tiles: FarmTile[] = [];
-  private tool: FarmingTool = "hoe";
+  private tool: FarmingTool | null = "hoe";
+  private hotbarItems: Array<InventoryItemId | null> = ["hoe", "seeds", "water", "harvest"];
+  private selectedHotbarIndex = 0;
   private seeds = 10;
   private rice = 0;
+  private goldenWheat = 0;
+  private mealBoostUntilGameMinute = 0;
   private day = 1;
+  private readonly matureGrowth = 4;
 
   private actionKey!: Phaser.Input.Keyboard.Key;
-  private nextDayKey!: Phaser.Input.Keyboard.Key;
   private toolKeys!: {
     one: Phaser.Input.Keyboard.Key;
     two: Phaser.Input.Keyboard.Key;
@@ -50,7 +68,6 @@ export class FarmingSystem {
   };
 
   private inventoryText!: Phaser.GameObjects.Text;
-  private dayText!: Phaser.GameObjects.Text;
   private statusText!: Phaser.GameObjects.Text;
   private highlight!: Phaser.GameObjects.Graphics;
   private selectedTile: FarmTile | null = null;
@@ -61,17 +78,16 @@ export class FarmingSystem {
   private toolLabels: Phaser.GameObjects.Text[] = [];
   private toolIcons: Phaser.GameObjects.Image[] = [];
 
-  private toolDefinitions = [
-    { key: "1", tool: "hoe" as FarmingTool, name: "farm.hoe", texture: "hoe_asset" },
-    { key: "2", tool: "seeds" as FarmingTool, name: "farm.seedTool", texture: "rice_seed_bag_asset" },
-    { key: "3", tool: "water" as FarmingTool, name: "farm.water", texture: "watering_can_asset" },
-    { key: "4", tool: "harvest" as FarmingTool, name: "farm.harvest", texture: "sickle_asset" }
-  ];
-
-  constructor(scene: Phaser.Scene, ui: ModalUIManager, language: LanguageSystem) {
+  constructor(
+    scene: Phaser.Scene,
+    ui: ModalUIManager,
+    language: LanguageSystem,
+    getElapsedGameMinutes: () => number = () => 0
+  ) {
     this.scene = scene;
     this.ui = ui;
     this.language = language;
+    this.getElapsedGameMinutes = getElapsedGameMinutes;
 
     this.createPlot();
     this.createControls();
@@ -98,6 +114,11 @@ export class FarmingSystem {
           planted: false,
           watered: false,
           growth: 0,
+          dryDays: 0,
+          dead: false,
+          wateredAtGameMinute: null,
+          plantedAtGameMinute: null,
+          goldenWheat: false,
           base,
           crop
         };
@@ -118,13 +139,24 @@ export class FarmingSystem {
     }
 
     if (tile.soil && tile.planted) {
-      tile.crop.setTexture(`crop_${Phaser.Math.Clamp(tile.growth, 0, 3)}`).setVisible(true);
+      if (tile.dead) {
+        tile.crop.setTexture("crop_3").setTint(0x75604b).setAlpha(0.88).setVisible(true);
+      } else {
+        tile.crop
+          .setTexture(`crop_${Phaser.Math.Clamp(tile.growth, 0, 3)}`)
+          .setAlpha(1)
+          .setVisible(true);
+        if (tile.goldenWheat) tile.crop.setTint(0xf0c34d);
+        else if (tile.dryDays > 0) tile.crop.setTint(0xb99567);
+        else tile.crop.clearTint();
+      }
     } else {
-      tile.crop.setVisible(false);
+      tile.crop.clearTint().setAlpha(1).setVisible(false);
     }
   }
 
-  private playFx(tile: FarmTile, key: "fx_dust" | "fx_splash" | "fx_sparkle"): void {
+  private playFx(tile: FarmTile, key: "fx_dust" | "fx_splash" | "fx_sparkle", action: "hoe" | "plant" | "water" | "harvest" | "clear"): void {
+    this.scene.events.emit("player-action", action);
     const fx = this.scene.add.sprite(tile.x + 16, tile.y + 20, key, 0)
       .setScale(2).setDepth(9000);
     fx.anims.play(`${key}-play`);
@@ -151,7 +183,6 @@ export class FarmingSystem {
   private createControls(): void {
     const keyboard = this.scene.input.keyboard!;
     this.actionKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    this.nextDayKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.N);
     this.toolKeys = {
       one: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE),
       two: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO),
@@ -161,40 +192,34 @@ export class FarmingSystem {
   }
 
   private createInterface(): void {
-    const topBackground = pixelPanel(this.scene, 437.5, 40.5, 275, 57).setDepth(100);
+    // unused legacy text objects kept off-screen-free: inventory is shown by the resource HUD
+    this.inventoryText = this.scene.add.text(0, 0, "").setVisible(false);
 
-    this.dayText = this.scene.add.text(312, 17, "", {
+    // Toast message above the hotbar (fades out)
+    this.statusText = this.scene.add.text(320, 298, "", {
       fontFamily: this.language.getFontFamily(),
       fontSize: "10px",
-      color: "#f0d69e"
-    }).setScrollFactor(0).setDepth(101);
+      color: "#fff1cf",
+      backgroundColor: "#2a1a14",
+      padding: { x: 7, y: 4 },
+      align: "center",
+      wordWrap: { width: 330 }
+    }).setOrigin(0.5, 1).setScrollFactor(0).setDepth(104).setAlpha(0);
 
-    this.inventoryText = this.scene.add.text(312, 34, "", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "9px",
-      color: "#eee0c0"
-    }).setScrollFactor(0).setDepth(101);
-
-    this.statusText = this.scene.add.text(312, 52, "", {
-      fontFamily: this.language.getFontFamily(),
-      fontSize: "8px",
-      color: "#d6e6c2"
-    }).setScrollFactor(0).setDepth(101);
-
-    // Stardew-style hotbar: four 40px slots with 2x icons
-    const centers = [244, 290, 336, 382];
-    this.toolDefinitions.forEach((definition, index) => {
+    // Four configurable hotbar slots. InventorySystem controls their contents.
+    const centers = [251, 297, 343, 389];
+    for (let index = 0; index < 4; index++) {
       const slot = this.scene.add.image(centers[index], 336, "ui_slot")
         .setScale(2).setScrollFactor(0).setDepth(101)
         .setInteractive({ useHandCursor: true });
-      slot.on("pointerdown", () => this.selectTool(definition.tool));
+      slot.on("pointerdown", () => this.selectHotbarSlot(index));
 
-      const icon = this.scene.add.image(centers[index], 336, definition.texture)
-        .setScale(2).setScrollFactor(0).setDepth(102);
+      const icon = this.scene.add.image(centers[index], 336, "ui_icon_hand")
+        .setScale(2).setScrollFactor(0).setDepth(102).setVisible(false);
 
-      const label = this.scene.add.text(centers[index] - 16, 319, definition.key, {
+      const label = this.scene.add.text(centers[index] - 17, 319, String(index + 1), {
         fontFamily: this.language.getFontFamily(),
-        fontSize: "8px",
+        fontSize: "9px",
         color: "#fff1cf",
         stroke: "#2a1a14",
         strokeThickness: 2
@@ -203,19 +228,17 @@ export class FarmingSystem {
       this.toolBackgrounds.push(slot);
       this.toolIcons.push(icon);
       this.toolLabels.push(label);
-    });
+    }
 
-    this.toolTip = this.scene.add.text(313, 307, "", {
+    this.toolTip = this.scene.add.text(320, 314, "", {
       fontFamily: this.language.getFontFamily(),
       fontSize: "9px",
-      color: "#fff1cf",
-      backgroundColor: "#2a1a14",
-      padding: { x: 5, y: 2 }
-    }).setOrigin(0.5, 1).setScrollFactor(0).setDepth(103);
+      color: "#ffd978",
+      stroke: "#2a1a14",
+      strokeThickness: 3
+    }).setOrigin(0.5, 1).setScrollFactor(0).setDepth(103).setAlpha(0);
 
     this.ui.registerHud(
-      topBackground,
-      this.dayText,
       this.inventoryText,
       this.statusText,
       this.toolTip,
@@ -228,25 +251,31 @@ export class FarmingSystem {
   }
 
   private updateInterface(): void {
-    this.dayText.setText(this.language.t("farm.day", { day: this.day }));
-    this.inventoryText.setText(
-      this.language.t("farm.seeds", { seeds: this.seeds, rice: this.rice })
-    );
     if (this.showingInitialHint) {
-      this.statusText.setText(this.language.t("farm.findPlot"));
+      this.toast(this.language.t("farm.findPlot"), 5000);
     }
 
-    this.toolDefinitions.forEach((definition, index) => {
-      const selected = definition.tool === this.tool;
+    this.hotbarItems.forEach((item, index) => {
+      const selected = index === this.selectedHotbarIndex;
+      const definition = item ? INVENTORY_ITEM_DEFINITIONS[item] : null;
       this.toolBackgrounds[index].setTexture(selected ? "ui_slot_selected" : "ui_slot");
       this.toolLabels[index].setFontFamily(this.language.getFontFamily());
       this.toolIcons[index].setY(selected ? 334 : 336);
-      if (selected) this.toolTip.setText(this.language.t(definition.name));
+      this.toolIcons[index].setVisible(!!definition);
+      if (definition) this.toolIcons[index].setTexture(definition.texture);
+      if (selected && definition) {
+        this.toolTip.setText(this.language.t(definition.nameKey));
+        this.scene.tweens.killTweensOf(this.toolTip);
+        this.toolTip.setAlpha(1);
+        this.scene.tweens.add({ targets: this.toolTip, alpha: 0, delay: 1800, duration: 500 });
+      } else if (selected) {
+        this.scene.tweens.killTweensOf(this.toolTip);
+        this.toolTip.setAlpha(0);
+      }
     });
 
     const font = this.language.getFontFamily();
     this.toolTip.setFontFamily(font);
-    this.dayText.setFontFamily(font);
     this.inventoryText.setFontFamily(font);
     this.statusText.setFontFamily(font);
   }
@@ -254,7 +283,14 @@ export class FarmingSystem {
 
   private setStatus(key: string, values: Record<string, string | number> = {}): void {
     this.showingInitialHint = false;
-    this.statusText.setText(this.language.t(key, values));
+    this.toast(this.language.t(key, values), 2800);
+  }
+
+  private toast(text: string, hold: number): void {
+    this.statusText.setText(text);
+    this.scene.tweens.killTweensOf(this.statusText);
+    this.statusText.setAlpha(1);
+    this.scene.tweens.add({ targets: this.statusText, alpha: 0, delay: hold, duration: 600 });
   }
 
   private findNearestTile(playerX: number, playerY: number): FarmTile | null {
@@ -277,33 +313,43 @@ export class FarmingSystem {
     return nearest;
   }
 
-  private selectTool(tool: FarmingTool): void {
-    this.tool = tool;
-    const names: Record<FarmingTool, string> = {
-      hoe: "farm.hoe",
-      seeds: "farm.seedTool",
-      water: "farm.water",
-      harvest: "farm.harvest"
-    };
-
+  private selectHotbarSlot(index: number): void {
+    if (index < 0 || index >= this.hotbarItems.length) return;
+    const item = this.hotbarItems[index];
+    this.selectedHotbarIndex = index;
+    this.tool = item ? (INVENTORY_ITEM_DEFINITIONS[item].tool ?? null) : null;
     this.updateInterface();
-    this.setStatus("farm.selected", { tool: this.language.t(names[tool]) });
+  }
+
+  setHotbarItems(items: Array<InventoryItemId | null>): void {
+    const next = Array.from({ length: 4 }, (_, index) => items[index] ?? null);
+    this.hotbarItems = next;
+    const selected = this.hotbarItems[this.selectedHotbarIndex];
+    this.tool = selected ? (INVENTORY_ITEM_DEFINITIONS[selected].tool ?? null) : null;
+    this.updateInterface();
+  }
+
+  getHotbarItems(): Array<InventoryItemId | null> {
+    return [...this.hotbarItems];
+  }
+
+  getSelectedHotbarIndex(): number {
+    return this.selectedHotbarIndex;
   }
 
   mobileSelectTool(index: number): void {
-    const definition = this.toolDefinitions[index];
-    if (definition) this.selectTool(definition.tool);
+    this.selectHotbarSlot(index);
   }
 
   mobileUseTool(): void {
     this.useTool();
   }
 
-  mobileAdvanceDay(): void {
-    this.advanceDay();
-  }
-
   private useTool(): void {
+    if (!this.tool) {
+      this.setStatus("farm.itemNotUsable");
+      return;
+    }
     if (!this.selectedTile) {
       this.setStatus("farm.noTile");
       return;
@@ -317,7 +363,8 @@ export class FarmingSystem {
         return;
       }
       tile.soil = true;
-      this.playFx(tile, "fx_dust");
+      this.playFx(tile, "fx_dust", "hoe");
+      this.scene.events.emit("sound-effect", { name: "hoe", x: tile.x + 16, y: tile.y + 16 });
       this.setStatus("farm.prepared");
     } else if (this.tool === "seeds") {
       if (!tile.soil) {
@@ -332,18 +379,28 @@ export class FarmingSystem {
         this.setStatus("farm.noSeeds");
         return;
       }
-      this.playFx(tile, "fx_dust");
+      this.playFx(tile, "fx_dust", "plant");
       tile.planted = true;
       tile.growth = 0;
+      tile.dryDays = 0;
+      tile.dead = false;
+      tile.goldenWheat = this.isMealBlessingActive() && Math.random() < 0.24;
       tile.watered = false;
+      tile.wateredAtGameMinute = null;
+      tile.plantedAtGameMinute = Math.max(0, Math.floor(this.getElapsedGameMinutes()));
       this.seeds--;
+      this.scene.events.emit("sound-effect", { name: "plant", x: tile.x + 16, y: tile.y + 16 });
       this.setStatus("farm.planted");
     } else if (this.tool === "water") {
       if (!tile.planted) {
         this.setStatus("farm.noCrop");
         return;
       }
-      if (tile.growth >= 3) {
+      if (tile.dead) {
+        this.setStatus("farm.deadCrop");
+        return;
+      }
+      if (tile.growth >= this.matureGrowth) {
         this.setStatus("farm.ready");
         return;
       }
@@ -352,42 +409,128 @@ export class FarmingSystem {
         return;
       }
       tile.watered = true;
-      this.playFx(tile, "fx_splash");
+      tile.wateredAtGameMinute = Math.max(0, Math.floor(this.getElapsedGameMinutes()));
+      tile.dryDays = 0;
+      this.playFx(tile, "fx_splash", "water");
+      this.scene.events.emit("sound-effect", { name: "water", x: tile.x + 16, y: tile.y + 16 });
       this.setStatus("farm.waterSuccess");
     } else if (this.tool === "harvest") {
-      if (!tile.planted || tile.growth < 3) {
+      if (!tile.planted || (!tile.dead && tile.growth < this.matureGrowth)) {
         this.setStatus("farm.notReady");
         return;
       }
+      const wasDead = tile.dead;
       tile.planted = false;
+      tile.soil = false;
       tile.watered = false;
+      tile.wateredAtGameMinute = null;
+      tile.plantedAtGameMinute = null;
       tile.growth = 0;
-      this.rice += 3;
-      this.playFx(tile, "fx_sparkle");
-      this.floatText(tile, "+3");
-      this.setStatus("farm.harvested");
+      tile.dryDays = 0;
+      tile.dead = false;
+      const wasGolden = tile.goldenWheat;
+      tile.goldenWheat = false;
+      if (wasDead) {
+        // Dead crops can be cleared, but they never enter the rice inventory
+        // and therefore cannot be sold at the market.
+        this.playFx(tile, "fx_dust", "clear");
+        this.scene.events.emit("sound-effect", { name: "dead", x: tile.x + 16, y: tile.y + 16 });
+        this.setStatus("farm.deadHarvested");
+      } else {
+        this.rice += 3;
+        if (wasGolden) this.goldenWheat += 1;
+        this.playFx(tile, "fx_sparkle", "harvest");
+        this.scene.events.emit("sound-effect", { name: "harvest", x: tile.x + 16, y: tile.y + 16 });
+        this.floatText(tile, wasGolden ? "+3 RICE  +1 GOLDEN WHEAT" : "+3");
+        this.setStatus(wasGolden ? "farm.goldenHarvested" : "farm.harvested");
+      }
     }
 
     this.drawTile(tile);
     this.updateInterface();
   }
 
-  private advanceDay(): void {
-    this.day++;
-    let grown = 0;
+  /**
+   * Crop stages advance only after a complete 24 in-game hours have elapsed
+   * since that individual plot was watered. The clock is shared with the
+   * village and continues while the player is indoors or asleep.
+   */
+  syncGameDay(gameDay: number, elapsedGameMinutes = this.getElapsedGameMinutes()): void {
+    const targetDay = Math.max(1, Math.floor(Number(gameDay) || 1));
+    const now = Math.max(0, Math.floor(Number(elapsedGameMinutes) || 0));
+    let totalGrown = 0;
+    let totalWilted = 0;
 
     for (const tile of this.tiles) {
-      if (!tile.planted) continue;
-      if (tile.watered && tile.growth < 3) {
-        tile.growth++;
-        grown++;
+      if (!tile.planted || tile.dead || tile.growth >= this.matureGrowth) continue;
+      const wateredAt = tile.wateredAtGameMinute;
+      const dryAnchor = wateredAt ?? tile.plantedAtGameMinute;
+      if (dryAnchor === null || !Number.isFinite(dryAnchor)) continue;
+      const elapsedSinceWatering = now - dryAnchor;
+      if (elapsedSinceWatering < 0) continue;
+
+      const growthInterval = this.isMealBlessingActive(now) ? 1080 : 1440;
+      if (tile.watered && wateredAt !== null && elapsedSinceWatering >= growthInterval) {
+        tile.growth = Math.min(this.matureGrowth, tile.growth + 1);
+        tile.watered = false;
+        tile.dryDays = 0;
+        totalGrown++;
+        this.drawTile(tile);
+      } else if (!tile.watered) {
+        // Unwatered new plants wilt after 24 hours. Once a watering cycle has
+        // produced growth, the following 24 hours are the first missed cycle.
+        const elapsedDays = Math.floor(elapsedSinceWatering / 1440);
+        const dryDays = wateredAt === null ? elapsedDays : elapsedDays - 1;
+        const nextDryDays = Phaser.Math.Clamp(dryDays, 0, 2);
+        if (nextDryDays > tile.dryDays) {
+          tile.dryDays = nextDryDays;
+          totalWilted++;
+          if (tile.dryDays >= 2) tile.dead = true;
+          this.drawTile(tile);
+        }
       }
-      tile.watered = false;
-      this.drawTile(tile);
     }
 
+    if (targetDay > this.day) {
+      this.day = targetDay;
+      this.updateInterface();
+      this.setStatus("farm.newDay", { grown: totalGrown, wilted: totalWilted });
+    } else if (totalGrown > 0 || totalWilted > 0) {
+      this.updateInterface();
+    }
+  }
+
+  applyMealBlessing(): void {
+    const now = Math.max(0, Math.floor(this.getElapsedGameMinutes()));
+    this.mealBoostUntilGameMinute = Math.max(this.mealBoostUntilGameMinute, now) + 2880;
+    for (const tile of this.tiles) {
+      if (tile.planted && !tile.dead && !tile.goldenWheat && Math.random() < 0.24) {
+        tile.goldenWheat = true;
+        this.drawTile(tile);
+      }
+    }
     this.updateInterface();
-    this.setStatus("farm.newDay", { grown });
+  }
+
+  private isMealBlessingActive(now = Math.max(0, Math.floor(this.getElapsedGameMinutes()))): boolean {
+    return now < this.mealBoostUntilGameMinute;
+  }
+
+  getGoldenWheat(): number {
+    return this.goldenWheat;
+  }
+
+  addGoldenWheat(amount: number): void {
+    this.goldenWheat += Math.max(0, Math.floor(amount));
+    this.updateInterface();
+  }
+
+  removeGoldenWheat(amount: number): boolean {
+    const safeAmount = Math.max(0, Math.floor(amount));
+    if (this.goldenWheat < safeAmount) return false;
+    this.goldenWheat -= safeAmount;
+    this.updateInterface();
+    return true;
   }
 
   getDay(): number {
@@ -403,11 +546,24 @@ export class FarmingSystem {
   }
 
   getSelectedTool(): string {
-    return this.tool;
+    return this.hotbarItems[this.selectedHotbarIndex] ?? "";
   }
 
   addSeeds(amount: number): void {
     this.seeds += Math.max(0, Math.floor(amount));
+    this.updateInterface();
+  }
+
+  removeSeeds(amount: number): boolean {
+    const safeAmount = Math.max(0, Math.floor(amount));
+    if (this.seeds < safeAmount) return false;
+    this.seeds -= safeAmount;
+    this.updateInterface();
+    return true;
+  }
+
+  addRice(amount: number): void {
+    this.rice += Math.max(0, Math.floor(amount));
     this.updateInterface();
   }
 
@@ -423,29 +579,52 @@ export class FarmingSystem {
       day: this.day,
       seeds: this.seeds,
       rice: this.rice,
+      goldenWheat: this.goldenWheat,
+      mealBoostUntilGameMinute: this.mealBoostUntilGameMinute,
       tiles: this.tiles.map(tile => ({
         soil: tile.soil,
         planted: tile.planted,
         watered: tile.watered,
-        growth: tile.growth
+        growth: tile.growth,
+        dryDays: tile.dryDays,
+        dead: tile.dead,
+        wateredAtGameMinute: tile.wateredAtGameMinute,
+        plantedAtGameMinute: tile.plantedAtGameMinute,
+        goldenWheat: tile.goldenWheat
       }))
     };
   }
 
-  loadSaveData(data: FarmSaveData): void {
+  loadSaveData(data: FarmSaveData, migrateLegacyMatureCrops = false): void {
     this.day = Math.max(1, Math.floor(Number(data.day) || 1));
     this.seeds = Math.max(0, Math.floor(Number(data.seeds) || 0));
     this.rice = Math.max(0, Math.floor(Number(data.rice) || 0));
+    this.goldenWheat = Math.max(0, Math.floor(Number(data.goldenWheat) || 0));
+    this.mealBoostUntilGameMinute = Math.max(0, Math.floor(Number(data.mealBoostUntilGameMinute) || 0));
 
     this.tiles.forEach((tile, index) => {
       const saved = data.tiles?.[index];
       if (!saved) return;
       tile.soil = saved.soil === true;
       tile.planted = tile.soil && saved.planted === true;
-      tile.watered = tile.planted && saved.watered === true;
+      const savedWateredAt = saved.wateredAtGameMinute;
+      const hasSavedWaterTime = typeof savedWateredAt === "number" && Number.isFinite(savedWateredAt);
+      const currentGameMinute = Math.max(0, Math.floor(this.getElapsedGameMinutes()));
+      tile.wateredAtGameMinute = tile.planted
+        ? (hasSavedWaterTime ? Math.max(0, Math.floor(savedWateredAt)) : (saved.watered === true ? currentGameMinute : null))
+        : null;
+      const savedPlantedAt = saved.plantedAtGameMinute;
+      tile.plantedAtGameMinute = tile.planted
+        ? (typeof savedPlantedAt === "number" && Number.isFinite(savedPlantedAt) ? Math.max(0, Math.floor(savedPlantedAt)) : currentGameMinute)
+        : null;
+      tile.watered = tile.planted && saved.watered === true && tile.wateredAtGameMinute !== null;
+      const savedGrowth = Math.max(0, Math.floor(Number(saved.growth) || 0));
       tile.growth = tile.planted
-        ? Phaser.Math.Clamp(Math.floor(Number(saved.growth) || 0), 0, 3)
+        ? Phaser.Math.Clamp(migrateLegacyMatureCrops && savedGrowth >= 3 ? 4 : savedGrowth, 0, this.matureGrowth)
         : 0;
+      tile.dryDays = tile.planted ? Phaser.Math.Clamp(Math.floor(Number(saved.dryDays) || 0), 0, 2) : 0;
+      tile.dead = tile.planted && saved.dead === true;
+      tile.goldenWheat = tile.planted && saved.goldenWheat === true;
       this.drawTile(tile);
     });
 
@@ -474,11 +653,10 @@ export class FarmingSystem {
     }
 
     const justDown = Phaser.Input.Keyboard.JustDown;
-    if (justDown(this.toolKeys.one)) this.selectTool("hoe");
-    if (justDown(this.toolKeys.two)) this.selectTool("seeds");
-    if (justDown(this.toolKeys.three)) this.selectTool("water");
-    if (justDown(this.toolKeys.four)) this.selectTool("harvest");
+    if (justDown(this.toolKeys.one)) this.selectHotbarSlot(0);
+    if (justDown(this.toolKeys.two)) this.selectHotbarSlot(1);
+    if (justDown(this.toolKeys.three)) this.selectHotbarSlot(2);
+    if (justDown(this.toolKeys.four)) this.selectHotbarSlot(3);
     if (justDown(this.actionKey)) this.useTool();
-    if (justDown(this.nextDayKey)) this.advanceDay();
   }
 }

@@ -277,28 +277,6 @@ def market_stall():
     return s
 
 
-def workbench():
-    rnd = random.Random(31)
-    s = Spr(60, 42)
-    g = 38
-    s.shadow_ellipse(30, g, 27, 3, 80)
-    for x in (5, 49): s.rect(x, 20, 5, g - 20, TEAK.m); s.vline(x, 20, g - 20, TEAK.l1)
-    s.rect(9, 28, 42, 3, TEAK.d1)   # lower rail
-    s.rect(9, 33, 42, 2, TEAK.d1)
-    planks(s, 2, 14, 56, 8, WOOD, rnd, vertical=False)
-    s.hline(2, 22, 56, WOOD.d2)
-    # tools on top: saw, bamboo poles, mallet
-    s.rect(8, 9, 22, 2, hx("#cfd3d6")); s.hline(8, 11, 22, hx("#8c9498")); s.rect(30, 8, 5, 4, TEAK.m)
-    for i in range(4):
-        s.rect(38 + i * 4, 4, 3, 11, Ramp("#6aa650").m); s.vline(38 + i * 4, 4, 11, Ramp("#6aa650").l1)
-        s.hline(38 + i * 4, 8, 3, Ramp("#6aa650").d2)
-    s.rect(14, 5, 8, 4, TEAK.m); s.rect(17, 8, 2, 5, TEAK.d1)
-    # under-shelf bundles
-    s.rect(14, 24, 10, 4, BAMBOO.m); s.rect(28, 24, 12, 4, hx("#8a5a38"))
-    s.outline(-0.72)
-    return s
-
-
 def shrine():
     rnd = random.Random(41)
     s = Spr(38, 44)

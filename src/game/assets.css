@@ -1,4 +1,4 @@
 #game-container canvas {
-  image-rendering: pixelated !important;
-  image-rendering: crisp-edges;
+  /* Do not force pixelated CSS scaling on text rendered inside the canvas. */
+  image-rendering: auto !important;
 }
