@@ -1,0 +1,6 @@
+FOI-DEPLOYMENT-V6-2026-11-10
+Fields of the Irrawaddy
+
+This marker confirms that Netlify is serving the V6 project build.
+Expected Netlify build command: npm run build
+Expected publish directory: dist

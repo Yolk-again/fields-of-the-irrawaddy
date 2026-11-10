@@ -1,0 +1,28 @@
+FIELDS OF THE IRRAWADDY — NETLIFY-READY V6
+
+THE PUBLISHED URL WAS CHECKED
+The currently published page did not expose the save-slot text or the V5 deployment marker. This indicates that the live Netlify site is not serving the V5 source included in the earlier ZIP.
+
+NETLIFY BUILD SETTINGS
+- Project/base directory: the folder containing index.html and netlify.toml
+- Build command: npm run build
+- Publish directory: dist
+- Node version: 22.16.0 (.nvmrc and netlify.toml)
+
+TITLE / SAVE SELECT
+- The save-selection markup is in index.html and exists before Phaser starts.
+- Phaser.Game is created only after a slot action is selected.
+- Three independent slots, legacy migration, overwrite confirmation, and delete confirmation are preserved.
+
+MOBILE HEADER
+- Six mobile buttons are in index.html outside the Phaser canvas.
+- The existing icon images in public/assets/ui are reused.
+- The buttons are shown during gameplay on detected touch/small-screen devices.
+
+VERIFY AFTER DEPLOYMENT
+Open /deployment-version.txt on the live site. It must show:
+FOI-DEPLOYMENT-V6-2026-11-10
+
+See NETLIFY-DEPLOYMENT-GUIDE.md for both Git-connected and manual deployment instructions.
+
+The source ZIP itself does not update an already-published Netlify deployment. Netlify must build from this project or receive the generated dist/ folder.
