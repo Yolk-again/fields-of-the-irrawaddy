@@ -28,6 +28,8 @@ const WORLD_HEIGHT = 640;
 const PLAYER_SPEED = 125;
 /** Art is authored at 16px tiles and shown at 2x (32px world tiles). */
 const PIXEL_SCALE = 2;
+const publicAsset = (path: string): string =>
+  `${import.meta.env.BASE_URL}${path.replace(/^\/+/, "")}`;
 
 type Obstacle = {
   x: number;
@@ -133,10 +135,6 @@ export class FarmScene extends Phaser.Scene {
       case "fullscreen":
         this.scale.toggleFullscreen();
         break;
-      case "title":
-        this.saveSystem?.saveNow();
-        window.dispatchEvent(new CustomEvent("foi-quit-to-title"));
-        break;
     }
   };
 
@@ -168,75 +166,75 @@ export class FarmScene extends Phaser.Scene {
       "seed", "globe", "expand", "note", "note_off", "sprout", "rice"
     ];
     const imageAssets: [string, string][] = [
-      ["world_ground", "/assets/terrain/village_ground_base.png"],
-      ["player_home_asset", "/assets/buildings/player_home.png"],
-      ["ma_home_asset", "/assets/buildings/ma_thiri_home.png"],
-      ["ko_home_asset", "/assets/buildings/ko_aung_home.png"],
-      ["stilt_house_01_asset", "/assets/buildings/stilt_house_01.png"],
-      ["stilt_house_02_asset", "/assets/buildings/stilt_house_02.png"],
-      ["granary_asset", "/assets/buildings/rice_granary.png"],
-      ["monastery_asset", "/assets/buildings/village_monastery.png"],
-      ["pagoda_asset", "/assets/buildings/golden_pagoda.png"],
-      ["lotus_pond_asset", "/assets/water/lotus_pond.png"],
-      ["bridge_asset", "/assets/water/wooden_bridge_asset.png"],
-      ["fruit_tree_round", "/assets/vegetation/fruit_tree_round.png"],
-      ["fruit_tree_large", "/assets/vegetation/fruit_tree_large.png"],
-      ["palm_tree_tall", "/assets/vegetation/palm_tree_tall.png"],
-      ["palm_tree_small", "/assets/vegetation/palm_tree_small.png"],
-      ["banana_plant_asset", "/assets/vegetation/banana_plant.png"],
-      ["bamboo_clump_asset", "/assets/vegetation/bamboo_clump.png"],
-      ["vegetable_bed_asset", "/assets/decorations/raised_vegetable_bed.png"],
-      ["bamboo_fence_asset", "/assets/decorations/bamboo_fence_segment.png"],
-      ["fence_h_asset", "/assets/decorations/fence_h.png"],
-      ["fence_v_asset", "/assets/decorations/fence_v.png"],
-      ["bamboo_planter_asset", "/assets/decorations/bamboo_planter.png"],
-      ["village_sign_asset", "/assets/decorations/village_sign.png"],
-      ["haystack_asset", "/assets/agriculture/haystack.png"],
-      ["drying_mat_asset", "/assets/decorations/rice_drying_mat.png"],
-      ["rice_plant_01", "/assets/agriculture/young_rice_plant_01.png"],
-      ["rice_plant_02", "/assets/agriculture/young_rice_plant_02.png"],
-      ["rice_plant_03", "/assets/agriculture/young_rice_plant_03.png"],
-      ["crop_0", "/assets/agriculture/rice_stage_0.png"],
-      ["crop_1", "/assets/agriculture/rice_stage_1.png"],
-      ["crop_2", "/assets/agriculture/rice_stage_2.png"],
-      ["crop_3", "/assets/agriculture/rice_stage_3.png"],
-      ["scarecrow_asset", "/assets/agriculture/scarecrow.png"],
-      ["tile_plot", "/assets/terrain/farm_plot.png"],
-      ["tile_tilled", "/assets/terrain/tilled_soil.png"],
-      ["tile_wet", "/assets/terrain/tilled_soil_wet.png"],
-      ["market_stall_asset", "/assets/buildings/market_stall.png"],
-      ["rice_bowl_asset", "/assets/agriculture/rice_bowl.png"],
-      ["rice_grain_asset", "/assets/agriculture/rice_grain.png"],
-      ["rice_seed_bag_asset", "/assets/tools/rice_seed_bag.png"],
-      ["hoe_asset", "/assets/tools/hoe.png"],
-      ["watering_can_asset", "/assets/tools/watering_can.png"],
-      ["sickle_asset", "/assets/tools/sickle.png"],
-      ["coin_asset", "/assets/ui/coin.png"],
-      ["road_lamp_asset", "/assets/village/road_lamp.png"],
-      ["road_lamp_glow", "/assets/village/road_lamp_glow.png"],
-      ["cooking_hearth_asset", "/assets/village/cooking_hearth.png"],
-      ["fishing_rod_asset", "/assets/tools/fishing_rod.png"],
-      ["fish_silver_barb_asset", "/assets/agriculture/fish_silver_barb.png"],
-      ["fish_catfish_asset", "/assets/agriculture/fish_catfish.png"],
-      ["fish_golden_carp_asset", "/assets/agriculture/fish_golden_carp.png"],
-      ["meal_fish_rice_asset", "/assets/agriculture/meal_fish_rice.png"],
-      ["meal_mohinga_asset", "/assets/agriculture/meal_mohinga.png"],
-      ["meal_fish_curry_asset", "/assets/agriculture/meal_fish_curry.png"],
-      ["ui_slot", "/assets/ui/slot.png"],
-      ["ui_slot_selected", "/assets/ui/slot_selected.png"],
-      ["ui_talk_bubble", "/assets/ui/talk_bubble.png"],
-      ["ui_key_e", "/assets/ui/key_e.png"],
+      ["world_ground", publicAsset("/assets/terrain/village_ground_base.png")],
+      ["player_home_asset", publicAsset("/assets/buildings/player_home.png")],
+      ["ma_home_asset", publicAsset("/assets/buildings/ma_thiri_home.png")],
+      ["ko_home_asset", publicAsset("/assets/buildings/ko_aung_home.png")],
+      ["stilt_house_01_asset", publicAsset("/assets/buildings/stilt_house_01.png")],
+      ["stilt_house_02_asset", publicAsset("/assets/buildings/stilt_house_02.png")],
+      ["granary_asset", publicAsset("/assets/buildings/rice_granary.png")],
+      ["monastery_asset", publicAsset("/assets/buildings/village_monastery.png")],
+      ["pagoda_asset", publicAsset("/assets/buildings/golden_pagoda.png")],
+      ["lotus_pond_asset", publicAsset("/assets/water/lotus_pond.png")],
+      ["bridge_asset", publicAsset("/assets/water/wooden_bridge_asset.png")],
+      ["fruit_tree_round", publicAsset("/assets/vegetation/fruit_tree_round.png")],
+      ["fruit_tree_large", publicAsset("/assets/vegetation/fruit_tree_large.png")],
+      ["palm_tree_tall", publicAsset("/assets/vegetation/palm_tree_tall.png")],
+      ["palm_tree_small", publicAsset("/assets/vegetation/palm_tree_small.png")],
+      ["banana_plant_asset", publicAsset("/assets/vegetation/banana_plant.png")],
+      ["bamboo_clump_asset", publicAsset("/assets/vegetation/bamboo_clump.png")],
+      ["vegetable_bed_asset", publicAsset("/assets/decorations/raised_vegetable_bed.png")],
+      ["bamboo_fence_asset", publicAsset("/assets/decorations/bamboo_fence_segment.png")],
+      ["fence_h_asset", publicAsset("/assets/decorations/fence_h.png")],
+      ["fence_v_asset", publicAsset("/assets/decorations/fence_v.png")],
+      ["bamboo_planter_asset", publicAsset("/assets/decorations/bamboo_planter.png")],
+      ["village_sign_asset", publicAsset("/assets/decorations/village_sign.png")],
+      ["haystack_asset", publicAsset("/assets/agriculture/haystack.png")],
+      ["drying_mat_asset", publicAsset("/assets/decorations/rice_drying_mat.png")],
+      ["rice_plant_01", publicAsset("/assets/agriculture/young_rice_plant_01.png")],
+      ["rice_plant_02", publicAsset("/assets/agriculture/young_rice_plant_02.png")],
+      ["rice_plant_03", publicAsset("/assets/agriculture/young_rice_plant_03.png")],
+      ["crop_0", publicAsset("/assets/agriculture/rice_stage_0.png")],
+      ["crop_1", publicAsset("/assets/agriculture/rice_stage_1.png")],
+      ["crop_2", publicAsset("/assets/agriculture/rice_stage_2.png")],
+      ["crop_3", publicAsset("/assets/agriculture/rice_stage_3.png")],
+      ["scarecrow_asset", publicAsset("/assets/agriculture/scarecrow.png")],
+      ["tile_plot", publicAsset("/assets/terrain/farm_plot.png")],
+      ["tile_tilled", publicAsset("/assets/terrain/tilled_soil.png")],
+      ["tile_wet", publicAsset("/assets/terrain/tilled_soil_wet.png")],
+      ["market_stall_asset", publicAsset("/assets/buildings/market_stall.png")],
+      ["rice_bowl_asset", publicAsset("/assets/agriculture/rice_bowl.png")],
+      ["rice_grain_asset", publicAsset("/assets/agriculture/rice_grain.png")],
+      ["rice_seed_bag_asset", publicAsset("/assets/tools/rice_seed_bag.png")],
+      ["hoe_asset", publicAsset("/assets/tools/hoe.png")],
+      ["watering_can_asset", publicAsset("/assets/tools/watering_can.png")],
+      ["sickle_asset", publicAsset("/assets/tools/sickle.png")],
+      ["coin_asset", publicAsset("/assets/ui/coin.png")],
+      ["road_lamp_asset", publicAsset("/assets/village/road_lamp.png")],
+      ["road_lamp_glow", publicAsset("/assets/village/road_lamp_glow.png")],
+      ["cooking_hearth_asset", publicAsset("/assets/village/cooking_hearth.png")],
+      ["fishing_rod_asset", publicAsset("/assets/tools/fishing_rod.png")],
+      ["fish_silver_barb_asset", publicAsset("/assets/agriculture/fish_silver_barb.png")],
+      ["fish_catfish_asset", publicAsset("/assets/agriculture/fish_catfish.png")],
+      ["fish_golden_carp_asset", publicAsset("/assets/agriculture/fish_golden_carp.png")],
+      ["meal_fish_rice_asset", publicAsset("/assets/agriculture/meal_fish_rice.png")],
+      ["meal_mohinga_asset", publicAsset("/assets/agriculture/meal_mohinga.png")],
+      ["meal_fish_curry_asset", publicAsset("/assets/agriculture/meal_fish_curry.png")],
+      ["ui_slot", publicAsset("/assets/ui/slot.png")],
+      ["ui_slot_selected", publicAsset("/assets/ui/slot_selected.png")],
+      ["ui_talk_bubble", publicAsset("/assets/ui/talk_bubble.png")],
+      ["ui_key_e", publicAsset("/assets/ui/key_e.png")],
       // portraits (idle front frame) used by menus
-      ["farmer_green_asset", "/assets/characters/farmer_green.png"],
-      ["farmer_blue_asset", "/assets/characters/farmer_blue.png"],
-      ["farmer_red_asset", "/assets/characters/farmer_red.png"],
-      ["farmer_purple_asset", "/assets/characters/farmer_purple.png"],
-      ["ma_thiri_asset", "/assets/characters/ma_thiri.png"],
-      ["ko_aung_asset", "/assets/characters/ko_aung.png"],
-      ["monk_asset", "/assets/characters/monk.png"],
-      ["kid_asset", "/assets/characters/kid.png"],
-      ...village.map(name => [`v_${name}`, `/assets/village/${name}.png`] as [string, string]),
-      ...icons.map(name => [`ui_icon_${name}`, `/assets/ui/icon_${name}.png`] as [string, string])
+      ["farmer_green_asset", publicAsset("/assets/characters/farmer_green.png")],
+      ["farmer_blue_asset", publicAsset("/assets/characters/farmer_blue.png")],
+      ["farmer_red_asset", publicAsset("/assets/characters/farmer_red.png")],
+      ["farmer_purple_asset", publicAsset("/assets/characters/farmer_purple.png")],
+      ["ma_thiri_asset", publicAsset("/assets/characters/ma_thiri.png")],
+      ["ko_aung_asset", publicAsset("/assets/characters/ko_aung.png")],
+      ["monk_asset", publicAsset("/assets/characters/monk.png")],
+      ["kid_asset", publicAsset("/assets/characters/kid.png")],
+      ...village.map(name => [`v_${name}`, publicAsset(`/assets/village/${name}.png`)] as [string, string]),
+      ...icons.map(name => [`ui_icon_${name}`, publicAsset(`/assets/ui/icon_${name}.png`)] as [string, string])
     ];
 
     for (const [key, path] of imageAssets) {
@@ -245,23 +243,23 @@ export class FarmScene extends Phaser.Scene {
 
     // [key, path, frameWidth, frameHeight]
     const sheets: [string, string, number, number][] = [
-      ["farmer_green_sheet", "/assets/characters/farmer_green_sheet.png", 16, 26],
-      ["farmer_blue_sheet", "/assets/characters/farmer_blue_sheet.png", 16, 26],
-      ["farmer_red_sheet", "/assets/characters/farmer_red_sheet.png", 16, 26],
-      ["farmer_purple_sheet", "/assets/characters/farmer_purple_sheet.png", 16, 26],
-      ["ma_thiri_sheet", "/assets/characters/ma_thiri_sheet.png", 16, 26],
-      ["ko_aung_sheet", "/assets/characters/ko_aung_sheet.png", 16, 26],
-      ["monk_sheet", "/assets/characters/monk_sheet.png", 16, 26],
-      ["kid_sheet", "/assets/characters/kid_sheet.png", 16, 26],
-      ["chicken_sheet", "/assets/animals/chicken_sheet.png", 16, 16],
-      ["duck_sheet", "/assets/animals/duck_sheet.png", 16, 16],
-      ["water_buffalo_sheet", "/assets/animals/water_buffalo_sheet.png", 44, 30],
-      ["fx_dust", "/assets/fx/dust.png", 16, 16],
-      ["fx_splash", "/assets/fx/splash.png", 16, 16],
-      ["fx_sparkle", "/assets/fx/sparkle.png", 16, 16],
-      ["water_glint", "/assets/fx/water_glint.png", 8, 8],
-      ["butterfly_yellow", "/assets/fx/butterfly_yellow.png", 8, 8],
-      ["butterfly_white", "/assets/fx/butterfly_white.png", 8, 8]
+      ["farmer_green_sheet", publicAsset("/assets/characters/farmer_green_sheet.png"), 16, 26],
+      ["farmer_blue_sheet", publicAsset("/assets/characters/farmer_blue_sheet.png"), 16, 26],
+      ["farmer_red_sheet", publicAsset("/assets/characters/farmer_red_sheet.png"), 16, 26],
+      ["farmer_purple_sheet", publicAsset("/assets/characters/farmer_purple_sheet.png"), 16, 26],
+      ["ma_thiri_sheet", publicAsset("/assets/characters/ma_thiri_sheet.png"), 16, 26],
+      ["ko_aung_sheet", publicAsset("/assets/characters/ko_aung_sheet.png"), 16, 26],
+      ["monk_sheet", publicAsset("/assets/characters/monk_sheet.png"), 16, 26],
+      ["kid_sheet", publicAsset("/assets/characters/kid_sheet.png"), 16, 26],
+      ["chicken_sheet", publicAsset("/assets/animals/chicken_sheet.png"), 16, 16],
+      ["duck_sheet", publicAsset("/assets/animals/duck_sheet.png"), 16, 16],
+      ["water_buffalo_sheet", publicAsset("/assets/animals/water_buffalo_sheet.png"), 44, 30],
+      ["fx_dust", publicAsset("/assets/fx/dust.png"), 16, 16],
+      ["fx_splash", publicAsset("/assets/fx/splash.png"), 16, 16],
+      ["fx_sparkle", publicAsset("/assets/fx/sparkle.png"), 16, 16],
+      ["water_glint", publicAsset("/assets/fx/water_glint.png"), 8, 8],
+      ["butterfly_yellow", publicAsset("/assets/fx/butterfly_yellow.png"), 8, 8],
+      ["butterfly_white", publicAsset("/assets/fx/butterfly_white.png"), 8, 8]
     ];
 
     for (const [key, path, frameWidth, frameHeight] of sheets) {
@@ -283,10 +281,6 @@ export class FarmScene extends Phaser.Scene {
     this.isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0 ||
       window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(max-width: 900px)").matches;
     document.body.classList.toggle("foi-touch-device", this.isTouchDevice);
-    document.body.classList.remove("foi-launching");
-    document.body.classList.add("foi-in-game");
-    document.getElementById("title-screen")?.classList.add("is-hidden");
-    document.getElementById("mobile-game-hud")?.setAttribute("aria-hidden", this.isTouchDevice ? "false" : "true");
 
     this.language = new LanguageSystem();
     this.createAnimations();
@@ -375,6 +369,13 @@ export class FarmScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.events.off("player-action", this.playPlayerAction, this);
     });
+
+    // Reveal gameplay only after the complete scene and its controls are ready.
+    document.body.classList.remove("foi-launching");
+    document.body.classList.add("foi-in-game");
+    document.getElementById("app")?.setAttribute("aria-hidden", "false");
+    document.getElementById("title-screen")?.classList.add("is-hidden");
+    document.getElementById("mobile-game-hud")?.setAttribute("aria-hidden", this.isTouchDevice ? "false" : "true");
   }
 
   // ------------------------------------------------------------------

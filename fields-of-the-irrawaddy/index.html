@@ -5,7 +5,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#2a1a14" />
+    <meta name="foi-build" content="mobile-startup-v5-2026-11-10" />
     <title>Fields of the Irrawaddy</title>
+    <style>
+      html, body { min-height: 100%; }
+      body:not(.foi-in-game) #app { visibility: hidden; }
+      #title-screen { display: grid; visibility: visible; opacity: 1; pointer-events: auto; }
+      #title-screen.is-hidden { visibility: hidden; opacity: 0; pointer-events: none; }
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -25,15 +32,6 @@
       <main>
         <section class="game-panel">
           <div id="game-container">
-            <nav id="mobile-game-hud" class="mobile-game-hud" aria-label="Game controls" aria-hidden="true">
-              <button type="button" class="mobile-hud-text-button" data-action="title" aria-label="Save and return to title" title="Save and return to title">MENU</button>
-              <button type="button" data-action="inventory" aria-label="Inventory" title="Inventory"><img src="/assets/ui/icon_bag.png" alt=""></button>
-              <button type="button" data-action="profile" aria-label="Profile" title="Profile"><img src="/assets/ui/icon_person.png" alt=""></button>
-              <button type="button" data-action="language" aria-label="Change language" title="Language"><img src="/assets/ui/icon_globe.png" alt=""></button>
-              <button type="button" data-action="help" aria-label="Help" title="Help"><img src="/assets/ui/icon_help.png" alt=""></button>
-              <button type="button" data-action="audio" aria-label="Audio settings" title="Audio"><img src="/assets/ui/icon_note.png" alt=""></button>
-              <button type="button" data-action="fullscreen" aria-label="Fullscreen" title="Fullscreen"><img src="/assets/ui/icon_expand.png" alt=""></button>
-            </nav>
           </div>
         </section>
 
@@ -66,6 +64,15 @@
       </div>
     </div>
 
+    <nav id="mobile-game-hud" class="mobile-game-hud" aria-label="Game controls" aria-hidden="true">
+      <button type="button" data-action="inventory" aria-label="Inventory" title="Inventory"><img src="./assets/ui/icon_bag.png" alt=""></button>
+      <button type="button" data-action="profile" aria-label="Profile" title="Profile"><img src="./assets/ui/icon_person.png" alt=""></button>
+      <button type="button" data-action="language" aria-label="Change language" title="Language"><img src="./assets/ui/icon_globe.png" alt=""></button>
+      <button type="button" data-action="help" aria-label="Help" title="Help"><img src="./assets/ui/icon_help.png" alt=""></button>
+      <button type="button" data-action="audio" aria-label="Audio settings" title="Audio"><img src="./assets/ui/icon_note.png" alt=""></button>
+      <button type="button" data-action="fullscreen" aria-label="Fullscreen" title="Fullscreen"><img src="./assets/ui/icon_expand.png" alt=""></button>
+    </nav>
+
     <div class="orientation-overlay" role="status" aria-live="polite">
       <div class="orientation-card">
         <div class="orientation-icon">↻</div>
@@ -74,6 +81,6 @@
       </div>
     </div>
 
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="./src/main.ts"></script>
   </body>
 </html>

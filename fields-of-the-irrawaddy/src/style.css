@@ -571,10 +571,10 @@ footer {
 }
 
 .mobile-game-hud {
-  position: absolute;
-  z-index: 30;
-  top: 7px;
-  right: 7px;
+  position: fixed;
+  z-index: 10010;
+  top: max(8px, env(safe-area-inset-top));
+  right: max(8px, env(safe-area-inset-right));
   display: none;
   align-items: center;
   gap: clamp(3px, 0.6vw, 6px);
@@ -605,19 +605,6 @@ footer {
   background: #6c4b30;
 }
 
-.mobile-game-hud .mobile-hud-text-button {
-  width: auto;
-  min-width: clamp(44px, 7vw, 56px);
-  height: clamp(31px, 5vw, 40px);
-  padding: 0 6px;
-  color: #fff1cf;
-  font-family: "Noto Sans", "Noto Sans Myanmar", Arial, sans-serif;
-  font-size: clamp(8px, 1.3vw, 10px);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-shadow: 1px 1px 0 #2a1a14;
-}
-
 .mobile-game-hud img {
   display: block;
   width: clamp(17px, 2.8vw, 24px);
@@ -629,6 +616,8 @@ footer {
 
 body.foi-touch-device.foi-in-game .mobile-game-hud {
   display: flex;
+  visibility: visible;
+  opacity: 1;
 }
 
 @media (max-width: 520px) and (orientation: landscape) {
@@ -702,7 +691,31 @@ body.foi-touch-device.foi-in-game .mobile-game-hud {
     font-size: 9px;
   }
 
-  .mobile-game-hud {
-    display: none !important;
-  }
+}
+
+
+/* Startup gate: keep the save-selection screen visible until gameplay is ready. */
+body:not(.foi-in-game) #app {
+  visibility: hidden;
+}
+
+body.foi-in-game #app {
+  visibility: visible;
+}
+
+/* Keep mobile controls above the Phaser canvas and outside its clipping area. */
+body.foi-touch-device.foi-in-game .mobile-game-hud {
+  display: flex !important;
+  position: fixed;
+  z-index: 10010;
+}
+
+.mobile-game-hud button {
+  width: clamp(36px, 5vw, 42px);
+  height: clamp(36px, 5vw, 42px);
+}
+
+.mobile-game-hud img {
+  width: clamp(21px, 2.8vw, 26px);
+  height: clamp(21px, 2.8vw, 26px);
 }

@@ -58,7 +58,8 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
   scene: [SaveSlotBootScene, FarmScene]
 };
 
-const title = document.getElementById("title-screen");
+const titleScreen = document.getElementById("title-screen");
+const appElement = document.getElementById("app");
 const saveSlotGrid = document.getElementById("save-slot-grid");
 const confirmation = document.getElementById("save-confirmation");
 const confirmationTitle = document.getElementById("save-confirmation-title");
@@ -70,6 +71,10 @@ const mobileHud = document.getElementById("mobile-game-hud");
 const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0 ||
   window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(max-width: 900px)").matches;
 if (isTouchDevice) document.body.classList.add("foi-touch-device");
+
+document.body.classList.remove("foi-in-game", "foi-launching");
+titleScreen?.classList.remove("is-hidden");
+appElement?.setAttribute("aria-hidden", "true");
 
 let pendingConfirmation: { slot: number; kind: ConfirmationKind } | null = null;
 
@@ -195,13 +200,6 @@ function launchGame(slot: number, loadExisting: boolean): void {
 function confirmSaveAction(): void {
   if (!pendingConfirmation) return;
   const { slot, kind } = pendingConfirmation;
-
-  if (kind === "overwrite" && gameInstance) {
-    // A game is already running; never wipe a slot without starting its replacement.
-    closeConfirmation();
-    return;
-  }
-
   const deleted = deleteSaveSlot(slot);
   if (!deleted) {
     if (confirmationMessage) confirmationMessage.textContent = "The browser could not update this save. Check storage permissions and try again.";
@@ -215,30 +213,6 @@ function confirmSaveAction(): void {
     launchGame(slot, false);
   }
 }
-
-function returnToTitle(): void {
-  const game = gameInstance;
-  if (game) {
-    try {
-      // Stopping the scene first runs its shutdown hooks (removes save listeners).
-      game.scene.stop("FarmScene");
-      game.destroy(true);
-    } catch (error) {
-      console.error("Could not close the game session cleanly:", error);
-    }
-  }
-  gameInstance = null;
-  selectedSaveForBoot = null;
-  document.body.classList.remove("foi-in-game", "foi-launching");
-  mobileHud?.setAttribute("aria-hidden", "true");
-  title?.classList.remove("is-hidden");
-  renderSaveSlots();
-}
-
-window.addEventListener("foi-quit-to-title", () => {
-  // Defer so Phaser is not torn down from inside its own input handler.
-  window.setTimeout(returnToTitle, 0);
-});
 
 function setupMobileHud(): void {
   mobileHud?.querySelectorAll<HTMLButtonElement>("button[data-action]").forEach(button => {
