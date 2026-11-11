@@ -191,7 +191,7 @@ export class FarmScene extends Phaser.Scene {
         this.music?.mobileToggle();
         break;
       case "fullscreen":
-        this.scale.toggleFullscreen();
+        this.toggleFullscreenForDevice();
         break;
     }
   };
@@ -1715,7 +1715,7 @@ export class FarmScene extends Phaser.Scene {
 
   private createFullscreenButton(x = 626, y = 22): void {
     this.fullscreenIcon = this.createIconButton(x, y, "ui_icon_expand", "hud.tip.fullscreen",
-      () => this.scale.toggleFullscreen());
+      () => this.toggleFullscreenForDevice());
 
     this.scale.on("enterfullscreen", this.handleFullscreenEntered, this);
     this.scale.on("leavefullscreen", this.handleFullscreenLeft, this);
@@ -1728,6 +1728,38 @@ export class FarmScene extends Phaser.Scene {
       this.scale.off("fullscreenfailed", this.handleFullscreenFailed, this);
       this.scale.off("fullscreenunsupported", this.handleFullscreenFailed, this);
     });
+  }
+
+  private toggleFullscreenForDevice(): void {
+    const container = document.getElementById("game-container");
+    if (!container) return;
+    if (document.body.classList.contains("foi-mobile-fullscreen")) {
+      document.body.classList.remove("foi-mobile-fullscreen");
+      this.scale.refresh();
+      return;
+    }
+    if (document.fullscreenElement) {
+      void document.exitFullscreen?.().catch(() => undefined);
+      return;
+    }
+    const requestFullscreen = container.requestFullscreen || (container as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> }).webkitRequestFullscreen;
+    if (requestFullscreen) {
+      try {
+        const result = requestFullscreen.call(container);
+        if (result && typeof result.then === "function") {
+          void result.catch(() => {
+            document.body.classList.add("foi-mobile-fullscreen");
+            this.scale.refresh();
+          });
+        }
+      } catch {
+        document.body.classList.add("foi-mobile-fullscreen");
+        this.scale.refresh();
+      }
+    } else {
+      document.body.classList.add("foi-mobile-fullscreen");
+      this.scale.refresh();
+    }
   }
 
   private handleFullscreenEntered(): void {

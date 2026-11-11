@@ -372,7 +372,20 @@ export class InventorySystem {
     }
 
     if (source.zone === target.zone && source.index === target.index) {
-      if (source.zone === "hotbar") this.farming.mobileSelectTool(source.index);
+      if (source.zone === "hotbar") {
+        this.farming.mobileSelectTool(source.index);
+      } else {
+        const tappedItem = sourceSlots[source.index];
+        const definition = tappedItem ? INVENTORY_ITEM_DEFINITIONS[tappedItem] : null;
+        if (tappedItem && definition?.tool === "seeds") {
+          const selectedIndex = this.farming.getSelectedHotbarIndex();
+          const previousItem = this.hotbarSlots[selectedIndex] ?? null;
+          this.hotbarSlots[selectedIndex] = tappedItem;
+          this.backpackSlots[source.index] = previousItem;
+          this.farming.setHotbarItems(this.hotbarSlots);
+          this.farming.mobileSelectTool(selectedIndex);
+        }
+      }
       this.setCanvasCursor("grab");
       this.updateInventoryDisplay();
       return;

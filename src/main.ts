@@ -322,7 +322,7 @@ window.addEventListener("foi-return-to-title", () => {
   if (!gameInstance) return;
   gameInstance.destroy(true);
   gameInstance = null;
-  document.body.classList.remove("foi-in-game", "foi-launching", "foi-modal-open");
+  document.body.classList.remove("foi-in-game", "foi-launching", "foi-modal-open", "foi-mobile-fullscreen");
   appElement?.setAttribute("aria-hidden", "true");
   mobileHud?.setAttribute("aria-hidden", "true");
   if (mobileContextAction) mobileContextAction.hidden = true;
@@ -354,6 +354,9 @@ confirmation?.addEventListener("click", event => {
 });
 
 document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && document.body.classList.contains("foi-mobile-fullscreen")) {
+    document.body.classList.remove("foi-mobile-fullscreen");
+  }
   if (event.key === "Escape" && confirmation && !confirmation.hidden) closeConfirmation();
   if (event.key === "Escape" && saveNameDialog && !saveNameDialog.hidden) closeSaveNameDialog();
 });

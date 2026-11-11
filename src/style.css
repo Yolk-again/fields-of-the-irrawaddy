@@ -2171,3 +2171,35 @@ body.foi-cutscene-active .game-menu-button {
     display: none !important;
   }
 }
+
+
+/* CSS fullscreen fallback for mobile browsers that do not expose the Fullscreen API. */
+body.foi-mobile-fullscreen {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+body.foi-mobile-fullscreen #game-container {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10040 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: #19291f;
+}
+body.foi-mobile-fullscreen #game-container > canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+body.foi-mobile-fullscreen #game-container > .game-hud-stack {
+  position: absolute !important;
+  top: max(8px, env(safe-area-inset-top)) !important;
+  right: max(8px, env(safe-area-inset-right)) !important;
+}
