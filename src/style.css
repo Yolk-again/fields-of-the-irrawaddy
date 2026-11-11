@@ -1529,7 +1529,7 @@ body.foi-touch-device.foi-in-game.foi-modal-open .mobile-game-hud {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .loading-wheat, .loading-dots i { animation: none; }
+  .loading-dots i { animation: none; }
 }
 
 

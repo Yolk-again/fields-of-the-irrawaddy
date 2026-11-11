@@ -15,7 +15,7 @@ import {
   LanguageSystem,
   type Language
 } from "./LanguageSystem";
-import { getSaveSlotStorageKey } from "./SaveSlotStorage";
+import { getSaveSlotStorageKey, isSupportedSaveVersion } from "./SaveSlotStorage";
 
 const WORLD_WIDTH = 1440;
 const WORLD_HEIGHT = 640;
@@ -98,7 +98,7 @@ export class SaveSystem {
     this.language = language;
     const safeSlot = Number.isInteger(saveSlot) ? Math.min(3, Math.max(1, saveSlot)) : 1;
     this.storageKey = getSaveSlotStorageKey(safeSlot);
-    this.profileCreationComplete = loadExisting;
+    this.profileCreationComplete = false;
 
     this.createInterface();
 
@@ -111,6 +111,7 @@ export class SaveSystem {
       "pagehide",
       this.handleBeforeUnload
     );
+    document.addEventListener("visibilitychange", this.handleVisibilityChange);
 
     this.scene.time.addEvent({
       delay: 10000,
@@ -123,6 +124,7 @@ export class SaveSystem {
     this.scene.events.once(
       Phaser.Scenes.Events.SHUTDOWN,
       () => {
+        this.saveGame(undefined, true);
         window.removeEventListener(
           "beforeunload",
           this.handleBeforeUnload
@@ -132,6 +134,7 @@ export class SaveSystem {
           "pagehide",
           this.handleBeforeUnload
         );
+        document.removeEventListener("visibilitychange", this.handleVisibilityChange);
       }
     );
 
@@ -140,7 +143,7 @@ export class SaveSystem {
     });
 
     if (loadExisting) {
-      this.loadGame();
+      this.profileCreationComplete = this.loadGame();
     }
   }
 
@@ -321,7 +324,7 @@ export class SaveSystem {
     }
   }
 
-  private loadGame(): void {
+  private loadGame(): boolean {
     try {
       const raw = window.localStorage.getItem(this.storageKey);
 
@@ -329,7 +332,7 @@ export class SaveSystem {
         this.statusText.setText(
           this.language.t("common.noSave")
         );
-        return;
+        return false;
       }
 
       const parsed: unknown = JSON.parse(raw);
@@ -344,7 +347,7 @@ export class SaveSystem {
       const data = parsed as GameSaveData;
 
       if (
-        ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(data.version) ||
+        !isSupportedSaveVersion(data.version) ||
         !data.player ||
         !Number.isFinite(data.player.x) ||
         !Number.isFinite(data.player.y) ||
@@ -401,16 +404,24 @@ export class SaveSystem {
       this.statusText.setText(
         this.language.t("common.loaded")
       );
+      return true;
     } catch (error) {
       this.statusText.setText(
         this.language.t("common.loadFailed")
       );
 
       console.error("Game load failed:", error);
+      return false;
     }
   }
 
   private handleBeforeUnload = (): void => {
     this.saveGame(undefined, true);
+  };
+
+  private handleVisibilityChange = (): void => {
+    if (document.visibilityState === "hidden") {
+      this.saveGame(undefined, true);
+    }
   };
 }

@@ -1,5 +1,9 @@
 export const SAVE_SLOT_COUNT = 3;
 
+export function isSupportedSaveVersion(version: unknown): version is number {
+  return typeof version === "number" && Number.isInteger(version) && version >= 1 && version <= 14;
+}
+
 export interface SaveSlotSummary {
   occupied: boolean;
   valid: boolean;
@@ -105,9 +109,8 @@ export function readSaveSlotSummary(slotNumber: number): SaveSlotSummary {
       profile?: { name?: unknown; farmName?: unknown };
     };
 
-    const supportedVersions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
-    const version = typeof data.version === "number" ? data.version : NaN;
-    const valid = supportedVersions.includes(version) &&
+    const version = data.version;
+    const valid = isSupportedSaveVersion(version) &&
       !!data.player && Number.isFinite(Number(data.player.x)) && Number.isFinite(Number(data.player.y)) &&
       !!data.farming && Array.isArray(data.farming.tiles) &&
       !!data.market && !!data.inventory && !!data.inventory.items &&

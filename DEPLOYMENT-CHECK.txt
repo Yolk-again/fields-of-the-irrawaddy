@@ -1,28 +1,34 @@
-FIELDS OF THE IRRAWADDY — NETLIFY-READY V6
+FIELDS OF THE IRRAWADDY — VERCEL-READY V7
 
-THE PUBLISHED URL WAS CHECKED
-The currently published page did not expose the save-slot text or the V5 deployment marker. This indicates that the live Netlify site is not serving the V5 source included in the earlier ZIP.
-
-NETLIFY BUILD SETTINGS
-- Project/base directory: the folder containing index.html and netlify.toml
+VERCEL BUILD SETTINGS
+- Framework preset: Vite
+- Project root: the folder containing index.html, package.json, and vercel.json
+- Install command: npm ci
 - Build command: npm run build
-- Publish directory: dist
-- Node version: 22.16.0 (.nvmrc and netlify.toml)
+- Output directory: dist
+- Node.js: 22.x (package.json engines; local .nvmrc uses 22.16.0)
 
 TITLE / SAVE SELECT
-- The save-selection markup is in index.html and exists before Phaser starts.
+- Save selection is rendered before Phaser starts.
 - Phaser.Game is created only after a slot action is selected.
 - Three independent slots, legacy migration, overwrite confirmation, and delete confirmation are preserved.
+- The save reader and loader now share the same supported version check (1 through 14).
+- Failed loads no longer mark an existing game as ready for autosave.
+- Saves are flushed on visibility changes and when the Phaser scene shuts down.
 
-MOBILE HEADER
-- Six mobile buttons are in index.html outside the Phaser canvas.
-- The existing icon images in public/assets/ui are reused.
-- The buttons are shown during gameplay on detected touch/small-screen devices.
+LOADING ANIMATION
+- The wheat emoji continues spinning even when Windows requests reduced motion.
+- The loading dots still respect reduced-motion settings.
+
+FAVICON / SEARCH METADATA
+- Wheat favicon: /favicon.png (192 x 192).
+- Page title and description metadata are configured in index.html.
+- robots.txt and sitemap.xml are included for the Vercel hostname configured in index.html.
 
 VERIFY AFTER DEPLOYMENT
 Open /deployment-version.txt on the live site. It must show:
-FOI-DEPLOYMENT-V6-2026-11-10
+FOI-DEPLOYMENT-V7-2026-11-11
 
-See NETLIFY-DEPLOYMENT-GUIDE.md for both Git-connected and manual deployment instructions.
+See VERCEL-DEPLOYMENT-GUIDE.md for Git-connected and CLI deployment steps, plus save export/import steps when changing domains.
 
-The source ZIP itself does not update an already-published Netlify deployment. Netlify must build from this project or receive the generated dist/ folder.
+The source ZIP does not publish itself. Push the project to GitHub and import the repository in Vercel, or use the Vercel CLI.
