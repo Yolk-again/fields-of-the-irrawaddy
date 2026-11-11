@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import "./style.css";
 import "./game/assets.css";
 import { FarmScene } from "./game/scenes/FarmScene";
+import { getGraphicsQuality } from "./game/systems/GraphicsQuality";
 import {
   SAVE_SLOT_COUNT,
   deleteSaveSlot,
@@ -40,6 +41,8 @@ class SaveSlotBootScene extends Phaser.Scene {
   }
 }
 
+const initialGraphicsQuality = getGraphicsQuality();
+
 const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: "game-container",
@@ -50,10 +53,15 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
   input: {
     activePointers: 5
   },
-  render: {
-    smoothPixelArt: true,
-    roundPixels: true
+  fps: {
+    target: 60,
+    limit: 0,
+    smoothStep: true,
+    deltaHistory: 8
   },
+  render: initialGraphicsQuality === "low"
+    ? { pixelArt: true, roundPixels: true }
+    : { smoothPixelArt: true, roundPixels: true },
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH

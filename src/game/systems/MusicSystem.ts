@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
+import { getGraphicsQuality, saveGraphicsQuality } from "./GraphicsQuality";
+import type { GraphicsQuality } from "./GraphicsQuality";
 import { createRedCloseButton, modalClosePosition, modalPanel, pixelPanel } from "../ui/PixelUI";
 
 /**
@@ -66,11 +68,14 @@ export class MusicSystem {
   private musicValueText!: Phaser.GameObjects.Text;
   private effectsValueText!: Phaser.GameObjects.Text;
   private settingsFooter!: Phaser.GameObjects.Text;
+  private qualityLabel!: Phaser.GameObjects.Text;
+  private qualityButtons: { quality: GraphicsQuality; button: Phaser.GameObjects.Container; plate: Phaser.GameObjects.Rectangle; label: Phaser.GameObjects.Text }[] = [];
   private musicFill!: Phaser.GameObjects.Rectangle;
   private effectsFill!: Phaser.GameObjects.Rectangle;
   private musicKnob!: Phaser.GameObjects.Arc;
   private effectsKnob!: Phaser.GameObjects.Arc;
   private activeSlider: "music" | "effects" | null = null;
+  private graphicsQuality: GraphicsQuality = getGraphicsQuality();
   private phase: DayPhase = "day";
   private button!: Phaser.GameObjects.Rectangle;
   private icon!: Phaser.GameObjects.Image;
@@ -181,7 +186,7 @@ export class MusicSystem {
 
   private refreshButton(): void {
     this.icon.setTexture("ui_icon_note");
-    this.tip.setText(this.language.getLanguage() === "my" ? "အသံချိန်ညှိရန်" : "AUDIO SETTINGS");
+    this.tip.setText(this.language.getLanguage() === "my" ? "ဂိမ်းဆက်တင်များ" : "GAME SETTINGS");
     this.tip.setFontFamily(this.language.getFontFamily());
   }
 
@@ -202,43 +207,67 @@ export class MusicSystem {
 
   private createSettingsPanel(ui: ModalUIManager): void {
     this.settingsPanel = this.scene.add.container(0, 0).setScrollFactor(0);
-    const background = modalPanel(this.scene, 320, 180, 390, 220);
-    const divider = this.scene.add.rectangle(320, 117, 350, 2, 0x9b7047, 0.9);
-    this.settingsTitle = this.scene.add.text(320, 96, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "17px", color: "#e6c47e", fontStyle: "bold"
+    const background = modalPanel(this.scene, 320, 180, 420, 286);
+    const divider = this.scene.add.rectangle(320, 87, 380, 2, 0x9b7047, 0.9);
+    this.settingsTitle = this.scene.add.text(320, 63, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "16px", color: "#e6c47e", fontStyle: "bold"
     }).setOrigin(0.5);
 
-    this.musicLabel = this.scene.add.text(170, 143, "", {
+    this.musicLabel = this.scene.add.text(170, 108, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf", fontStyle: "bold"
     }).setOrigin(0, 0.5);
-    this.musicValueText = this.scene.add.text(475, 143, "", {
+    this.musicValueText = this.scene.add.text(475, 108, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#e6c47e", fontStyle: "bold"
     }).setOrigin(1, 0.5);
-    this.effectsLabel = this.scene.add.text(170, 205, "", {
+    this.effectsLabel = this.scene.add.text(170, 163, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf", fontStyle: "bold"
     }).setOrigin(0, 0.5);
-    this.effectsValueText = this.scene.add.text(475, 205, "", {
+    this.effectsValueText = this.scene.add.text(475, 163, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#e6c47e", fontStyle: "bold"
     }).setOrigin(1, 0.5);
 
-    const musicTrack = this.scene.add.rectangle(320, 164, 230, 8, 0x241a14, 1);
-    const effectsTrack = this.scene.add.rectangle(320, 226, 230, 8, 0x241a14, 1);
-    this.musicFill = this.scene.add.rectangle(205, 164, 230, 8, 0x88a85f, 1).setOrigin(0, 0.5);
-    this.effectsFill = this.scene.add.rectangle(205, 226, 230, 8, 0x88a85f, 1).setOrigin(0, 0.5);
-    this.musicKnob = this.scene.add.circle(435, 164, 7, 0xe6c47e, 1).setStrokeStyle(2, 0x2a1a14);
-    this.effectsKnob = this.scene.add.circle(435, 226, 7, 0xe6c47e, 1).setStrokeStyle(2, 0x2a1a14);
+    const musicTrack = this.scene.add.rectangle(320, 132, 230, 8, 0x241a14, 1);
+    const effectsTrack = this.scene.add.rectangle(320, 187, 230, 8, 0x241a14, 1);
+    this.musicFill = this.scene.add.rectangle(205, 132, 230, 8, 0x88a85f, 1).setOrigin(0, 0.5);
+    this.effectsFill = this.scene.add.rectangle(205, 187, 230, 8, 0x88a85f, 1).setOrigin(0, 0.5);
+    this.musicKnob = this.scene.add.circle(435, 132, 7, 0xe6c47e, 1).setStrokeStyle(2, 0x2a1a14);
+    this.effectsKnob = this.scene.add.circle(435, 187, 7, 0xe6c47e, 1).setStrokeStyle(2, 0x2a1a14);
 
-    this.settingsFooter = this.scene.add.text(320, 269, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d7e6c5", align: "center"
+    this.qualityLabel = this.scene.add.text(170, 220, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf", fontStyle: "bold"
+    }).setOrigin(0, 0.5);
+    this.qualityButtons = ([
+      { quality: "high", x: 235 },
+      { quality: "balanced", x: 320 },
+      { quality: "low", x: 405 }
+    ] as const).map(({ quality, x }) => {
+      const button = this.scene.add.container(x, 248).setScrollFactor(0);
+      const plate = this.scene.add.rectangle(0, 0, 78, 28, 0x3a4a32, 1).setStrokeStyle(1, 0x9b7047);
+      const label = this.scene.add.text(0, 0, "", {
+        fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#e7dfc8", fontStyle: "bold"
+      }).setOrigin(0.5);
+      button.add([plate, label]);
+      button.setSize(78, 28);
+      button.setInteractive(new Phaser.Geom.Rectangle(-39, -14, 78, 28), Phaser.Geom.Rectangle.Contains);
+      button.on("pointerdown", () => this.selectGraphicsQuality(quality));
+      button.on("pointerover", () => plate.setStrokeStyle(2, 0xe6c47e));
+      button.on("pointerout", () => this.updateQualityVisuals());
+      return { quality, button, plate, label };
+    });
+
+    this.settingsFooter = this.scene.add.text(320, 298, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "7px", color: "#d7e6c5", align: "center", wordWrap: { width: 360 }
     }).setOrigin(0.5);
-    const closePosition = modalClosePosition(320, 180, 390, 220);
+    const closePosition = modalClosePosition(320, 180, 420, 286);
     this.settingsCloseButton = createRedCloseButton(this.scene, closePosition.x, closePosition.y);
 
     this.settingsPanel.add([
       background, divider, this.settingsTitle, this.musicLabel, this.musicValueText,
       musicTrack, this.musicFill, this.musicKnob,
       this.effectsLabel, this.effectsValueText, effectsTrack,
-      this.effectsFill, this.effectsKnob, this.settingsFooter, this.settingsCloseButton
+      this.effectsFill, this.effectsKnob, this.qualityLabel,
+      ...this.qualityButtons.map(item => item.button),
+      this.settingsFooter, this.settingsCloseButton
     ]);
     ui.registerPanel("audio", this.settingsPanel, 420, () => {
       this.activeSlider = null;
@@ -246,18 +275,44 @@ export class MusicSystem {
     this.language.onChange(() => this.updateSettingsText());
     this.updateSettingsText();
     this.updateSliderVisuals();
+    this.updateQualityVisuals();
   }
 
   private updateSettingsText(): void {
-    const myanmar = this.language.getLanguage() === "my";
     const font = this.language.getFontFamily();
-    this.settingsTitle.setText(myanmar ? "အသံချိန်ညှိမှု" : "AUDIO SETTINGS");
-    this.musicLabel.setText(myanmar ? "နောက်ခံတေးဂီတ" : "BACKGROUND MUSIC");
-    this.effectsLabel.setText(myanmar ? "အသံအကျိုးသက်ရောက်မှု" : "SOUND EFFECTS");
-    this.settingsFooter.setText(myanmar ? "ဘားကို နှိပ်ပါ သို့မဟုတ် ဆွဲရွှေ့၍ အသံချိန်ညှိပါ" : "CLICK OR DRAG A BAR TO ADJUST VOLUME");
-    for (const text of [this.settingsTitle, this.musicLabel, this.effectsLabel, this.musicValueText, this.effectsValueText, this.settingsFooter]) {
+    this.settingsTitle.setText(this.language.t("settings.title"));
+    this.musicLabel.setText(this.language.getLanguage() === "my" ? "နောက်ခံတေးဂီတ" : "BACKGROUND MUSIC");
+    this.effectsLabel.setText(this.language.getLanguage() === "my" ? "အသံအကျိုးသက်ရောက်မှု" : "SOUND EFFECTS");
+    this.qualityLabel.setText(this.language.t("settings.graphicsQuality"));
+    this.settingsFooter.setText(this.language.t("settings.qualityHint"));
+    for (const text of [this.settingsTitle, this.musicLabel, this.effectsLabel, this.musicValueText, this.effectsValueText, this.qualityLabel, this.settingsFooter, ...this.qualityButtons.map(item => item.label)]) {
       text.setFontFamily(font);
     }
+    this.updateQualityVisuals();
+  }
+
+  private updateQualityVisuals(): void {
+    const selected = this.graphicsQuality;
+    const labels: Record<GraphicsQuality, string> = {
+      high: this.language.t("settings.qualityHigh"),
+      balanced: this.language.t("settings.qualityBalanced"),
+      low: this.language.t("settings.qualityLow")
+    };
+    for (const item of this.qualityButtons) {
+      const active = item.quality === selected;
+      item.plate.setFillStyle(active ? 0x8b7442 : 0x3a4a32, 1);
+      item.plate.setStrokeStyle(active ? 2 : 1, active ? 0xffd77c : 0x9b7047);
+      item.label.setText(labels[item.quality]);
+      item.label.setColor(active ? "#fff5d6" : "#e7dfc8");
+    }
+  }
+
+  private selectGraphicsQuality(quality: GraphicsQuality): void {
+    this.graphicsQuality = quality;
+    saveGraphicsQuality(quality);
+    this.scene.events.emit("foi-graphics-quality-change", quality);
+    this.updateQualityVisuals();
+    this.settingsFooter.setText(this.language.t("settings.qualityHint"));
   }
 
   private updateSliderVisuals(): void {
@@ -302,10 +357,10 @@ export class MusicSystem {
     const y = pointer.y;
     const onTrack = x >= 188 && x <= 452;
 
-    if (onTrack && y >= 150 && y <= 178) {
+    if (onTrack && y >= 118 && y <= 146) {
       this.activeSlider = "music";
       this.updateSliderFromPointer(pointer);
-    } else if (onTrack && y >= 212 && y <= 240) {
+    } else if (onTrack && y >= 173 && y <= 201) {
       this.activeSlider = "effects";
       this.updateSliderFromPointer(pointer);
     } else {

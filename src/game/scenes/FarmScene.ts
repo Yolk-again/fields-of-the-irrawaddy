@@ -15,6 +15,8 @@ import { ModalUIManager } from "../systems/ModalUIManager";
 import { LanguageSystem } from "../systems/LanguageSystem";
 import { HelpSystem } from "../systems/HelpSystem";
 import { MusicSystem } from "../systems/MusicSystem";
+import { getGraphicsQuality } from "../systems/GraphicsQuality";
+import type { GraphicsQuality } from "../systems/GraphicsQuality";
 import { OpeningCutsceneSystem } from "../systems/OpeningCutsceneSystem";
 import { NpcFarmingSystem } from "../systems/NpcFarmingSystem";
 import {
@@ -114,6 +116,10 @@ export class FarmScene extends Phaser.Scene {
   private enteredThroughSaveSelect = false;
   private mobileContextPointerId: number | null = null;
   private chickenCluckTimer = Phaser.Math.Between(8, 15);
+  private graphicsQuality: GraphicsQuality = getGraphicsQuality();
+  private performanceUiElapsed = 0;
+  private performanceLightingElapsed = 0;
+  private performanceButterflyElapsed = 0;
 
   private canUseMobileContextAction(): boolean {
     if (!this.isTouchDevice) return false;
@@ -445,6 +451,11 @@ export class FarmScene extends Phaser.Scene {
     this.createResourceHud();
     this.createTouchControls();
     this.applyReadableTextRendering();
+    this.applyGraphicsQuality(this.graphicsQuality);
+    this.events.on("foi-graphics-quality-change", this.handleGraphicsQualityChange, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.events.off("foi-graphics-quality-change", this.handleGraphicsQualityChange, this);
+    });
     window.addEventListener("foi-menu-request", this.handleGameMenuRequest);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       window.removeEventListener("foi-menu-request", this.handleGameMenuRequest);
@@ -877,11 +888,12 @@ export class FarmScene extends Phaser.Scene {
   }
 
   /** World name-plates fade in only when the player is close, so they never clutter the view. */
-  private updateWorldLabels(): void {
+  private updateWorldLabels(delta = 16.67): void {
+    const blend = 1 - Math.pow(0.85, Math.max(1, delta) / 16.67);
     for (const item of this.worldLabels) {
       const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, item.text.x, item.text.y);
       const target = distance < item.radius ? 1 : 0;
-      item.text.setAlpha(Phaser.Math.Linear(item.text.alpha, target, 0.15));
+      item.text.setAlpha(Phaser.Math.Linear(item.text.alpha, target, blend));
     }
   }
 
@@ -979,8 +991,9 @@ export class FarmScene extends Phaser.Scene {
     const baseAngle = Math.atan2(animal.sprite.y - threat.y, animal.sprite.x - threat.x);
     let bestPath: Array<{ x: number; y: number }> = [];
     let bestScore = -Infinity;
-    for (let index = 0; index < 24; index++) {
-      const angle = baseAngle + index * (Math.PI * 2 / 24);
+    const directionCount = this.graphicsQuality === "high" ? 24 : this.graphicsQuality === "balanced" ? 16 : 10;
+    for (let index = 0; index < directionCount; index++) {
+      const angle = baseAngle + index * (Math.PI * 2 / directionCount);
       const targetX = Phaser.Math.Clamp(animal.sprite.x + Math.cos(angle) * 90, animal.rect.x1 + 5, animal.rect.x2 - 5);
       const targetY = Phaser.Math.Clamp(animal.sprite.y + Math.sin(angle) * 76, animal.rect.y1 + 3, animal.rect.y2 - 3);
       if (Phaser.Math.Distance.Between(animal.sprite.x, animal.sprite.y, targetX, targetY) < 12) continue;
@@ -1289,7 +1302,9 @@ export class FarmScene extends Phaser.Scene {
     const flicker = 0.94 + 0.06 * Math.sin(this.time.now / 780);
     for (const light of this.roadLampLights) {
       // A large soft halo replaces the old tiny white circle inside the lamp.
-      light.glow.setAlpha(lampIntensity * 0.92 * flicker);
+      const qualityGlow = this.graphicsQuality === "low" ? 0.52 : this.graphicsQuality === "balanced" ? 0.78 : 0.92;
+      const qualityFlicker = this.graphicsQuality === "low" ? 1 : flicker;
+      light.glow.setAlpha(lampIntensity * qualityGlow * qualityFlicker);
     }
   }
 
@@ -1730,6 +1745,17 @@ export class FarmScene extends Phaser.Scene {
     });
   }
 
+  private handleGraphicsQualityChange = (quality: GraphicsQuality): void => {
+    this.applyGraphicsQuality(quality);
+  };
+
+  private applyGraphicsQuality(quality: GraphicsQuality): void {
+    this.graphicsQuality = quality;
+    const reduced = quality === "low";
+    for (const butterfly of this.butterflies) butterfly.sprite.setVisible(!reduced);
+    for (const animal of this.animals) animal.shadow.setVisible(!reduced);
+  }
+
   private canMoveTo(x: number, y: number): boolean {
     const left = x - 5;
     const right = x + 5;
@@ -1765,12 +1791,34 @@ export class FarmScene extends Phaser.Scene {
 
     this.music.setListenerPosition(this.player.x, this.player.y);
     this.updateAnimals(delta);
-    this.updateButterflies(delta);
-    this.updateWorldLabels();
-    this.updateLighting();
+
+    const uiRefreshInterval = this.graphicsQuality === "high" ? 90 : this.graphicsQuality === "balanced" ? 120 : 150;
+    const lightingRefreshInterval = this.graphicsQuality === "high" ? 50 : this.graphicsQuality === "balanced" ? 100 : 180;
+    this.updateWorldLabels(delta);
+    this.performanceUiElapsed += delta;
+    this.performanceLightingElapsed += delta;
+
+    if (this.graphicsQuality === "high") {
+      this.updateButterflies(delta);
+    } else if (this.graphicsQuality === "balanced") {
+      this.performanceButterflyElapsed += delta;
+      if (this.performanceButterflyElapsed >= 1000 / 30) {
+        this.updateButterflies(this.performanceButterflyElapsed);
+        this.performanceButterflyElapsed = 0;
+      }
+    }
+
+    if (this.performanceUiElapsed >= uiRefreshInterval) {
+      this.updateResourceHud();
+      this.updateMobileContextAction();
+      this.performanceUiElapsed = 0;
+    }
+
+    if (this.performanceLightingElapsed >= lightingRefreshInterval) {
+      this.updateLighting();
+      this.performanceLightingElapsed = 0;
+    }
     this.music.setTimeOfDayHours(this.village.getTimeOfDayHours());
-    this.updateResourceHud();
-    this.updateMobileContextAction();
 
     // Farming and daily village requests share the exact same 24-hour game clock.
     this.farming.syncGameDay(this.village.getGameDay(), this.village.getElapsedGameMinutes());
