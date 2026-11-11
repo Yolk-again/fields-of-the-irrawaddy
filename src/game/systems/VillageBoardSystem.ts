@@ -8,15 +8,32 @@ import { LanguageSystem } from "./LanguageSystem";
 import { createRedCloseButton, modalClosePosition, modalPanel } from "../ui/PixelUI";
 
 type RequestKind = "rice" | "fish" | "meals" | "tomatoes" | "greenBeans";
+interface DailyRequest {
+  kind: RequestKind;
+  amount: number;
+  delivered: boolean;
+}
 interface VillageBoardSaveData {
   day: number;
-  riceRequired?: number;
+  requests?: DailyRequest[];
   requestKind?: RequestKind;
   requestAmount?: number;
-  delivered: boolean;
+  riceRequired?: number;
+  delivered?: boolean;
   lastRiceRequired?: number;
 }
+interface RequestRowUI {
+  background: Phaser.GameObjects.Rectangle;
+  icon: Phaser.GameObjects.Image;
+  requestText: Phaser.GameObjects.Text;
+  progressText: Phaser.GameObjects.Text;
+  rewardText: Phaser.GameObjects.Text;
+  deliverButton: Phaser.GameObjects.Rectangle;
+  deliverText: Phaser.GameObjects.Text;
+}
 
+const DAILY_REQUEST_COUNT = 3;
+const REQUEST_ROW_CENTERS = [111, 180, 249];
 const FISH_ORDER: FishKind[] = ["silverBarb", "catfish", "goldenCarp"];
 const MEAL_ORDER: MealKind[] = ["fishRice", "mohinga", "fishCurry"];
 const REQUEST_ICONS: Record<RequestKind, string> = {
@@ -34,7 +51,7 @@ const REQUEST_LABELS: Record<RequestKind, string> = {
   greenBeans: "board.item.greenBeans"
 };
 
-/** Daily village deliveries reward a mix of crops, fish and cooked meals. */
+/** Multiple daily village deliveries reward a mix of crops, fish and cooked meals. */
 export class VillageBoardSystem {
   private readonly scene: Phaser.Scene;
   private readonly farming: FarmingSystem;
@@ -47,32 +64,20 @@ export class VillageBoardSystem {
   private readonly boardX = 435;
   private readonly boardY = 258;
   private day = 1;
-  private requestKind: RequestKind = "rice";
-  private requestAmount = 3;
+  private requests: DailyRequest[] = [];
   private lastRiceRequired = 0;
-  private delivered = false;
   private isOpen = false;
 
   private interactKey!: Phaser.Input.Keyboard.Key;
-  private deliverKey!: Phaser.Input.Keyboard.Key;
+  private deliverKeys: Phaser.Input.Keyboard.Key[] = [];
   private promptText!: Phaser.GameObjects.Text;
   private boardLabel!: Phaser.GameObjects.Text;
   private panel!: Phaser.GameObjects.Container;
   private closeButton!: Phaser.GameObjects.Container;
   private titleText!: Phaser.GameObjects.Text;
   private subtitleText!: Phaser.GameObjects.Text;
-  private requestIcon!: Phaser.GameObjects.Image;
-  private requestText!: Phaser.GameObjects.Text;
-  private rewardCoinText!: Phaser.GameObjects.Text;
-  private rewardSeedText!: Phaser.GameObjects.Text;
-  private statusText!: Phaser.GameObjects.Text;
-  private deliverText!: Phaser.GameObjects.Text;
   private exitHintText!: Phaser.GameObjects.Text;
-  private deliverCard!: Phaser.GameObjects.Rectangle;
-  private progressTrack!: Phaser.GameObjects.Rectangle;
-  private progressFill!: Phaser.GameObjects.Rectangle;
-  private rewardCoinIcon!: Phaser.GameObjects.Image;
-  private rewardSeedIcon!: Phaser.GameObjects.Image;
+  private requestRows: RequestRowUI[] = [];
   private readonly touchMode = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
 
   constructor(
@@ -93,7 +98,7 @@ export class VillageBoardSystem {
     this.language = language;
 
     this.day = this.farming.getDay();
-    this.rollDailyRequest();
+    this.rollDailyRequests();
     this.createBoardProp();
     this.createControls();
     this.createInterface();
@@ -108,7 +113,7 @@ export class VillageBoardSystem {
     this.ui.registerPanel("board", this.panel, 270, () => {
       this.isOpen = false;
       this.interactKey.reset();
-      this.deliverKey.reset();
+      this.deliverKeys.forEach(key => key.reset());
     }, this.closeButton);
     this.ui.registerHud(this.promptText);
     this.language.onChange(() => this.updateInterface());
@@ -128,14 +133,41 @@ export class VillageBoardSystem {
     return [2, 3, 4, 5];
   }
 
-  private rollDailyRequest(): void {
+  private generateDailyRequests(day: number): DailyRequest[] {
+    const candidates: DailyRequest[] = [];
+    for (const kind of this.requestPoolForDay(day)) {
+      for (const amount of this.amountOptions(kind, day)) {
+        candidates.push({ kind, amount, delivered: false });
+      }
+    }
+
+    for (let index = candidates.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(Math.random() * (index + 1));
+      [candidates[index], candidates[swapIndex]] = [candidates[swapIndex], candidates[index]];
+    }
+
+    const chosen: DailyRequest[] = [];
+    const usedKinds = new Set<RequestKind>();
+    for (const candidate of candidates) {
+      if (chosen.length >= DAILY_REQUEST_COUNT) break;
+      if (usedKinds.has(candidate.kind)) continue;
+      chosen.push(candidate);
+      usedKinds.add(candidate.kind);
+    }
+
+    for (const candidate of candidates) {
+      if (chosen.length >= DAILY_REQUEST_COUNT) break;
+      if (chosen.some(request => request.kind === candidate.kind && request.amount === candidate.amount)) continue;
+      chosen.push(candidate);
+    }
+
+    return chosen.slice(0, DAILY_REQUEST_COUNT);
+  }
+
+  private rollDailyRequests(): void {
     this.day = this.farming.getDay();
-    const pool = this.requestPoolForDay(this.day).filter(kind => kind !== this.requestKind || this.requestAmount < 2);
-    this.requestKind = Phaser.Utils.Array.GetRandom(pool.length ? pool : this.requestPoolForDay(this.day)) ?? "rice";
-    const options = this.amountOptions(this.requestKind, this.day);
-    this.requestAmount = Phaser.Utils.Array.GetRandom(options) ?? options[0] ?? 3;
-    this.lastRiceRequired = this.requestKind === "rice" ? this.requestAmount : this.lastRiceRequired;
-    this.delivered = false;
+    this.requests = this.generateDailyRequests(this.day);
+    this.lastRiceRequired = this.requests.find(request => request.kind === "rice")?.amount ?? this.lastRiceRequired;
   }
 
   private createBoardProp(): void {
@@ -168,69 +200,71 @@ export class VillageBoardSystem {
   private createControls(): void {
     const keyboard = this.scene.input.keyboard!;
     this.interactKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
-    this.deliverKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE);
+    this.deliverKeys = [
+      keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE),
+      keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO),
+      keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE)
+    ];
   }
 
   private createInterface(): void {
     this.panel = this.scene.add.container(0, 0).setScrollFactor(0);
-    const background = modalPanel(this.scene, 320, 180, 520, 284);
-    const divider = this.scene.add.rectangle(320, 99, 468, 2, 0x9b7047, 0.9);
-    this.titleText = this.scene.add.text(320, 56, "", {
+    const background = modalPanel(this.scene, 320, 180, 560, 328);
+    const divider = this.scene.add.rectangle(320, 76, 510, 2, 0x9b7047, 0.9);
+    this.titleText = this.scene.add.text(320, 34, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "16px", color: "#e6c47e", fontStyle: "bold",
       align: "center", wordWrap: { width: 450 }
     }).setOrigin(0.5);
-    this.subtitleText = this.scene.add.text(320, 80, "", {
+    this.subtitleText = this.scene.add.text(320, 57, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d7e6c5", align: "center",
       wordWrap: { width: 452 }
     }).setOrigin(0.5);
 
-    const requestCard = this.scene.add.rectangle(320, 151, 454, 82, 0x3d4b34, 1).setStrokeStyle(2, 0x9b7047);
-    this.requestIcon = this.scene.add.image(174, 151, "rice_bowl_asset").setScale(1.65);
-    this.requestText = this.scene.add.text(204, 151, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "13px", color: "#fff1cf", fontStyle: "bold",
-      wordWrap: { width: 245 }, lineSpacing: 1
-    }).setOrigin(0, 0.5);
-    this.rewardCoinIcon = this.scene.add.image(218, 185, "coin_asset").setScale(0.9);
-    this.rewardCoinText = this.scene.add.text(234, 185, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#f0d69e", fontStyle: "bold"
-    }).setOrigin(0, 0.5);
-    this.rewardSeedIcon = this.scene.add.image(382, 185, "rice_seed_bag_asset").setScale(0.9);
-    this.rewardSeedText = this.scene.add.text(398, 185, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#f0d69e", fontStyle: "bold"
-    }).setOrigin(0, 0.5);
-    this.statusText = this.scene.add.text(320, 218, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#d7e6c5", align: "center", fontStyle: "bold"
+    this.requestRows = REQUEST_ROW_CENTERS.map((centerY, index) => {
+      const backgroundCard = this.scene.add.rectangle(320, centerY, 520, 58, 0x3d4b34, 1).setStrokeStyle(2, 0x9b7047);
+      const icon = this.scene.add.image(79, centerY, "rice_bowl_asset").setScale(1.15);
+      const requestText = this.scene.add.text(108, centerY - 13, "", {
+        fontFamily: this.language.getFontFamily(), fontSize: "11px", color: "#fff1cf", fontStyle: "bold",
+        wordWrap: { width: 300 }, lineSpacing: 1
+      }).setOrigin(0, 0.5);
+      const progressText = this.scene.add.text(108, centerY + 13, "", {
+        fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d7e6c5",
+        wordWrap: { width: 300 }
+      }).setOrigin(0, 0.5);
+      const rewardText = this.scene.add.text(520, centerY - 16, "", {
+        fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#f0d69e", fontStyle: "bold",
+        align: "center", wordWrap: { width: 112 }
+      }).setOrigin(0.5);
+      const deliverButton = this.scene.add.rectangle(520, centerY + 10, 108, 25, 0x527044, 1).setStrokeStyle(1, 0xd6b36b);
+      const deliverText = this.scene.add.text(520, centerY + 10, "", {
+        fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#fff1cf", fontStyle: "bold",
+        align: "center", wordWrap: { width: 100 }
+      }).setOrigin(0.5);
+      return { background: backgroundCard, icon, requestText, progressText, rewardText, deliverButton, deliverText };
+    });
+
+    this.exitHintText = this.scene.add.text(320, 309, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d7e6c5", align: "center"
     }).setOrigin(0.5);
-    this.progressTrack = this.scene.add.rectangle(320, 241, 300, 10, 0x263327, 1).setStrokeStyle(1, 0x9b7047);
-    this.progressFill = this.scene.add.rectangle(170, 241, 1, 6, 0x79b35d, 1).setOrigin(0, 0.5);
-    this.deliverCard = this.scene.add.rectangle(320, 269, 276, 38, 0x527044, 1).setStrokeStyle(2, 0xd6b36b);
-    this.deliverText = this.scene.add.text(320, 269, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "11px", color: "#fff1cf", fontStyle: "bold"
-    }).setOrigin(0.5);
-    this.exitHintText = this.scene.add.text(320, 310, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d7e6c5"
-    }).setOrigin(0.5);
-    const closePosition = modalClosePosition(320, 180, 520, 284);
+    const closePosition = modalClosePosition(320, 180, 560, 328);
     this.closeButton = createRedCloseButton(this.scene, closePosition.x, closePosition.y);
-    this.panel.add([
-      background, divider, this.titleText, this.subtitleText, requestCard, this.requestIcon, this.requestText,
-      this.rewardCoinIcon, this.rewardCoinText, this.rewardSeedIcon, this.rewardSeedText, this.statusText,
-      this.progressTrack, this.progressFill, this.deliverCard, this.deliverText, this.exitHintText, this.closeButton
-    ]);
+    const rowObjects = this.requestRows.flatMap(row => [row.background, row.icon, row.requestText, row.progressText,
+      row.rewardText, row.deliverButton, row.deliverText]);
+    this.panel.add([background, divider, this.titleText, this.subtitleText, ...rowObjects, this.exitHintText, this.closeButton]);
     this.updateInterface();
   }
 
-  private get coinReward(): number {
+  private coinReward(request: DailyRequest): number {
     const multiplier: Record<RequestKind, number> = { rice: 3, fish: 5, meals: 8, tomatoes: 4, greenBeans: 4 };
-    return this.requestAmount * multiplier[this.requestKind] + 5;
+    return request.amount * multiplier[request.kind] + 5;
   }
 
-  private get seedReward(): number {
-    return Math.max(1, Math.floor(this.requestAmount / 4));
+  private seedReward(request: DailyRequest): number {
+    return Math.max(1, Math.floor(request.amount / 4));
   }
 
-  private getOwnedAmount(): number {
-    switch (this.requestKind) {
+  private getOwnedAmount(request: DailyRequest): number {
+    switch (request.kind) {
       case "rice": return this.farming.getRice();
       case "fish": return this.fishing.getFishTotal();
       case "meals": return this.cooking.getTotalMeals();
@@ -239,9 +273,9 @@ export class VillageBoardSystem {
     }
   }
 
-  private removeRequestedAmount(): boolean {
-    const amount = this.requestAmount;
-    switch (this.requestKind) {
+  private removeRequestedAmount(request: DailyRequest): boolean {
+    const amount = request.amount;
+    switch (request.kind) {
       case "rice": return this.farming.removeRice(amount);
       case "tomatoes": return this.farming.removeCrop("tomato", amount);
       case "greenBeans": return this.farming.removeCrop("greenBean", amount);
@@ -271,54 +305,71 @@ export class VillageBoardSystem {
     }
   }
 
-  private isPointerOverDeliverButton(pointer: Phaser.Input.Pointer): boolean {
-    return pointer.x >= 182 && pointer.x <= 458 && pointer.y >= 250 && pointer.y <= 288;
+  private getDeliverButtonIndex(pointer: Phaser.Input.Pointer): number {
+    if (pointer.x < 466 || pointer.x > 574) return -1;
+    return REQUEST_ROW_CENTERS.findIndex(centerY => pointer.y >= centerY - 3 && pointer.y <= centerY + 23);
   }
 
   private handleBoardPointerUp = (pointer: Phaser.Input.Pointer): void => {
-    if (!this.isOpen || !this.ui.isOpen("board") || this.delivered) return;
-    if (this.isPointerOverDeliverButton(pointer)) this.deliverRequest();
+    if (!this.isOpen || !this.ui.isOpen("board")) return;
+    const index = this.getDeliverButtonIndex(pointer);
+    if (index >= 0 && index < this.requests.length) this.deliverRequest(index);
   };
 
   private handleBoardPointerMove = (pointer: Phaser.Input.Pointer): void => {
-    if (!this.deliverCard) return;
-    if (!this.isOpen || !this.ui.isOpen("board") || this.delivered) {
+    if (!this.requestRows.length) return;
+    if (!this.isOpen || !this.ui.isOpen("board")) {
       this.scene.game.canvas.style.cursor = "default";
       return;
     }
-    const overButton = this.isPointerOverDeliverButton(pointer);
-    this.deliverCard.setFillStyle(overButton ? 0x668651 : 0x527044, 1);
-    this.scene.game.canvas.style.cursor = overButton ? "pointer" : "default";
+    const hovered = this.getDeliverButtonIndex(pointer);
+    this.requestRows.forEach((row, index) => {
+      const request = this.requests[index];
+      row.deliverButton.setFillStyle(hovered === index && request && !request.delivered ? 0x668651 : request?.delivered ? 0x493629 : 0x527044, 1);
+    });
+    this.scene.game.canvas.style.cursor = hovered >= 0 && this.requests[hovered] && !this.requests[hovered].delivered ? "pointer" : "default";
   };
 
   private updateInterface(): void {
     const font = this.language.getFontFamily();
-    const owned = this.getOwnedAmount();
-    const canDeliver = owned >= this.requestAmount;
-    const itemName = this.language.t(REQUEST_LABELS[this.requestKind]);
     this.titleText.setText(this.language.t("board.title"));
-    this.subtitleText.setText(this.language.t("board.subtitle"));
+    this.subtitleText.setText(this.requests.every(request => request.delivered)
+      ? this.language.t("board.allComplete")
+      : this.language.t("board.subtitle", { count: this.requests.length }));
     this.boardLabel.setText(this.language.t("board.label"));
     this.promptText.setText(this.language.t("board.prompt"));
-    this.requestIcon.setTexture(REQUEST_ICONS[this.requestKind]);
-    this.requestText.setText(this.language.t("board.requestItem", { amount: this.requestAmount, item: itemName }));
-    this.rewardCoinText.setText(this.language.t("board.rewardCoins", { coins: this.coinReward }));
-    this.rewardSeedText.setText(this.language.t("board.rewardSeeds", { seeds: this.seedReward }));
-    this.statusText.setText(this.delivered
-      ? this.language.t("board.completed")
-      : this.language.t("board.progressItem", { item: itemName, current: owned, required: this.requestAmount }));
-    this.statusText.setColor(this.delivered || canDeliver ? "#bce5a4" : "#f2c08f");
-    this.progressFill.setSize(Math.max(1, 300 * Phaser.Math.Clamp(owned / Math.max(1, this.requestAmount), 0, 1)), 6);
-    this.progressFill.setFillStyle(this.delivered ? 0x8d9d72 : canDeliver ? 0x79b35d : 0xc28b4a, 1);
-    this.deliverText.setText(this.language.t(this.delivered
-      ? "board.doneButton"
-      : canDeliver
-        ? "board.deliverButton"
-        : "board.needMoreButton", { amount: Math.max(0, this.requestAmount - owned) }));
-    this.deliverCard.setFillStyle(this.delivered ? 0x493629 : canDeliver ? 0x527044 : 0x6b5034, 1);
     this.exitHintText.setText(this.language.t("board.exitHint"));
-    for (const text of [this.titleText, this.subtitleText, this.requestText, this.rewardCoinText, this.rewardSeedText, this.statusText,
-      this.deliverText, this.exitHintText, this.boardLabel, this.promptText]) text.setFontFamily(font);
+
+    this.requestRows.forEach((row, index) => {
+      const request = this.requests[index];
+      if (!request) return;
+      const owned = this.getOwnedAmount(request);
+      const canDeliver = owned >= request.amount && !request.delivered;
+      const itemName = this.language.t(REQUEST_LABELS[request.kind]);
+      row.icon.setTexture(REQUEST_ICONS[request.kind]);
+      row.requestText.setText(this.language.t("board.requestItem", { amount: request.amount, item: itemName }));
+      row.progressText.setText(request.delivered
+        ? this.language.t("board.rowCompleted")
+        : this.language.t("board.progressItem", { item: itemName, current: owned, required: request.amount }));
+      row.progressText.setColor(request.delivered || canDeliver ? "#bce5a4" : "#d7e6c5");
+      row.rewardText.setText(this.language.t("board.rewardCompact", {
+        coins: this.coinReward(request), seeds: this.seedReward(request)
+      }));
+      row.deliverText.setText(this.language.t(request.delivered
+        ? "board.doneButton"
+        : canDeliver
+          ? "board.deliverShort"
+          : "board.needMoreButton", { amount: Math.max(0, request.amount - owned) }));
+      row.background.setFillStyle(request.delivered ? 0x33412f : 0x3d4b34, 1);
+      row.deliverButton.setFillStyle(request.delivered ? 0x493629 : canDeliver ? 0x527044 : 0x6b5034, 1);
+      row.deliverButton.setAlpha(request.delivered ? 0.8 : 1);
+      for (const text of [row.requestText, row.progressText, row.rewardText, row.deliverText]) text.setFontFamily(font);
+    });
+    this.titleText.setFontFamily(font);
+    this.subtitleText.setFontFamily(font);
+    this.exitHintText.setFontFamily(font);
+    this.boardLabel.setFontFamily(font);
+    this.promptText.setFontFamily(font);
   }
 
   private openBoard(): void {
@@ -332,31 +383,36 @@ export class VillageBoardSystem {
     this.isOpen = false;
     this.ui.close("board");
     this.interactKey.reset();
-    this.deliverKey.reset();
+    this.deliverKeys.forEach(key => key.reset());
   };
 
-  private deliverRequest(): void {
-    if (this.delivered) return;
-    const owned = this.getOwnedAmount();
-    if (owned < this.requestAmount || !this.removeRequestedAmount()) {
-      this.statusText.setText(this.language.t("board.notEnoughItem", {
-        amount: this.requestAmount,
-        item: this.language.t(REQUEST_LABELS[this.requestKind]),
+  private deliverRequest(index: number): void {
+    const request = this.requests[index];
+    if (!request || request.delivered) return;
+    const owned = this.getOwnedAmount(request);
+    if (owned < request.amount || !this.removeRequestedAmount(request)) {
+      const row = this.requestRows[index];
+      row.progressText.setText(this.language.t("board.notEnoughItem", {
+        amount: request.amount,
+        item: this.language.t(REQUEST_LABELS[request.kind]),
         current: owned
       }));
+      row.progressText.setColor("#f2c08f");
       return;
     }
-    this.delivered = true;
-    this.market.addCoins(this.coinReward);
-    this.farming.addSeeds(this.seedReward);
+    request.delivered = true;
+    const coins = this.coinReward(request);
+    const seeds = this.seedReward(request);
+    this.market.addCoins(coins);
+    this.farming.addSeeds(seeds);
     this.scene.events.emit("sound-effect", { name: "request", x: this.boardX, y: this.boardY, maxDistance: 175 });
     this.updateInterface();
-    this.statusText.setText(this.language.t("board.thankYou", { coins: this.coinReward, seeds: this.seedReward }));
+    this.requestRows[index].progressText.setText(this.language.t("board.thankYou", { coins, seeds }));
   }
 
   private refreshForNewDay(): void {
     if (this.farming.getDay() === this.day) return;
-    this.rollDailyRequest();
+    this.rollDailyRequests();
     this.updateInterface();
   }
 
@@ -378,12 +434,14 @@ export class VillageBoardSystem {
   }
 
   getSaveData(): VillageBoardSaveData {
+    const firstRequest = this.requests[0];
     return {
       day: this.day,
-      riceRequired: this.lastRiceRequired || (this.requestKind === "rice" ? this.requestAmount : 3),
-      requestKind: this.requestKind,
-      requestAmount: this.requestAmount,
-      delivered: this.delivered,
+      requests: this.requests.map(request => ({ ...request })),
+      riceRequired: this.lastRiceRequired || (firstRequest?.kind === "rice" ? firstRequest.amount : 3),
+      requestKind: firstRequest?.kind,
+      requestAmount: firstRequest?.amount,
+      delivered: firstRequest?.delivered ?? false,
       lastRiceRequired: this.lastRiceRequired
     };
   }
@@ -391,20 +449,44 @@ export class VillageBoardSystem {
   loadSaveData(data: VillageBoardSaveData): void {
     this.day = Math.max(1, Math.floor(Number(data.day) || this.farming.getDay()));
     const allowed = this.requestPoolForDay(this.day);
-    this.requestKind = allowed.includes(data.requestKind as RequestKind) ? data.requestKind as RequestKind : "rice";
-    const amountOptions = this.amountOptions(this.requestKind, this.day);
-    const savedAmount = Number(data.requestAmount ?? data.riceRequired);
-    this.requestAmount = amountOptions.includes(savedAmount) ? savedAmount : (Phaser.Utils.Array.GetRandom(amountOptions) ?? amountOptions[0] ?? 3);
-    this.lastRiceRequired = Math.max(0, Math.floor(Number(data.lastRiceRequired) || 0));
-    this.delivered = data.delivered === true;
-    if (this.day !== this.farming.getDay()) this.rollDailyRequest();
+    this.requests = this.generateDailyRequests(this.day);
+
+    if (Array.isArray(data.requests) && data.requests.length > 0) {
+      const restored = data.requests
+        .filter(request => request && allowed.includes(request.kind) && Number.isFinite(Number(request.amount)) && Number(request.amount) > 0)
+        .slice(0, DAILY_REQUEST_COUNT)
+        .map(request => ({
+          kind: request.kind,
+          amount: Math.max(1, Math.floor(Number(request.amount))),
+          delivered: request.delivered === true
+        }));
+      if (restored.length > 0) {
+        this.requests = restored;
+        for (const generated of this.generateDailyRequests(this.day)) {
+          if (this.requests.length >= DAILY_REQUEST_COUNT) break;
+          if (!this.requests.some(request => request.kind === generated.kind && request.amount === generated.amount)) {
+            this.requests.push(generated);
+          }
+        }
+      }
+    } else if (data.requestKind && allowed.includes(data.requestKind)) {
+      const legacyAmount = Math.max(1, Math.floor(Number(data.requestAmount ?? data.riceRequired) || 3));
+      this.requests[0] = { kind: data.requestKind, amount: legacyAmount, delivered: data.delivered === true };
+    }
+
+    this.lastRiceRequired = Math.max(0, Math.floor(Number(data.lastRiceRequired) || Number(data.riceRequired) || 0));
+    const riceRequest = this.requests.find(request => request.kind === "rice");
+    if (riceRequest) this.lastRiceRequired = riceRequest.amount;
+    if (this.day !== this.farming.getDay()) this.rollDailyRequests();
     this.updateInterface();
   }
 
   update(playerX: number, playerY: number): void {
     this.refreshForNewDay();
     if (this.isOpen) {
-      if (Phaser.Input.Keyboard.JustDown(this.deliverKey)) this.deliverRequest();
+      this.deliverKeys.forEach((key, index) => {
+        if (Phaser.Input.Keyboard.JustDown(key)) this.deliverRequest(index);
+      });
       if (Phaser.Input.Keyboard.JustDown(this.interactKey)) this.closeBoard();
       return;
     }
