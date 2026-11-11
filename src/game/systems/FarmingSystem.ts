@@ -72,7 +72,7 @@ export class FarmingSystem {
   private goldenWheat = 0;
   private mealBoostUntilGameMinute = 0;
   private day = 1;
-  private readonly matureGrowth = 4;
+  private readonly matureGrowth = 3;
 
   private actionKey!: Phaser.Input.Keyboard.Key;
   private toolKeys!: {
@@ -487,9 +487,10 @@ export class FarmingSystem {
   }
 
   /**
-   * Crop stages advance only after a complete 24 in-game hours have elapsed
-   * since that individual plot was watered. The clock is shared with the
-   * village and continues while the player is indoors or asleep.
+   * A crop matures after three successful watering cycles: plant and water
+   * on Day 1, water again on Day 2 and Day 3, then harvest on Day 4.
+   * Each stage advances after 24 in-game hours from the previous watering.
+   * The shared village clock continues while the player is indoors or asleep.
    */
   syncGameDay(gameDay: number, elapsedGameMinutes = this.getElapsedGameMinutes()): void {
     const targetDay = Math.max(1, Math.floor(Number(gameDay) || 1));
@@ -697,7 +698,7 @@ export class FarmingSystem {
       tile.watered = tile.planted && saved.watered === true && tile.wateredAtGameMinute !== null;
       const savedGrowth = Math.max(0, Math.floor(Number(saved.growth) || 0));
       tile.growth = tile.planted
-        ? Phaser.Math.Clamp(migrateLegacyMatureCrops && savedGrowth >= 3 ? 4 : savedGrowth, 0, this.matureGrowth)
+        ? Phaser.Math.Clamp(migrateLegacyMatureCrops && savedGrowth >= 3 ? this.matureGrowth : savedGrowth, 0, this.matureGrowth)
         : 0;
       tile.dryDays = tile.planted ? Phaser.Math.Clamp(Math.floor(Number(saved.dryDays) || 0), 0, 2) : 0;
       tile.dead = tile.planted && saved.dead === true;

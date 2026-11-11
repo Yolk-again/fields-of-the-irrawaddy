@@ -62,7 +62,7 @@ export class NpcFarmingSystem {
   private day = 1;
   private readonly columns = 5;
   private readonly rows = 3;
-  private readonly matureGrowth = 4;
+  private readonly matureGrowth = 3;
 
   constructor(scene: Phaser.Scene, language: LanguageSystem) {
     this.scene = scene;
