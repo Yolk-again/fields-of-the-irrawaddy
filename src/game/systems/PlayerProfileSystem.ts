@@ -74,7 +74,11 @@ export class PlayerProfileSystem {
   private femaleButton!: Phaser.GameObjects.Rectangle;
   private outfitLabel!: Phaser.GameObjects.Text;
   private instructionText!: Phaser.GameObjects.Text;
-  private exitHintText!: Phaser.GameObjects.Text;
+  private saveButton!: Phaser.GameObjects.Rectangle;
+  private loadButton!: Phaser.GameObjects.Rectangle;
+  private saveButtonText!: Phaser.GameObjects.Text;
+  private loadButtonText!: Phaser.GameObjects.Text;
+  private saveActions: { save: () => string; load: () => string } = { save: () => "common.saveFailed", load: () => "common.loadFailed" };
   private outfitButtons: Phaser.GameObjects.Rectangle[] = [];
   private outfitNumbers: Phaser.GameObjects.Text[] = [];
   private isOpen = false;
@@ -89,6 +93,7 @@ export class PlayerProfileSystem {
   private characterCreationComplete?: () => void;
   private characterCreationCancel?: () => void;
   private keyboardWasEnabled: boolean | null = null;
+  private feedbackActive = false;
 
   constructor(
     scene: Phaser.Scene,
@@ -199,6 +204,11 @@ export class PlayerProfileSystem {
         }
       }
     }
+
+    if (y >= 296 && y <= 321) {
+      if (x >= 190 && x <= 310) this.showSaveFeedback(this.saveActions.save());
+      else if (x >= 330 && x <= 450) this.showSaveFeedback(this.saveActions.load());
+    }
   };
 
   private createProfileInterface(): void {
@@ -262,17 +272,22 @@ export class PlayerProfileSystem {
       return swatch;
     });
 
-    this.outfitText = this.scene.add.text(320, 299, "", {
+    this.outfitText = this.scene.add.text(320, 288, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d6e6c2"
     }).setOrigin(0.5);
 
-    this.instructionText = this.scene.add.text(320, 315, "", {
+    this.instructionText = this.scene.add.text(320, 331, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "7px", color: "#b9dca3", align: "center",
       wordWrap: { width: 400 }
     }).setOrigin(0.5);
 
-    this.exitHintText = this.scene.add.text(320, 327, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "7px", color: "#d7e6c5", align: "center"
+    this.saveButton = this.scene.add.rectangle(250, 307, 116, 23, 0x527044).setStrokeStyle(2, 0xd6b36b);
+    this.loadButton = this.scene.add.rectangle(390, 307, 116, 23, 0x725332).setStrokeStyle(2, 0xd6b36b);
+    this.saveButtonText = this.scene.add.text(250, 307, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf", fontStyle: "bold"
+    }).setOrigin(0.5);
+    this.loadButtonText = this.scene.add.text(390, 307, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf", fontStyle: "bold"
     }).setOrigin(0.5);
 
     this.profilePanel.add([
@@ -280,7 +295,8 @@ export class PlayerProfileSystem {
       renameButton, this.renameLabel, this.farmNameText, renameFarmButton, this.farmRenameLabel,
       this.genderLabel, this.maleButton, this.femaleButton, this.maleLabel, this.femaleLabel,
       this.outfitLabel, ...this.outfitButtons, ...this.outfitNumbers, this.outfitText,
-      this.instructionText, this.exitHintText
+      this.saveButton, this.loadButton, this.saveButtonText, this.loadButtonText,
+      this.instructionText
     ]);
 
     this.updateProfileDisplay();
@@ -299,8 +315,12 @@ export class PlayerProfileSystem {
     this.femaleLabel.setText(this.language.t("profile.female"));
     this.outfitLabel.setText(this.language.t("profile.outfit"));
     this.outfitText.setText(this.language.t(this.outfits[this.outfitIndex].nameKey));
-    this.instructionText.setText(this.language.t("profile.close"));
-    this.exitHintText.setText(this.language.t("common.clickCrossExit"));
+    if (!this.feedbackActive) {
+      this.instructionText.setText(this.language.t("profile.close"));
+      this.instructionText.setColor("#b9dca3");
+    }
+    this.saveButtonText.setText(this.language.t("save.saveButton"));
+    this.loadButtonText.setText(this.language.t("save.loadButton"));
     this.previewSprite.setTexture(this.getCurrentPortraitAsset());
     this.nameLabel.setText(this.playerName);
     this.maleButton.setFillStyle(this.gender === "male" ? 0x527044 : 0x493729);
@@ -314,12 +334,29 @@ export class PlayerProfileSystem {
     for (const text of [
       this.titleText, this.nameText, this.renameLabel, this.farmNameText, this.farmRenameLabel,
       this.genderLabel, this.maleLabel, this.femaleLabel, this.outfitLabel, ...this.outfitNumbers,
-      this.outfitText, this.instructionText, this.exitHintText, this.nameLabel
+      this.outfitText, this.instructionText, this.saveButtonText, this.loadButtonText, this.nameLabel
     ]) text.setFontFamily(font);
 
     if (this.renameOverlay) this.renameOverlay.style.fontFamily = font;
     if (this.renameInput) this.renameInput.style.fontFamily = font;
     this.updateCharacterCreationPreview();
+  }
+
+  setSaveActions(save: () => string, load: () => string): void {
+    this.saveActions = { save, load };
+    this.updateProfileDisplay();
+  }
+
+  private showSaveFeedback(key: string): void {
+    this.feedbackActive = true;
+    this.instructionText.setText(this.language.t(key));
+    this.instructionText.setColor(key === "common.saved" || key === "common.loaded" ? "#bce5a4" : "#f0b28d");
+    this.scene.time.delayedCall(2200, () => {
+      if (!this.instructionText || !this.instructionText.active) return;
+      this.feedbackActive = false;
+      this.instructionText.setText(this.language.t("profile.close"));
+      this.instructionText.setColor("#b9dca3");
+    });
   }
 
   private createRenameOverlay(): void {

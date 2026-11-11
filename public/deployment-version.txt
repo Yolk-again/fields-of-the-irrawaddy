@@ -1,6 +1,6 @@
-FOI-DEPLOYMENT-V7-2026-11-11
+FOI-DEPLOYMENT-V8-2026-11-11
 Fields of the Irrawaddy
 
-This marker identifies the Vercel-ready project build.
+Profile save/load, new crop and request content, mobile house interaction, and audio tooltip update.
 Expected build command: npm run build
 Expected output directory: dist

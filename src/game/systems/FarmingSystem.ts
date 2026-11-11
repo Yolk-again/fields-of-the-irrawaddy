@@ -5,6 +5,7 @@ import { LanguageSystem } from "./LanguageSystem";
 import { INVENTORY_ITEM_DEFINITIONS, type InventoryItemId } from "../ui/InventoryItems";
 
 type FarmingTool = "hoe" | "seeds" | "water" | "harvest";
+export type FarmCropKind = "rice" | "tomato" | "greenBean";
 
 export type FarmUpgradeId = "hoe" | "wateringCan" | "sickle" | "expansion" | "riceMill";
 export type FarmUpgradeLevels = Record<FarmUpgradeId, number>;
@@ -30,6 +31,7 @@ interface FarmTile {
   wateredAtGameMinute: number | null;
   plantedAtGameMinute: number | null;
   goldenWheat: boolean;
+  cropType: FarmCropKind;
   base: Phaser.GameObjects.Image;
   crop: Phaser.GameObjects.Image;
 }
@@ -39,6 +41,10 @@ interface FarmSaveData {
   seeds: number;
   rice: number;
   goldenWheat?: number;
+  tomatoSeeds?: number;
+  greenBeanSeeds?: number;
+  tomatoes?: number;
+  greenBeans?: number;
   mealBoostUntilGameMinute?: number;
   upgrades?: Partial<FarmUpgradeLevels>;
   tiles: {
@@ -51,6 +57,7 @@ interface FarmSaveData {
     wateredAtGameMinute?: number | null;
     plantedAtGameMinute?: number | null;
     goldenWheat?: boolean;
+    cropType?: FarmCropKind;
   }[];
 }
 
@@ -67,8 +74,13 @@ export class FarmingSystem {
   private tool: FarmingTool | null = "hoe";
   private hotbarItems: Array<InventoryItemId | null> = ["hoe", "seeds", "water", "harvest"];
   private selectedHotbarIndex = 0;
+  private selectedSeedKind: FarmCropKind = "rice";
   private seeds = 5;
+  private tomatoSeeds = 3;
+  private greenBeanSeeds = 3;
   private rice = 0;
+  private tomatoes = 0;
+  private greenBeans = 0;
   private goldenWheat = 0;
   private mealBoostUntilGameMinute = 0;
   private day = 1;
@@ -127,7 +139,7 @@ export class FarmingSystem {
     const tile: FarmTile = {
       x, y, soil: false, planted: false, watered: false, growth: 0,
       dryDays: 0, dead: false, wateredAtGameMinute: null,
-      plantedAtGameMinute: null, goldenWheat: false, base, crop
+      plantedAtGameMinute: null, goldenWheat: false, cropType: "rice", base, crop
     };
     this.tiles.push(tile);
     this.drawTile(tile);
@@ -153,10 +165,10 @@ export class FarmingSystem {
 
     if (tile.soil && tile.planted) {
       if (tile.dead) {
-        tile.crop.setTexture("crop_3").setTint(0x75604b).setAlpha(0.88).setVisible(true);
+        tile.crop.setTexture(this.cropTexture(tile.cropType, 3)).setTint(0x75604b).setAlpha(0.88).setVisible(true);
       } else {
         tile.crop
-          .setTexture(`crop_${Phaser.Math.Clamp(tile.growth, 0, 3)}`)
+          .setTexture(this.cropTexture(tile.cropType, Phaser.Math.Clamp(tile.growth, 0, 3)))
           .setAlpha(1)
           .setVisible(true);
         if (tile.goldenWheat) tile.crop.setTint(0xf0c34d);
@@ -166,6 +178,27 @@ export class FarmingSystem {
     } else {
       tile.crop.clearTint().setAlpha(1).setVisible(false);
     }
+  }
+
+  private cropTexture(kind: FarmCropKind, stage: number): string {
+    const safeStage = Phaser.Math.Clamp(Math.floor(stage), 0, 3);
+    if (kind === "tomato") return `crop_tomato_${safeStage}`;
+    if (kind === "greenBean") return `crop_green_bean_${safeStage}`;
+    return `crop_${safeStage}`;
+  }
+
+  private getSeedCountFor(kind: FarmCropKind): number {
+    if (kind === "tomato") return this.tomatoSeeds;
+    if (kind === "greenBean") return this.greenBeanSeeds;
+    return this.seeds;
+  }
+
+  private consumeSeed(kind: FarmCropKind): boolean {
+    if (this.getSeedCountFor(kind) <= 0) return false;
+    if (kind === "tomato") this.tomatoSeeds--;
+    else if (kind === "greenBean") this.greenBeanSeeds--;
+    else this.seeds--;
+    return true;
   }
 
   private playFx(tile: FarmTile, key: "fx_dust" | "fx_splash" | "fx_sparkle", action: "hoe" | "plant" | "water" | "harvest" | "clear"): void {
@@ -331,6 +364,7 @@ export class FarmingSystem {
     const item = this.hotbarItems[index];
     this.selectedHotbarIndex = index;
     this.tool = item ? (INVENTORY_ITEM_DEFINITIONS[item].tool ?? null) : null;
+    this.selectedSeedKind = item ? (INVENTORY_ITEM_DEFINITIONS[item].cropSeed ?? "rice") : "rice";
     this.updateInterface();
   }
 
@@ -339,6 +373,7 @@ export class FarmingSystem {
     this.hotbarItems = next;
     const selected = this.hotbarItems[this.selectedHotbarIndex];
     this.tool = selected ? (INVENTORY_ITEM_DEFINITIONS[selected].tool ?? null) : null;
+    this.selectedSeedKind = selected ? (INVENTORY_ITEM_DEFINITIONS[selected].cropSeed ?? "rice") : "rice";
     this.updateInterface();
   }
 
@@ -401,7 +436,8 @@ export class FarmingSystem {
         this.setStatus("farm.alreadyPlanted");
         return;
       }
-      if (this.seeds <= 0) {
+      const seedCount = this.getSeedCountFor(this.selectedSeedKind);
+      if (seedCount <= 0) {
         this.setStatus("farm.noSeeds");
         return;
       }
@@ -410,11 +446,12 @@ export class FarmingSystem {
       tile.growth = 0;
       tile.dryDays = 0;
       tile.dead = false;
-      tile.goldenWheat = this.isMealBlessingActive() && Math.random() < 0.24;
+      tile.cropType = this.selectedSeedKind;
+      tile.goldenWheat = tile.cropType === "rice" && this.isMealBlessingActive() && Math.random() < 0.24;
       tile.watered = false;
       tile.wateredAtGameMinute = null;
       tile.plantedAtGameMinute = Math.max(0, Math.floor(this.getElapsedGameMinutes()));
-      this.seeds--;
+      this.consumeSeed(this.selectedSeedKind);
       this.scene.events.emit("sound-effect", { name: "plant", x: tile.x + 16, y: tile.y + 16 });
       this.setStatus("farm.planted");
     } else if (this.tool === "water") {
@@ -464,7 +501,9 @@ export class FarmingSystem {
       tile.dryDays = 0;
       tile.dead = false;
       const wasGolden = tile.goldenWheat;
+      const harvestedKind = tile.cropType;
       tile.goldenWheat = false;
+      tile.cropType = "rice";
       if (wasDead) {
         // Dead crops can be cleared, but they never enter the rice inventory
         // and therefore cannot be sold at the market.
@@ -473,12 +512,15 @@ export class FarmingSystem {
         this.setStatus("farm.deadHarvested");
       } else {
         const harvestYield = 3 + this.upgrades.sickle;
-        this.rice += harvestYield;
+        if (harvestedKind === "tomato") this.tomatoes += harvestYield;
+        else if (harvestedKind === "greenBean") this.greenBeans += harvestYield;
+        else this.rice += harvestYield;
         if (wasGolden) this.goldenWheat += 1;
         this.playFx(tile, "fx_sparkle", "harvest");
         this.scene.events.emit("sound-effect", { name: "harvest", x: tile.x + 16, y: tile.y + 16 });
-        this.floatText(tile, wasGolden ? `+${harvestYield} RICE  +1 GOLDEN WHEAT` : `+${harvestYield}`);
-        this.setStatus(wasGolden ? "farm.goldenHarvested" : "farm.harvested", { amount: harvestYield });
+        const cropLabel = harvestedKind === "tomato" ? "TOMATOES" : harvestedKind === "greenBean" ? "GREEN BEANS" : "RICE";
+        this.floatText(tile, wasGolden ? `+${harvestYield} RICE  +1 GOLDEN WHEAT` : `+${harvestYield} ${cropLabel}`);
+        this.setStatus(wasGolden ? "farm.goldenHarvested" : harvestedKind === "rice" ? "farm.harvested" : "farm.harvestedCrop", { amount: harvestYield, crop: this.language.t(`inventory.${harvestedKind === "tomato" ? "tomatoes" : "greenBeans"}`) });
       }
     }
 
@@ -609,6 +651,47 @@ export class FarmingSystem {
     return this.seeds;
   }
 
+  getSeedCount(kind: FarmCropKind): number { return this.getSeedCountFor(kind); }
+
+  addCropSeeds(kind: FarmCropKind, amount: number): void {
+    const safeAmount = Math.max(0, Math.floor(amount));
+    if (kind === "tomato") this.tomatoSeeds += safeAmount;
+    else if (kind === "greenBean") this.greenBeanSeeds += safeAmount;
+    else this.seeds += safeAmount;
+    this.updateInterface();
+  }
+
+  removeCropSeeds(kind: FarmCropKind, amount: number): boolean {
+    const safeAmount = Math.max(0, Math.floor(amount));
+    if (this.getSeedCountFor(kind) < safeAmount) return false;
+    if (kind === "tomato") this.tomatoSeeds -= safeAmount;
+    else if (kind === "greenBean") this.greenBeanSeeds -= safeAmount;
+    else this.seeds -= safeAmount;
+    this.updateInterface();
+    return true;
+  }
+
+  getCropCount(kind: Exclude<FarmCropKind, "rice">): number {
+    return kind === "tomato" ? this.tomatoes : this.greenBeans;
+  }
+
+  addCrop(kind: Exclude<FarmCropKind, "rice">, amount: number): void {
+    const safeAmount = Math.max(0, Math.floor(amount));
+    if (kind === "tomato") this.tomatoes += safeAmount;
+    else this.greenBeans += safeAmount;
+    this.updateInterface();
+  }
+
+  removeCrop(kind: Exclude<FarmCropKind, "rice">, amount: number): boolean {
+    const safeAmount = Math.max(0, Math.floor(amount));
+    const owned = this.getCropCount(kind);
+    if (owned < safeAmount) return false;
+    if (kind === "tomato") this.tomatoes -= safeAmount;
+    else this.greenBeans -= safeAmount;
+    this.updateInterface();
+    return true;
+  }
+
   getRice(): number {
     return this.rice;
   }
@@ -648,6 +731,10 @@ export class FarmingSystem {
       seeds: this.seeds,
       rice: this.rice,
       goldenWheat: this.goldenWheat,
+      tomatoSeeds: this.tomatoSeeds,
+      greenBeanSeeds: this.greenBeanSeeds,
+      tomatoes: this.tomatoes,
+      greenBeans: this.greenBeans,
       mealBoostUntilGameMinute: this.mealBoostUntilGameMinute,
       upgrades: { ...this.upgrades },
       tiles: this.tiles.map(tile => ({
@@ -659,7 +746,8 @@ export class FarmingSystem {
         dead: tile.dead,
         wateredAtGameMinute: tile.wateredAtGameMinute,
         plantedAtGameMinute: tile.plantedAtGameMinute,
-        goldenWheat: tile.goldenWheat
+        goldenWheat: tile.goldenWheat,
+        cropType: tile.cropType
       }))
     };
   }
@@ -669,6 +757,10 @@ export class FarmingSystem {
     this.seeds = Math.max(0, Math.floor(Number(data.seeds) || 0));
     this.rice = Math.max(0, Math.floor(Number(data.rice) || 0));
     this.goldenWheat = Math.max(0, Math.floor(Number(data.goldenWheat) || 0));
+    this.tomatoSeeds = Math.max(0, Math.floor(Number(data.tomatoSeeds ?? 3) || 0));
+    this.greenBeanSeeds = Math.max(0, Math.floor(Number(data.greenBeanSeeds ?? 3) || 0));
+    this.tomatoes = Math.max(0, Math.floor(Number(data.tomatoes) || 0));
+    this.greenBeans = Math.max(0, Math.floor(Number(data.greenBeans) || 0));
     this.mealBoostUntilGameMinute = Math.max(0, Math.floor(Number(data.mealBoostUntilGameMinute) || 0));
     const savedUpgrades = data.upgrades ?? {};
     this.upgrades = {
@@ -703,6 +795,7 @@ export class FarmingSystem {
       tile.dryDays = tile.planted ? Phaser.Math.Clamp(Math.floor(Number(saved.dryDays) || 0), 0, 2) : 0;
       tile.dead = tile.planted && saved.dead === true;
       tile.goldenWheat = tile.planted && saved.goldenWheat === true;
+      tile.cropType = saved.cropType === "tomato" || saved.cropType === "greenBean" ? saved.cropType : "rice";
       this.drawTile(tile);
     });
 

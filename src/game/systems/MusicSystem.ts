@@ -168,8 +168,11 @@ export class MusicSystem {
     this.language.onChange(() => this.refreshButton());
 
     this.button.on("pointerover", () => this.tip.setVisible(true));
-    this.button.on("pointerout", () => this.tip.setVisible(false));
-    this.button.on("pointerdown", () => { this.tip.setVisible(false); this.openSettings(); });
+    this.button.on("pointerout", this.hideTooltip);
+    this.button.on("pointerdown", () => { this.hideTooltip(); this.openSettings(); });
+    this.scene.input.on("gameout", this.hideTooltip);
+    window.addEventListener("blur", this.hideTooltip);
+    document.addEventListener("visibilitychange", this.handleVisibilityChange);
     ui.registerHud(frame, this.icon, this.button, this.tip);
     ui.registerTooltip(this.tip);
     this.headerControls = [frame, this.icon, this.button, this.tip];
@@ -325,7 +328,16 @@ export class MusicSystem {
     this.activeSlider = null;
   };
 
+  private hideTooltip = (): void => {
+    if (this.tip?.active) this.tip.setVisible(false);
+  };
+
+  private handleVisibilityChange = (): void => {
+    if (document.visibilityState === "hidden") this.hideTooltip();
+  };
+
   private openSettings(): void {
+    this.hideTooltip();
     if (this.ui.isOpen("audio")) {
       this.ui.close("audio");
       return;
@@ -643,6 +655,10 @@ export class MusicSystem {
     this.scene.input.off("pointerdown", this.handleSliderPointerDown, this);
     this.scene.input.off("pointermove", this.handleSliderPointerMove, this);
     this.scene.input.off("pointerup", this.handleSliderPointerUp, this);
+    this.scene.input.off("gameout", this.hideTooltip);
+    window.removeEventListener("blur", this.hideTooltip);
+    document.removeEventListener("visibilitychange", this.handleVisibilityChange);
+    this.hideTooltip();
     if (this.unlockHandler) {
       window.removeEventListener("pointerdown", this.unlockHandler, true);
       window.removeEventListener("keydown", this.unlockHandler, true);

@@ -55,14 +55,11 @@ export class SaveSystem {
   private village: VillageSystem;
   private profile: PlayerProfileSystem;
 
-  private ui: ModalUIManager;
   private language: LanguageSystem;
 
   private storageKey: string;
   private profileCreationComplete: boolean;
 
-  private statusText!: Phaser.GameObjects.Text;
-  private controls: Array<Phaser.GameObjects.Rectangle | Phaser.GameObjects.Text> = [];
 
   constructor(
     scene: Phaser.Scene,
@@ -76,7 +73,7 @@ export class SaveSystem {
     board: VillageBoardSystem,
     village: VillageSystem,
     profile: PlayerProfileSystem,
-    ui: ModalUIManager,
+    _ui: ModalUIManager,
     language: LanguageSystem,
     saveSlot = 1,
     loadExisting = false
@@ -94,7 +91,6 @@ export class SaveSystem {
     this.village = village;
     this.profile = profile;
 
-    this.ui = ui;
     this.language = language;
     const safeSlot = Number.isInteger(saveSlot) ? Math.min(3, Math.max(1, saveSlot)) : 1;
     this.storageKey = getSaveSlotStorageKey(safeSlot);
@@ -117,14 +113,14 @@ export class SaveSystem {
       delay: 10000,
       loop: true,
       callback: () => {
-        if (this.profileCreationComplete) this.saveGame(undefined, true);
+        if (this.profileCreationComplete) this.saveGame();
       }
     });
 
     this.scene.events.once(
       Phaser.Scenes.Events.SHUTDOWN,
       () => {
-        this.saveGame(undefined, true);
+        this.saveGame();
         window.removeEventListener(
           "beforeunload",
           this.handleBeforeUnload
@@ -138,138 +134,19 @@ export class SaveSystem {
       }
     );
 
-    this.language.onChange(() => {
-      this.updateButtonLabels();
-    });
-
     if (loadExisting) {
-      this.profileCreationComplete = this.loadGame();
+      this.profileCreationComplete = this.loadGame() === "common.loaded";
     }
   }
 
   private createInterface(): void {
-    this.createButton(
-      48,
-      88,
-      "save.saveButton",
-      () => this.saveGame()
-    );
-
-    this.createButton(
-      132,
-      88,
-      "save.loadButton",
-      () => this.loadGame()
-    );
-
-    this.statusText = this.scene.add.text(
-      12,
-      107,
-      "",
-      {
-        fontFamily: this.language.getFontFamily(),
-        fontSize: "10px",
-        color: "#e6c47e",
-        backgroundColor: "#34271d",
-        padding: { x: 4, y: 3 }
-      }
-    )
-      .setScrollFactor(0)
-      .setDepth(142);
-
-    this.ui.registerHud(this.statusText);
+    // Manual save/load controls live inside the profile panel now.
+    // Autosaves are silent and never add a permanent HUD message.
   }
-
-  private createButton(
-    x: number,
-    y: number,
-    labelKey: string,
-    action: () => void
-  ): void {
-    const background = this.scene.add.rectangle(
-      x,
-      y,
-      76,
-      24,
-      0x79382e,
-      0.98
-    );
-
-    background.setStrokeStyle(1, 0xd6b36b);
-
-    background
-      .setScrollFactor(0)
-      .setDepth(140)
-      .setInteractive({ useHandCursor: true });
-
-    background.on("pointerdown", action);
-
-    const buttonText = this.scene.add.text(
-      x,
-      y,
-      "",
-      {
-        fontFamily: this.language.getFontFamily(),
-        fontSize: "10px",
-        color: "#f5e8c6"
-      }
-    )
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(141);
-
-    buttonText.setData("labelKey", labelKey);
-
-    this.ui.registerHud(
-      background,
-      buttonText
-    );
-    this.controls.push(background, buttonText);
-
-    this.updateButtonLabel(buttonText);
-  }
-
-  private updateButtonLabel(
-    button: Phaser.GameObjects.Text
-  ): void {
-    const key = button.getData("labelKey") as string;
-
-    button.setText(this.language.t(key));
-
-    button.setFontFamily(
-      this.language.getFontFamily()
-    );
-  }
-
-  private updateButtonLabels(): void {
-    for (const object of this.scene.children.list) {
-      if (
-        object instanceof Phaser.GameObjects.Text &&
-        typeof object.getData("labelKey") === "string"
-      ) {
-        this.updateButtonLabel(object);
-      }
-    }
-
-    if (this.statusText) {
-      this.statusText.setFontFamily(
-        this.language.getFontFamily()
-      );
-    }
-  }
-
-  /** Save/load remain available from the mobile action grid without crowding it with desktop buttons. */
-  setMobileControlsHidden(hidden: boolean): void {
-    for (const control of this.controls) control.setVisible(!hidden);
-  }
-
-  mobileSave(): void { this.saveGame(); }
-
-  mobileLoad(): void { this.loadGame(); }
 
   private createSaveData(): GameSaveData {
     return {
-      version: 14,
+      version: 16,
       savedAt: new Date().toISOString(),
 
       player: {
@@ -297,43 +174,35 @@ export class SaveSystem {
 
   saveNow(): void {
     if (!this.profileCreationComplete) return;
-    this.saveGame(this.language.t("common.saved"));
+    this.saveGame();
   }
 
-  private saveGame(message?: string, silent = false): void {
-    if (!this.profileCreationComplete) return;
+  saveFromProfile(): string {
+    return this.saveGame() ? "common.saved" : "common.saveFailed";
+  }
+
+  loadFromProfile(): string {
+    const result = this.loadGame();
+    if (result === "common.loaded") this.profileCreationComplete = true;
+    return result;
+  }
+
+  private saveGame(): boolean {
+    if (!this.profileCreationComplete) return false;
     try {
       const saveData = this.createSaveData();
-
-      window.localStorage.setItem(
-        this.storageKey,
-        JSON.stringify(saveData)
-      );
-
-      if (!silent) {
-        this.statusText.setText(
-          message ?? this.language.t("common.saved")
-        );
-      }
+      window.localStorage.setItem(this.storageKey, JSON.stringify(saveData));
+      return true;
     } catch (error) {
-      this.statusText.setText(
-        this.language.t("common.saveFailed")
-      );
-
       console.error("Game save failed:", error);
+      return false;
     }
   }
 
-  private loadGame(): boolean {
+  private loadGame(): string {
     try {
       const raw = window.localStorage.getItem(this.storageKey);
-
-      if (!raw) {
-        this.statusText.setText(
-          this.language.t("common.noSave")
-        );
-        return false;
-      }
+      if (!raw) return "common.noSave";
 
       const parsed: unknown = JSON.parse(raw);
 
@@ -401,27 +270,20 @@ export class SaveSystem {
         this.language.setLanguage(data.language);
       }
 
-      this.statusText.setText(
-        this.language.t("common.loaded")
-      );
-      return true;
+      return "common.loaded";
     } catch (error) {
-      this.statusText.setText(
-        this.language.t("common.loadFailed")
-      );
-
       console.error("Game load failed:", error);
-      return false;
+      return "common.loadFailed";
     }
   }
 
   private handleBeforeUnload = (): void => {
-    this.saveGame(undefined, true);
+    this.saveGame();
   };
 
   private handleVisibilityChange = (): void => {
     if (document.visibilityState === "hidden") {
-      this.saveGame(undefined, true);
+      this.saveGame();
     }
   };
 }

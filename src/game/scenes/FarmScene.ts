@@ -103,8 +103,6 @@ export class FarmScene extends Phaser.Scene {
   private worldLabels: { text: Phaser.GameObjects.Text; key: string; radius: number }[] = [];
 
   private fullscreenIcon!: Phaser.GameObjects.Image;
-  private seedText!: Phaser.GameObjects.Text;
-  private riceText!: Phaser.GameObjects.Text;
   private coinText!: Phaser.GameObjects.Text;
   private isTouchDevice = false;
   private joystickPointerId: number | null = null;
@@ -252,6 +250,14 @@ export class FarmScene extends Phaser.Scene {
       ["crop_1", publicAsset("/assets/agriculture/rice_stage_1.png")],
       ["crop_2", publicAsset("/assets/agriculture/rice_stage_2.png")],
       ["crop_3", publicAsset("/assets/agriculture/rice_stage_3.png")],
+      ["crop_tomato_0", publicAsset("/assets/agriculture/tomato_stage_0.png")],
+      ["crop_tomato_1", publicAsset("/assets/agriculture/tomato_stage_1.png")],
+      ["crop_tomato_2", publicAsset("/assets/agriculture/tomato_stage_2.png")],
+      ["crop_tomato_3", publicAsset("/assets/agriculture/tomato_stage_3.png")],
+      ["crop_green_bean_0", publicAsset("/assets/agriculture/green_bean_stage_0.png")],
+      ["crop_green_bean_1", publicAsset("/assets/agriculture/green_bean_stage_1.png")],
+      ["crop_green_bean_2", publicAsset("/assets/agriculture/green_bean_stage_2.png")],
+      ["crop_green_bean_3", publicAsset("/assets/agriculture/green_bean_stage_3.png")],
       ["scarecrow_asset", publicAsset("/assets/agriculture/scarecrow.png")],
       ["tile_plot", publicAsset("/assets/terrain/farm_plot.png")],
       ["tile_tilled", publicAsset("/assets/terrain/tilled_soil.png")],
@@ -260,6 +266,10 @@ export class FarmScene extends Phaser.Scene {
       ["rice_bowl_asset", publicAsset("/assets/agriculture/rice_bowl.png")],
       ["rice_grain_asset", publicAsset("/assets/agriculture/rice_grain.png")],
       ["rice_seed_bag_asset", publicAsset("/assets/tools/rice_seed_bag.png")],
+      ["tomato_seed_bag_asset", publicAsset("/assets/tools/tomato_seed_bag.png")],
+      ["green_bean_seed_bag_asset", publicAsset("/assets/tools/green_bean_seed_bag.png")],
+      ["tomato_basket_asset", publicAsset("/assets/agriculture/tomato_basket.png")],
+      ["green_bean_basket_asset", publicAsset("/assets/agriculture/green_bean_basket.png")],
       ["hoe_asset", publicAsset("/assets/tools/hoe.png")],
       ["watering_can_asset", publicAsset("/assets/tools/watering_can.png")],
       ["sickle_asset", publicAsset("/assets/tools/sickle.png")],
@@ -392,7 +402,7 @@ export class FarmScene extends Phaser.Scene {
     );
     this.music.setTimeOfDayHours(this.village.getTimeOfDayHours());
     this.inventory = new InventorySystem(this, this.farming, this.fishing, this.cooking, this.ui, this.language);
-    this.villageBoard = new VillageBoardSystem(this, this.farming, this.market, this.ui, this.language);
+    this.villageBoard = new VillageBoardSystem(this, this.farming, this.market, this.fishing, this.cooking, this.ui, this.language);
     this.chest = new ChestStorageSystem(this, this.farming, this.fishing, this.cooking, this.ui, this.language);
     this.profile = new PlayerProfileSystem(this, this.player, this.ui, this.language);
 
@@ -413,7 +423,10 @@ export class FarmScene extends Phaser.Scene {
       this.selectedSaveSlot,
       this.loadExistingSave
     );
-    this.saveSystem.setMobileControlsHidden(this.isTouchDevice);
+    this.profile.setSaveActions(
+      () => this.saveSystem.saveFromProfile(),
+      () => this.saveSystem.loadFromProfile()
+    );
 
     this.house = new HouseInteriorSystem(
       this,
@@ -1408,35 +1421,27 @@ export class FarmScene extends Phaser.Scene {
     hit.on("pointerover", () => { image.setY(y - 1); tip.setVisible(true); });
     hit.on("pointerout", () => { image.setY(y); tip.setVisible(false); });
     hit.on("pointerdown", () => { tip.setVisible(false); action(); });
+    const hideTip = (): void => { tip.setVisible(false); image.setY(y); };
+    this.input.on("gameout", hideTip);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.input.off("gameout", hideTip);
+      hideTip();
+    });
     this.ui.registerHud(frame, image, hit, tip);
     this.ui.registerTooltip(tip);
     return image;
   }
 
   private createResourceHud(): void {
-    const panel = pixelPanel(this, 93, 52, 170, 26).setDepth(150);
-    const slots: { icon: string; x: number }[] = [
-      { icon: "ui_icon_seed", x: 16 }, { icon: "ui_icon_rice", x: 66 }, { icon: "coin_asset", x: 116 }
-    ];
-    const objs: Phaser.GameObjects.GameObject[] = [panel];
-    for (const slot of slots) {
-      const image = this.add.image(slot.x + 8, 52, slot.icon).setScrollFactor(0).setDepth(151);
-      if (slot.icon === "coin_asset") image.setScale(1);
-      objs.push(image);
-    }
+    const panel = pixelPanel(this, 70, 52, 108, 26).setDepth(150);
+    const icon = this.add.image(34, 52, "coin_asset").setScrollFactor(0).setDepth(151);
     const style = { fontFamily: this.language.getFontFamily(), fontSize: "11px", color: "#fff1cf", stroke: "#2a1a14", strokeThickness: 2 };
-    this.seedText = this.add.text(30, 46, "0", style).setScrollFactor(0).setDepth(151);
-    this.riceText = this.add.text(80, 46, "0", style).setScrollFactor(0).setDepth(151);
-    this.coinText = this.add.text(130, 46, "0", style).setScrollFactor(0).setDepth(151);
-    this.ui.registerHud(...objs, this.seedText, this.riceText, this.coinText);
+    this.coinText = this.add.text(52, 46, "0", style).setScrollFactor(0).setDepth(151);
+    this.ui.registerHud(panel, icon, this.coinText);
   }
 
   private updateResourceHud(): void {
-    const seeds = String(this.farming.getSeeds());
-    const rice = String(this.farming.getRice());
     const coins = String(this.market.getCoins());
-    if (this.seedText.text !== seeds) this.seedText.setText(seeds);
-    if (this.riceText.text !== rice) this.riceText.setText(rice);
     if (this.coinText.text !== coins) this.coinText.setText(coins);
   }
 

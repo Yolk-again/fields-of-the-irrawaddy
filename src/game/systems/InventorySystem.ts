@@ -30,7 +30,7 @@ type InventorySaveData = {
 
 const HOTBAR_DEFAULT: Array<InventoryItemId | null> = ["hoe", "seeds", "water", "harvest"];
 const BACKPACK_DEFAULT: Array<InventoryItemId | null> = Array(15).fill(null);
-const ALL_ITEMS: InventoryItemId[] = ["hoe", "seeds", "water", "harvest", "rice", "silverBarb", "catfish", "goldenCarp", "meals", "rod", "goldenWheat"];
+const ALL_ITEMS: InventoryItemId[] = ["hoe", "seeds", "tomatoSeeds", "greenBeanSeeds", "water", "harvest", "rice", "tomatoes", "greenBeans", "silverBarb", "catfish", "goldenCarp", "meals", "rod", "goldenWheat"];
 
 /** Minecraft-inspired movable backpack and four-slot quick toolbar. */
 export class InventorySystem {
@@ -49,6 +49,7 @@ export class InventorySystem {
   private backpackTitleText!: Phaser.GameObjects.Text;
   private instructionText!: Phaser.GameObjects.Text;
   private exitHintText!: Phaser.GameObjects.Text;
+  private seedPacketText!: Phaser.GameObjects.Text;
   private hotbarSlots: Array<InventoryItemId | null> = [...HOTBAR_DEFAULT];
   private backpackSlots: Array<InventoryItemId | null> = [...BACKPACK_DEFAULT];
   private cells: InventoryCell[] = [];
@@ -110,16 +111,19 @@ export class InventorySystem {
     this.hotbarTitleText = this.scene.add.text(320, 61, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#d6b36b"
     }).setOrigin(0.5);
-    this.backpackTitleText = this.scene.add.text(320, 132, "", {
+    this.seedPacketText = this.scene.add.text(320, 119, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d7e6c5", align: "center"
+    }).setOrigin(0.5);
+    this.backpackTitleText = this.scene.add.text(320, 140, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#d6b36b"
     }).setOrigin(0.5);
-    this.inventoryPanel.add([background, this.titleText, this.hotbarTitleText, this.backpackTitleText]);
+    this.inventoryPanel.add([background, this.titleText, this.hotbarTitleText, this.seedPacketText, this.backpackTitleText]);
 
     const hotbarX = [230, 290, 350, 410];
     hotbarX.forEach((x, index) => this.createCell({ zone: "hotbar", index }, x, 96, 52, String(index + 1)));
 
     const backpackX = [192, 256, 320, 384, 448];
-    const backpackY = [169, 216, 263];
+    const backpackY = [176, 223, 270];
     for (let index = 0; index < 15; index++) {
       this.createCell({ zone: "backpack", index }, backpackX[index % 5], backpackY[Math.floor(index / 5)], 56);
     }
@@ -186,8 +190,12 @@ export class InventorySystem {
   private countFor(item: InventoryItemId): number {
     switch (item) {
       case "hoe": case "water": case "harvest": case "rod": return item === "rod" ? (this.fishing.getHasRod() ? 1 : 0) : 1;
-      case "seeds": return this.farming.getSeeds();
+      case "seeds": return this.farming.getSeedCount("rice");
+      case "tomatoSeeds": return this.farming.getSeedCount("tomato");
+      case "greenBeanSeeds": return this.farming.getSeedCount("greenBean");
       case "rice": return this.farming.getRice();
+      case "tomatoes": return this.farming.getCropCount("tomato");
+      case "greenBeans": return this.farming.getCropCount("greenBean");
       case "silverBarb": case "catfish": case "goldenCarp": return this.fishing.getFishCount(item);
       case "meals": return this.cooking.getTotalMeals();
       case "goldenWheat": return this.farming.getGoldenWheat();
@@ -228,9 +236,14 @@ export class InventorySystem {
     this.titleText.setText(this.language.t("inventory.title"));
     this.hotbarTitleText.setText(this.language.t("inventory.hotbar"));
     this.backpackTitleText.setText(this.language.t("inventory.backpack"));
+    this.seedPacketText.setText(this.language.t("inventory.seedPacketInfo", {
+      rice: this.farming.getSeedCount("rice"),
+      tomato: this.farming.getSeedCount("tomato"),
+      greenBean: this.farming.getSeedCount("greenBean")
+    }));
     this.instructionText.setText(this.language.t("inventory.dragInstructions"));
     this.exitHintText.setText(this.language.t("common.clickCrossExit"));
-    for (const text of [this.titleText, this.hotbarTitleText, this.backpackTitleText, this.instructionText, this.exitHintText]) {
+    for (const text of [this.titleText, this.hotbarTitleText, this.seedPacketText, this.backpackTitleText, this.instructionText, this.exitHintText]) {
       text.setFontFamily(font);
     }
     this.ensureNewItemsHaveSlots();

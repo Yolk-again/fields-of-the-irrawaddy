@@ -1,7 +1,7 @@
 export const SAVE_SLOT_COUNT = 3;
 
 export function isSupportedSaveVersion(version: unknown): version is number {
-  return typeof version === "number" && Number.isInteger(version) && version >= 1 && version <= 14;
+  return typeof version === "number" && Number.isInteger(version) && version >= 1 && version <= 16;
 }
 
 export interface SaveSlotSummary {

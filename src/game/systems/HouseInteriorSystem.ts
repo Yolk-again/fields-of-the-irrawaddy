@@ -395,19 +395,18 @@ export class HouseInteriorSystem {
     const found = hitAreas.find(area => pointer.x >= area.left && pointer.x <= area.right && pointer.y >= area.top && pointer.y <= area.bottom);
     if (found) {
       const targetPoint = this.targets[found.target];
-      // Touch players select indoor furniture by tapping it, then use the
-      // matching action prompt on the right side of the room.
+      // Touch players must walk close to furniture before using the shared
+      // mobile action button. A tap on furniture must never move/teleport the
+      // avatar (the old snap-to-target behavior could land on the bed).
+      const closeEnough = Phaser.Math.Distance.Between(this.avatarX, this.avatarY, targetPoint.x, targetPoint.y) < 92;
       if (this.touchMode) {
-        this.avatarX = targetPoint.x;
-        this.avatarY = targetPoint.y;
-        this.avatar.setPosition(this.avatarX, this.avatarY);
-        this.promptTarget = found.target;
-        // The green native HTML action button is the only touch action prompt.
+        this.promptTarget = closeEnough ? found.target : this.closestTarget();
         this.roomPrompt.setVisible(false);
         this.roomPromptHitArea.setVisible(false);
+        if (closeEnough) this.interact(found.target);
         return;
       }
-      if (Phaser.Math.Distance.Between(this.avatarX, this.avatarY, targetPoint.x, targetPoint.y) < 92) {
+      if (closeEnough) {
         this.roomPrompt.setVisible(false);
         this.interact(found.target);
       }

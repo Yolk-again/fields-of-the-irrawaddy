@@ -7,13 +7,17 @@ import { ModalUIManager } from "./ModalUIManager";
 import { createRedCloseButton, modalClosePosition, modalPanel } from "../ui/PixelUI";
 import { adjustQuantity, maximumQuantitySelection, normalizeQuantity, quantityAdjustmentStep } from "../ui/QuantityMath";
 
-export type ChestItem = "seeds" | "rice" | FishKind | MealKind;
+export type ChestItem = "seeds" | "tomatoSeeds" | "greenBeanSeeds" | "rice" | "tomatoes" | "greenBeans" | FishKind | MealKind;
 export type ChestContents = Record<ChestItem, number>;
-export interface ChestSaveData { stored: ChestContents; }
+export interface ChestSaveData { stored: Partial<ChestContents>; }
 
 const ITEMS: { id: ChestItem; key: string; texture: string }[] = [
   { id: "seeds", key: "chest.seeds", texture: "rice_seed_bag_asset" },
+  { id: "tomatoSeeds", key: "chest.tomatoSeeds", texture: "tomato_seed_bag_asset" },
+  { id: "greenBeanSeeds", key: "chest.greenBeanSeeds", texture: "green_bean_seed_bag_asset" },
   { id: "rice", key: "chest.rice", texture: "rice_bowl_asset" },
+  { id: "tomatoes", key: "chest.tomatoes", texture: "tomato_basket_asset" },
+  { id: "greenBeans", key: "chest.greenBeans", texture: "green_bean_basket_asset" },
   { id: "silverBarb", key: "chest.silverBarb", texture: "fish_silver_barb_asset" },
   { id: "catfish", key: "chest.catfish", texture: "fish_catfish_asset" },
   { id: "goldenCarp", key: "chest.goldenCarp", texture: "fish_golden_carp_asset" },
@@ -31,8 +35,8 @@ export class ChestStorageSystem {
   private readonly ui: ModalUIManager;
   private readonly language: LanguageSystem;
   private readonly stored: ChestContents = {
-    seeds: 0, rice: 0, silverBarb: 0, catfish: 0, goldenCarp: 0,
-    fishRice: 0, mohinga: 0, fishCurry: 0
+    seeds: 0, tomatoSeeds: 0, greenBeanSeeds: 0, rice: 0, tomatoes: 0, greenBeans: 0,
+    silverBarb: 0, catfish: 0, goldenCarp: 0, fishRice: 0, mohinga: 0, fishCurry: 0
   };
   private isOpen = false;
   private panel!: Phaser.GameObjects.Container;
@@ -57,12 +61,13 @@ export class ChestStorageSystem {
   private maxLabels: Phaser.GameObjects.Text[] = [];
   private amountTexts: Phaser.GameObjects.Text[] = [];
   private readonly selectedAmounts: Record<ChestItem, number> = {
-    seeds: 1, rice: 1, silverBarb: 1, catfish: 1, goldenCarp: 1, fishRice: 1, mohinga: 1, fishCurry: 1
+    seeds: 1, tomatoSeeds: 1, greenBeanSeeds: 1, rice: 1, tomatoes: 1, greenBeans: 1,
+    silverBarb: 1, catfish: 1, goldenCarp: 1, fishRice: 1, mohinga: 1, fishCurry: 1
   };
   private putLabels: Phaser.GameObjects.Text[] = [];
   private takeLabels: Phaser.GameObjects.Text[] = [];
   private messageValue = "";
-  private readonly rowY = ITEMS.map((_item, index) => 88 + index * 29);
+  private readonly rowY = ITEMS.map((_item, index) => 78 + index * 20);
 
   constructor(scene: Phaser.Scene, farming: FarmingSystem, fishing: FishingSystem, cooking: CookingSystem, ui: ModalUIManager, language: LanguageSystem) {
     this.scene = scene;
@@ -96,7 +101,7 @@ export class ChestStorageSystem {
 
     ITEMS.forEach((item, index) => {
       const y = this.rowY[index];
-      const card = this.scene.add.rectangle(320, y, 520, 26, index % 2 ? 0x394a32 : 0x40513a, 1).setStrokeStyle(1, 0x8b6742);
+      const card = this.scene.add.rectangle(320, y, 520, 19, index % 2 ? 0x394a32 : 0x40513a, 1).setStrokeStyle(1, 0x8b6742);
       const icon = this.scene.add.image(73, y, item.texture).setScale(0.9);
       const name = this.scene.add.text(92, y, "", { fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#fff1cf" }).setOrigin(0, 0.5);
       const bag = this.scene.add.text(238, y, "0", { fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#ffffff" }).setOrigin(0.5);
@@ -142,8 +147,12 @@ export class ChestStorageSystem {
   }
 
   private playerCount(item: ChestItem): number {
-    if (item === "seeds") return this.farming.getSeeds();
+    if (item === "seeds") return this.farming.getSeedCount("rice");
+    if (item === "tomatoSeeds") return this.farming.getSeedCount("tomato");
+    if (item === "greenBeanSeeds") return this.farming.getSeedCount("greenBean");
     if (item === "rice") return this.farming.getRice();
+    if (item === "tomatoes") return this.farming.getCropCount("tomato");
+    if (item === "greenBeans") return this.farming.getCropCount("greenBean");
     if (item === "silverBarb" || item === "catfish" || item === "goldenCarp") return this.fishing.getFishCount(item);
     return this.cooking.getMealCounts()[item];
   }
@@ -152,8 +161,12 @@ export class ChestStorageSystem {
     const amount = Math.min(this.selectedAmounts[item], this.playerCount(item));
     if (amount <= 0) return 0;
     let removed = false;
-    if (item === "seeds") removed = this.farming.removeSeeds(amount);
+    if (item === "seeds") removed = this.farming.removeCropSeeds("rice", amount);
+    else if (item === "tomatoSeeds") removed = this.farming.removeCropSeeds("tomato", amount);
+    else if (item === "greenBeanSeeds") removed = this.farming.removeCropSeeds("greenBean", amount);
     else if (item === "rice") removed = this.farming.removeRice(amount);
+    else if (item === "tomatoes") removed = this.farming.removeCrop("tomato", amount);
+    else if (item === "greenBeans") removed = this.farming.removeCrop("greenBean", amount);
     else if (item === "silverBarb" || item === "catfish" || item === "goldenCarp") removed = this.fishing.removeFish(item, amount);
     else removed = this.cooking.removeMeals(item, amount);
     if (!removed) return 0;
@@ -165,8 +178,12 @@ export class ChestStorageSystem {
     const amount = Math.min(this.selectedAmounts[item], this.stored[item]);
     if (amount <= 0) return 0;
     this.stored[item] -= amount;
-    if (item === "seeds") this.farming.addSeeds(amount);
+    if (item === "seeds") this.farming.addCropSeeds("rice", amount);
+    else if (item === "tomatoSeeds") this.farming.addCropSeeds("tomato", amount);
+    else if (item === "greenBeanSeeds") this.farming.addCropSeeds("greenBean", amount);
     else if (item === "rice") this.farming.addRice(amount);
+    else if (item === "tomatoes") this.farming.addCrop("tomato", amount);
+    else if (item === "greenBeans") this.farming.addCrop("greenBean", amount);
     else if (item === "silverBarb" || item === "catfish" || item === "goldenCarp") this.fishing.addFish(item, amount);
     else this.cooking.addMeals(item, amount);
     return amount;
@@ -174,7 +191,7 @@ export class ChestStorageSystem {
 
   private visibleRowAt(y: number): number {
     const slot = this.visibleRowIndices.findIndex((_itemIndex, visibleSlot) =>
-      Math.abs(y - (88 + visibleSlot * 29)) <= 13
+      Math.abs(y - (78 + visibleSlot * 20)) <= 10
     );
     return slot < 0 ? -1 : this.visibleRowIndices[slot];
   }
@@ -244,7 +261,7 @@ export class ChestStorageSystem {
       const item = ITEMS[index].id;
       const visible = this.playerCount(item) > 0 || this.stored[item] > 0;
       const visibleSlot = this.visibleRowIndices.length;
-      const targetY = 88 + visibleSlot * 29;
+      const targetY = 78 + visibleSlot * 20;
       row.forEach(object => {
         const display = object as Phaser.GameObjects.GameObject & {
           x: number;
