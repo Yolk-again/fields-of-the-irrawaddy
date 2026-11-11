@@ -220,7 +220,7 @@ export class VillageBoardSystem {
       wordWrap: { width: 452 }
     }).setOrigin(0.5);
 
-    this.requestRows = REQUEST_ROW_CENTERS.map((centerY, index) => {
+    this.requestRows = REQUEST_ROW_CENTERS.map((centerY) => {
       const backgroundCard = this.scene.add.rectangle(320, centerY, 520, 58, 0x3d4b34, 1).setStrokeStyle(2, 0x9b7047);
       const icon = this.scene.add.image(79, centerY, "rice_bowl_asset").setScale(1.15);
       const requestText = this.scene.add.text(108, centerY - 13, "", {
