@@ -119,6 +119,9 @@ export class FarmScene extends Phaser.Scene {
 
   private canUseMobileContextAction(): boolean {
     if (!this.isTouchDevice) return false;
+    // Dialogue is a modal, but the native mobile action button must remain
+    // available so touch players can advance NPC conversations.
+    if (this.village?.isDialogueOpen()) return true;
     if (this.house?.isInside()) {
       return this.ui?.isOpen("house") === true && this.house.getMobileActionLabel() !== null;
     }
@@ -1617,6 +1620,12 @@ export class FarmScene extends Phaser.Scene {
   }
 
   private handleMobileTalk(): void {
+    // While a villager dialogue is open, the same native button advances it.
+    // This check must happen before the generic modal guard below.
+    if (this.village?.isDialogueOpen()) {
+      this.village.mobileTalk(this.player.x, this.player.y);
+      return;
+    }
     // Indoors, the same native contextual button activates the room's current
     // target (bed, chest, cooker or door), just as it activates the market outdoors.
     if (this.house?.isInside()) {
@@ -1646,6 +1655,14 @@ export class FarmScene extends Phaser.Scene {
   private updateMobileContextAction(): void {
     const button = document.getElementById("mobile-context-action") as HTMLButtonElement | null;
     if (!button || !this.isTouchDevice) return;
+
+    if (this.village?.isDialogueOpen()) {
+      const continueLabel = this.language.t("mobile.continueDialogue");
+      button.hidden = false;
+      button.textContent = continueLabel;
+      button.setAttribute("aria-label", continueLabel);
+      return;
+    }
 
     if (this.house?.isInside()) {
       const roomLabel = this.house.getMobileActionLabel();

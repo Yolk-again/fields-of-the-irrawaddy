@@ -2152,3 +2152,22 @@ body.foi-cutscene-active .game-menu-button {
     margin-bottom: 10px;
   }
 }
+
+
+/* Mobile title onboarding is landscape-only: portrait shows the rotate-phone
+   overlay and must not expose a scrollable save-slot page behind it. */
+@media (max-width: 700px) and (orientation: portrait) {
+  body.foi-touch-device:not(.foi-in-game) .title-screen {
+    overflow: hidden !important;
+    overscroll-behavior: none;
+    touch-action: none;
+  }
+  body.foi-touch-device:not(.foi-in-game) .title-screen-content {
+    min-height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+  }
+  body.foi-touch-device:not(.foi-in-game) .title-scroll-cue {
+    display: none !important;
+  }
+}

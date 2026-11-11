@@ -24,6 +24,7 @@ const translations: Record<Language, TranslationTable> = {
     "mobile.clickOpenChest": "CLICK TO OPEN CHEST",
     "mobile.clickCook": "CLICK TO COOK",
     "mobile.clickExitHouse": "CLICK TO EXIT HOUSE",
+    "mobile.continueDialogue": "TAP TO CONTINUE",
 
     "story.dialogLabel": "Opening story",
     "story.chapterOne": "CHAPTER 01 · HOME AGAIN",
@@ -433,6 +434,7 @@ const translations: Record<Language, TranslationTable> = {
     "mobile.clickOpenChest": "သေတ္တာဖွင့်ရန် နှိပ်ပါ",
     "mobile.clickCook": "ချက်ပြုတ်ရန် နှိပ်ပါ",
     "mobile.clickExitHouse": "အိမ်မှ ထွက်ရန် နှိပ်ပါ",
+    "mobile.continueDialogue": "ဆက်လက်ရန် နှိပ်ပါ",
 
     "story.dialogLabel": "အစပိုင်း ဇာတ်လမ်း",
     "story.chapterOne": "အခန်း ၁ · အိမ်ပြန်ရောက်ခြင်း",
