@@ -518,8 +518,8 @@ export class FarmingSystem {
         if (wasGolden) this.goldenWheat += 1;
         this.playFx(tile, "fx_sparkle", "harvest");
         this.scene.events.emit("sound-effect", { name: "harvest", x: tile.x + 16, y: tile.y + 16 });
-        const cropLabel = harvestedKind === "tomato" ? "TOMATOES" : harvestedKind === "greenBean" ? "GREEN BEANS" : "RICE";
-        this.floatText(tile, wasGolden ? `+${harvestYield} RICE  +1 GOLDEN WHEAT` : `+${harvestYield} ${cropLabel}`);
+        const cropLabel = harvestedKind === "tomato" ? "TOMATOES" : harvestedKind === "greenBean" ? "GREEN BEANS" : "WHEAT";
+        this.floatText(tile, wasGolden ? `+${harvestYield} WHEAT  +1 GOLDEN WHEAT` : `+${harvestYield} ${cropLabel}`);
         this.setStatus(wasGolden ? "farm.goldenHarvested" : harvestedKind === "rice" ? "farm.harvested" : "farm.harvestedCrop", { amount: harvestYield, crop: this.language.t(`inventory.${harvestedKind === "tomato" ? "tomatoes" : "greenBeans"}`) });
       }
     }

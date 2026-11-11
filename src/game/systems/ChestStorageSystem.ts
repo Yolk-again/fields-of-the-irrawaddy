@@ -7,15 +7,18 @@ import { ModalUIManager } from "./ModalUIManager";
 import { createRedCloseButton, modalClosePosition, modalPanel } from "../ui/PixelUI";
 import { adjustQuantity, maximumQuantitySelection, normalizeQuantity, quantityAdjustmentStep } from "../ui/QuantityMath";
 
-export type ChestItem = "seeds" | "tomatoSeeds" | "greenBeanSeeds" | "rice" | "tomatoes" | "greenBeans" | FishKind | MealKind;
+export type ChestItem = "seeds" | "tomatoSeeds" | "greenBeanSeeds" | "wheat" | "tomatoes" | "greenBeans" | FishKind | MealKind;
 export type ChestContents = Record<ChestItem, number>;
-export interface ChestSaveData { stored: Partial<ChestContents>; }
+export interface ChestSaveData {
+  stored: Partial<ChestContents> & { rice?: number; goldenWheat?: number };
+  wheatBreakdown?: { regularRice: number; goldenWheat: number };
+}
 
 const ITEMS: { id: ChestItem; key: string; texture: string }[] = [
   { id: "seeds", key: "chest.seeds", texture: "rice_seed_bag_asset" },
   { id: "tomatoSeeds", key: "chest.tomatoSeeds", texture: "tomato_seed_bag_asset" },
   { id: "greenBeanSeeds", key: "chest.greenBeanSeeds", texture: "green_bean_seed_bag_asset" },
-  { id: "rice", key: "chest.rice", texture: "rice_bowl_asset" },
+  { id: "wheat", key: "chest.wheat", texture: "wheat_basket_asset" },
   { id: "tomatoes", key: "chest.tomatoes", texture: "tomato_basket_asset" },
   { id: "greenBeans", key: "chest.greenBeans", texture: "green_bean_basket_asset" },
   { id: "silverBarb", key: "chest.silverBarb", texture: "fish_silver_barb_asset" },
@@ -35,9 +38,11 @@ export class ChestStorageSystem {
   private readonly ui: ModalUIManager;
   private readonly language: LanguageSystem;
   private readonly stored: ChestContents = {
-    seeds: 0, tomatoSeeds: 0, greenBeanSeeds: 0, rice: 0, tomatoes: 0, greenBeans: 0,
+    seeds: 0, tomatoSeeds: 0, greenBeanSeeds: 0, wheat: 0, tomatoes: 0, greenBeans: 0,
     silverBarb: 0, catfish: 0, goldenCarp: 0, fishRice: 0, mohinga: 0, fishCurry: 0
   };
+  private storedWheatRice = 0;
+  private storedGoldenWheat = 0;
   private isOpen = false;
   private panel!: Phaser.GameObjects.Container;
   private closeButton!: Phaser.GameObjects.Container;
@@ -61,7 +66,7 @@ export class ChestStorageSystem {
   private maxLabels: Phaser.GameObjects.Text[] = [];
   private amountTexts: Phaser.GameObjects.Text[] = [];
   private readonly selectedAmounts: Record<ChestItem, number> = {
-    seeds: 1, tomatoSeeds: 1, greenBeanSeeds: 1, rice: 1, tomatoes: 1, greenBeans: 1,
+    seeds: 1, tomatoSeeds: 1, greenBeanSeeds: 1, wheat: 1, tomatoes: 1, greenBeans: 1,
     silverBarb: 1, catfish: 1, goldenCarp: 1, fishRice: 1, mohinga: 1, fishCurry: 1
   };
   private putLabels: Phaser.GameObjects.Text[] = [];
@@ -102,7 +107,7 @@ export class ChestStorageSystem {
     ITEMS.forEach((item, index) => {
       const y = this.rowY[index];
       const card = this.scene.add.rectangle(320, y, 520, 19, index % 2 ? 0x394a32 : 0x40513a, 1).setStrokeStyle(1, 0x8b6742);
-      const icon = this.scene.add.image(73, y, item.texture).setScale(0.9);
+      const icon = this.scene.add.image(73, y, item.texture).setDisplaySize(20, 17);
       const name = this.scene.add.text(92, y, "", { fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#fff1cf" }).setOrigin(0, 0.5);
       const bag = this.scene.add.text(238, y, "0", { fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#ffffff" }).setOrigin(0.5);
       const chest = this.scene.add.text(302, y, "0", { fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#f0d69e" }).setOrigin(0.5);
@@ -150,7 +155,7 @@ export class ChestStorageSystem {
     if (item === "seeds") return this.farming.getSeedCount("rice");
     if (item === "tomatoSeeds") return this.farming.getSeedCount("tomato");
     if (item === "greenBeanSeeds") return this.farming.getSeedCount("greenBean");
-    if (item === "rice") return this.farming.getRice();
+    if (item === "wheat") return this.farming.getRice() + this.farming.getGoldenWheat();
     if (item === "tomatoes") return this.farming.getCropCount("tomato");
     if (item === "greenBeans") return this.farming.getCropCount("greenBean");
     if (item === "silverBarb" || item === "catfish" || item === "goldenCarp") return this.fishing.getFishCount(item);
@@ -160,11 +165,25 @@ export class ChestStorageSystem {
   private transferToChest(item: ChestItem): number {
     const amount = Math.min(this.selectedAmounts[item], this.playerCount(item));
     if (amount <= 0) return 0;
+
+    if (item === "wheat") {
+      const regularAmount = Math.min(amount, this.farming.getRice());
+      const goldenAmount = amount - regularAmount;
+      if (regularAmount > 0 && !this.farming.removeRice(regularAmount)) return 0;
+      if (goldenAmount > 0 && !this.farming.removeGoldenWheat(goldenAmount)) {
+        if (regularAmount > 0) this.farming.addRice(regularAmount);
+        return 0;
+      }
+      this.storedWheatRice += regularAmount;
+      this.storedGoldenWheat += goldenAmount;
+      this.stored.wheat = this.storedWheatRice + this.storedGoldenWheat;
+      return amount;
+    }
+
     let removed = false;
     if (item === "seeds") removed = this.farming.removeCropSeeds("rice", amount);
     else if (item === "tomatoSeeds") removed = this.farming.removeCropSeeds("tomato", amount);
     else if (item === "greenBeanSeeds") removed = this.farming.removeCropSeeds("greenBean", amount);
-    else if (item === "rice") removed = this.farming.removeRice(amount);
     else if (item === "tomatoes") removed = this.farming.removeCrop("tomato", amount);
     else if (item === "greenBeans") removed = this.farming.removeCrop("greenBean", amount);
     else if (item === "silverBarb" || item === "catfish" || item === "goldenCarp") removed = this.fishing.removeFish(item, amount);
@@ -177,11 +196,22 @@ export class ChestStorageSystem {
   private transferFromChest(item: ChestItem): number {
     const amount = Math.min(this.selectedAmounts[item], this.stored[item]);
     if (amount <= 0) return 0;
+
+    if (item === "wheat") {
+      const regularAmount = Math.min(amount, this.storedWheatRice);
+      const goldenAmount = Math.min(amount - regularAmount, this.storedGoldenWheat);
+      this.storedWheatRice -= regularAmount;
+      this.storedGoldenWheat -= goldenAmount;
+      this.stored.wheat = this.storedWheatRice + this.storedGoldenWheat;
+      if (regularAmount > 0) this.farming.addRice(regularAmount);
+      if (goldenAmount > 0) this.farming.addGoldenWheat(goldenAmount);
+      return regularAmount + goldenAmount;
+    }
+
     this.stored[item] -= amount;
     if (item === "seeds") this.farming.addCropSeeds("rice", amount);
     else if (item === "tomatoSeeds") this.farming.addCropSeeds("tomato", amount);
     else if (item === "greenBeanSeeds") this.farming.addCropSeeds("greenBean", amount);
-    else if (item === "rice") this.farming.addRice(amount);
     else if (item === "tomatoes") this.farming.addCrop("tomato", amount);
     else if (item === "greenBeans") this.farming.addCrop("greenBean", amount);
     else if (item === "silverBarb" || item === "catfish" || item === "goldenCarp") this.fishing.addFish(item, amount);
@@ -303,11 +333,28 @@ export class ChestStorageSystem {
     this.updateInterface();
   }
 
-  getSaveData(): ChestSaveData { return { stored: { ...this.stored } }; }
+  getSaveData(): ChestSaveData {
+    return {
+      stored: { ...this.stored },
+      wheatBreakdown: { regularRice: this.storedWheatRice, goldenWheat: this.storedGoldenWheat }
+    };
+  }
 
   loadSaveData(data?: ChestSaveData): void {
     if (!data?.stored) return;
-    for (const item of ITEMS) this.stored[item.id] = Math.max(0, Math.floor(Number(data.stored[item.id]) || 0));
+    const saved = data.stored;
+    for (const item of ITEMS) {
+      if (item.id === "wheat") continue;
+      this.stored[item.id] = Math.max(0, Math.floor(Number(saved[item.id]) || 0));
+    }
+    if (data.wheatBreakdown) {
+      this.storedWheatRice = Math.max(0, Math.floor(Number(data.wheatBreakdown.regularRice) || 0));
+      this.storedGoldenWheat = Math.max(0, Math.floor(Number(data.wheatBreakdown.goldenWheat) || 0));
+    } else {
+      this.storedWheatRice = Math.max(0, Math.floor(Number(saved.rice ?? saved.wheat) || 0));
+      this.storedGoldenWheat = Math.max(0, Math.floor(Number(saved.goldenWheat) || 0));
+    }
+    this.stored.wheat = this.storedWheatRice + this.storedGoldenWheat;
     this.updateInterface();
   }
 }

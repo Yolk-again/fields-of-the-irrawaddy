@@ -276,6 +276,7 @@ export class FarmScene extends Phaser.Scene {
       ["green_bean_seed_bag_asset", publicAsset("/assets/tools/green_bean_seed_bag.png")],
       ["tomato_basket_asset", publicAsset("/assets/agriculture/tomato_basket.png")],
       ["green_bean_basket_asset", publicAsset("/assets/agriculture/green_bean_basket.png")],
+      ["wheat_basket_asset", publicAsset("/assets/agriculture/wheat_basket.png")],
       ["hoe_asset", publicAsset("/assets/tools/hoe.png")],
       ["watering_can_asset", publicAsset("/assets/tools/watering_can.png")],
       ["sickle_asset", publicAsset("/assets/tools/sickle.png")],

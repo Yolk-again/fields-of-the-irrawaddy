@@ -37,14 +37,14 @@ const REQUEST_ROW_CENTERS = [111, 180, 249];
 const FISH_ORDER: FishKind[] = ["silverBarb", "catfish", "goldenCarp"];
 const MEAL_ORDER: MealKind[] = ["fishRice", "mohinga", "fishCurry"];
 const REQUEST_ICONS: Record<RequestKind, string> = {
-  rice: "rice_bowl_asset",
+  rice: "wheat_basket_asset",
   fish: "fish_silver_barb_asset",
   meals: "meal_fish_rice_asset",
   tomatoes: "tomato_basket_asset",
   greenBeans: "green_bean_basket_asset"
 };
 const REQUEST_LABELS: Record<RequestKind, string> = {
-  rice: "board.item.rice",
+  rice: "board.item.wheat",
   fish: "board.item.fish",
   meals: "board.item.meals",
   tomatoes: "board.item.tomatoes",
@@ -222,7 +222,7 @@ export class VillageBoardSystem {
 
     this.requestRows = REQUEST_ROW_CENTERS.map((centerY) => {
       const backgroundCard = this.scene.add.rectangle(320, centerY, 520, 58, 0x3d4b34, 1).setStrokeStyle(2, 0x9b7047);
-      const icon = this.scene.add.image(79, centerY, "rice_bowl_asset").setScale(1.15);
+      const icon = this.scene.add.image(79, centerY, "wheat_basket_asset").setDisplaySize(30, 25);
       const requestText = this.scene.add.text(108, centerY - 13, "", {
         fontFamily: this.language.getFontFamily(), fontSize: "11px", color: "#fff1cf", fontStyle: "bold",
         wordWrap: { width: 300 }, lineSpacing: 1
@@ -265,7 +265,7 @@ export class VillageBoardSystem {
 
   private getOwnedAmount(request: DailyRequest): number {
     switch (request.kind) {
-      case "rice": return this.farming.getRice();
+      case "rice": return this.farming.getRice() + this.farming.getGoldenWheat();
       case "fish": return this.fishing.getFishTotal();
       case "meals": return this.cooking.getTotalMeals();
       case "tomatoes": return this.farming.getCropCount("tomato");
@@ -276,7 +276,16 @@ export class VillageBoardSystem {
   private removeRequestedAmount(request: DailyRequest): boolean {
     const amount = request.amount;
     switch (request.kind) {
-      case "rice": return this.farming.removeRice(amount);
+      case "rice": {
+        const regularAmount = Math.min(amount, this.farming.getRice());
+        const goldenAmount = amount - regularAmount;
+        if (regularAmount > 0 && !this.farming.removeRice(regularAmount)) return false;
+        if (goldenAmount > 0 && !this.farming.removeGoldenWheat(goldenAmount)) {
+          if (regularAmount > 0) this.farming.addRice(regularAmount);
+          return false;
+        }
+        return true;
+      }
       case "tomatoes": return this.farming.removeCrop("tomato", amount);
       case "greenBeans": return this.farming.removeCrop("greenBean", amount);
       case "fish": {

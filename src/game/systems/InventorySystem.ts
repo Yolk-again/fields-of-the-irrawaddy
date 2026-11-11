@@ -30,7 +30,7 @@ type InventorySaveData = {
 
 const HOTBAR_DEFAULT: Array<InventoryItemId | null> = ["hoe", "seeds", "water", "harvest"];
 const BACKPACK_DEFAULT: Array<InventoryItemId | null> = Array(15).fill(null);
-const ALL_ITEMS: InventoryItemId[] = ["hoe", "seeds", "tomatoSeeds", "greenBeanSeeds", "water", "harvest", "rice", "tomatoes", "greenBeans", "silverBarb", "catfish", "goldenCarp", "meals", "rod", "goldenWheat"];
+const ALL_ITEMS: InventoryItemId[] = ["hoe", "seeds", "tomatoSeeds", "greenBeanSeeds", "water", "harvest", "rice", "tomatoes", "greenBeans", "silverBarb", "catfish", "goldenCarp", "meals", "rod"];
 
 /** Minecraft-inspired movable backpack and four-slot quick toolbar. */
 export class InventorySystem {
@@ -193,12 +193,11 @@ export class InventorySystem {
       case "seeds": return this.farming.getSeedCount("rice");
       case "tomatoSeeds": return this.farming.getSeedCount("tomato");
       case "greenBeanSeeds": return this.farming.getSeedCount("greenBean");
-      case "rice": return this.farming.getRice();
+      case "rice": return this.farming.getRice() + this.farming.getGoldenWheat();
       case "tomatoes": return this.farming.getCropCount("tomato");
       case "greenBeans": return this.farming.getCropCount("greenBean");
       case "silverBarb": case "catfish": case "goldenCarp": return this.fishing.getFishCount(item);
       case "meals": return this.cooking.getTotalMeals();
-      case "goldenWheat": return this.farming.getGoldenWheat();
     }
   }
 
@@ -427,7 +426,8 @@ export class InventorySystem {
   loadSaveData(data: InventorySaveData): void {
     const valid = (value: unknown): value is InventoryItemId => typeof value === "string" && ALL_ITEMS.includes(value as InventoryItemId);
     const migrateLegacyFish = (item: unknown): InventoryItemId | null => {
-      if (item !== "fish") return item === null ? null : valid(item) ? item : null;
+      const normalized = item === "goldenWheat" ? "rice" : item;
+      if (normalized !== "fish") return normalized === null ? null : valid(normalized) ? normalized : null;
       const counts = this.fishing.getFishCounts();
       return counts.silverBarb > 0 ? "silverBarb" : counts.catfish > 0 ? "catfish" : counts.goldenCarp > 0 ? "goldenCarp" : null;
     };
