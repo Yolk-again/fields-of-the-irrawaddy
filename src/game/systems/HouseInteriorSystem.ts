@@ -8,6 +8,7 @@ import type { SaveSystem } from "./SaveSystem";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
 import { createRedCloseButton, modalClosePosition } from "../ui/PixelUI";
+import { isMobilePlatform } from "../utils/DeviceMode";
 
 type RoomTarget = "bed" | "chest" | "cooker" | "door";
 
@@ -49,7 +50,7 @@ export class HouseInteriorSystem {
   private sleeping = false;
   private sleepBreathTween?: Phaser.Tweens.Tween;
   private promptTarget: RoomTarget | null = null;
-  private readonly touchMode = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
+  private readonly touchMode = isMobilePlatform();
   private avatarTexture = "farmer_green_sheet";
   private readonly entrance = { x: 190, y: 267 };
   private readonly targets: Record<RoomTarget, { x: number; y: number }> = {
@@ -200,7 +201,7 @@ export class HouseInteriorSystem {
   }
 
   private updateLanguage(): void {
-    this.outsidePrompt.setText(this.language.t("house.enterPrompt"));
+    this.outsidePrompt.setText(this.language.t(this.touchMode ? "house.mobileEnterPrompt" : "house.enterPrompt"));
     if (!this.title) return;
     this.title.setText(this.language.t("house.title"));
     const font = this.language.getFontFamily();

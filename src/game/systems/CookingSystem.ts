@@ -4,6 +4,7 @@ import { FishingSystem, type FishKind } from "./FishingSystem";
 import { LanguageSystem } from "./LanguageSystem";
 import { ModalUIManager } from "./ModalUIManager";
 import { createRedCloseButton, modalClosePosition, modalPanel } from "../ui/PixelUI";
+import { isMobilePlatform } from "../utils/DeviceMode";
 
 export type MealKind = "fishRice" | "mohinga" | "fishCurry";
 export interface CookingSaveData {
@@ -53,6 +54,7 @@ export class CookingSystem {
   private cardTexts: Phaser.GameObjects.Text[] = [];
   private recipeStatusBadges: Phaser.GameObjects.Text[] = [];
   private message = "";
+  private readonly mobileMode = isMobilePlatform();
 
   constructor(
     scene: Phaser.Scene,
@@ -147,7 +149,7 @@ export class CookingSystem {
     const font = this.language.getFontFamily();
     this.titleText.setText(this.language.t("cooking.title"));
     this.subtitleText.setText(this.language.t("cooking.subtitle"));
-    this.exitText.setText(this.language.t("common.clickCrossExit"));
+    this.exitText.setText(this.language.t(this.mobileMode ? "cooking.mobileExitHint" : "cooking.exitHint"));
     this.eatText.setText(this.language.t("cooking.eatButton"));
     this.eatBackground.setFillStyle(0x70532f, 1);
     for (const text of [this.titleText, this.subtitleText, this.statusText, this.exitText, ...this.cardTexts, ...this.recipeStatusBadges, this.eatText]) {
@@ -155,7 +157,8 @@ export class CookingSystem {
     }
     const riceOwned = this.farming.getRice();
     RECIPES.forEach((recipe, index) => {
-      this.cardTexts[index * 2].setText(`${index + 1}. ${this.language.t(recipe.titleKey)}  ·  ${this.getMealCount(recipe.id)} ${this.language.t("cooking.owned")}`);
+      const recipePrefix = this.mobileMode ? "" : `${index + 1}. `;
+      this.cardTexts[index * 2].setText(`${recipePrefix}${this.language.t(recipe.titleKey)}  ·  ${this.getMealCount(recipe.id)} ${this.language.t("cooking.owned")}`);
       this.cardTexts[index * 2 + 1].setText(this.language.t(recipe.descriptionKey));
       const fishOwned = recipe.fish === "any"
         ? this.fishing.getFishTotal()

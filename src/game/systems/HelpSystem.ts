@@ -76,10 +76,10 @@ export class HelpSystem {
 
     this.createCard(scene, 145, 136, "ui_icon_hand", "help.moveTitle", "help.moveBody", "help.mobileMoveTitle", "help.mobileMoveBody", "ui_icon_hand");
     this.createCard(scene, 320, 136, "ui_icon_sprout", "help.farmTitle", "help.farmBody", "help.mobileUseTitle", "help.mobileUseBody", "ui_icon_action");
-    this.createCard(scene, 495, 136, "fish_silver_barb_asset", "help.fishingTitle", "help.fishingBody", "help.mobileVillageTitle", "help.mobileVillageBody", "ui_icon_talk");
-    this.createCard(scene, 145, 224, "ui_icon_talk", "help.villageTitle", "help.villageBody", "help.farmTitle", "help.mobileFarmBody", "ui_icon_sprout");
-    this.createCard(scene, 320, 224, "cooking_hearth_asset", "help.cookingTitle", "help.cookingBody", "help.mobileActivitiesTitle", "help.mobileActivitiesBody", "cooking_hearth_asset");
-    this.createCard(scene, 495, 224, "ui_icon_bed", "help.houseTitle", "help.houseBody", "help.mobileIconsTitle", "help.mobileIconsBody", "ui_icon_bag");
+    this.createCard(scene, 495, 136, "fish_silver_barb_asset", "help.fishingTitle", "help.fishingBody", "help.mobileFishingTitle", "help.mobileFishingBody", "fish_silver_barb_asset");
+    this.createCard(scene, 145, 224, "ui_icon_talk", "help.villageTitle", "help.villageBody", "help.mobileVillageTitle", "help.mobileVillageBody", "ui_icon_talk");
+    this.createCard(scene, 320, 224, "cooking_hearth_asset", "help.cookingTitle", "help.cookingBody", "help.mobileCookingTitle", "help.mobileCookingBody", "cooking_hearth_asset");
+    this.createCard(scene, 495, 224, "ui_icon_bed", "help.houseTitle", "help.houseBody", "help.mobileHouseTitle", "help.mobileHouseBody", "ui_icon_bed");
 
     this.exitHintText = scene.add.text(320, 318, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d7e6c5", align: "center"
@@ -94,7 +94,7 @@ export class HelpSystem {
     const font = this.language.getFontFamily();
     this.titleText.setText(this.language.t("help.title"));
     this.subtitleText.setText(this.language.t(this.mobileMode ? "help.mobileSubtitle" : "help.subtitle"));
-    this.exitHintText.setText(this.language.t(this.mobileMode ? "help.mobileExit" : "common.clickCrossExit"));
+    this.exitHintText.setText(this.language.t(this.mobileMode ? "help.mobileExit" : "common.desktopExitHint"));
     for (const text of [this.titleText, this.subtitleText, this.exitHintText]) text.setFontFamily(font);
     for (const card of this.cardTexts) {
       card.title.setText(this.language.t(this.mobileMode ? card.mobileTitleKey : card.titleKey));

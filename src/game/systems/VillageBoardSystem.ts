@@ -6,6 +6,7 @@ import { CookingSystem, type MealKind } from "./CookingSystem";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
 import { createRedCloseButton, modalClosePosition, modalPanel } from "../ui/PixelUI";
+import { isMobilePlatform } from "../utils/DeviceMode";
 
 type RequestKind = "rice" | "fish" | "meals" | "tomatoes" | "greenBeans";
 interface DailyRequest {
@@ -80,7 +81,7 @@ export class VillageBoardSystem {
   private subtitleText!: Phaser.GameObjects.Text;
   private exitHintText!: Phaser.GameObjects.Text;
   private requestRows: RequestRowUI[] = [];
-  private readonly touchMode = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
+  private readonly touchMode = isMobilePlatform();
 
   constructor(
     scene: Phaser.Scene,
@@ -338,12 +339,22 @@ export class VillageBoardSystem {
       this.scene.game.canvas.style.cursor = "default";
       return;
     }
+    // Touch pointers do not have a persistent hover state. Never recolor mobile
+    // delivery buttons from pointer movement; their state comes only from stock.
+    if (this.touchMode) {
+      this.scene.game.canvas.style.cursor = "default";
+      return;
+    }
     const hovered = this.getDeliverButtonIndex(pointer);
     this.requestRows.forEach((row, index) => {
       const request = this.requests[index];
-      row.deliverButton.setFillStyle(hovered === index && request && !request.delivered ? 0x668651 : request?.delivered ? 0x493629 : 0x527044, 1);
+      const canDeliver = !!request && !request.delivered && this.getOwnedAmount(request) >= request.amount;
+      const fill = request?.delivered ? 0x493629 : canDeliver ? (hovered === index ? 0x668651 : 0x527044) : 0x6b5034;
+      row.deliverButton.setFillStyle(fill, 1);
     });
-    this.scene.game.canvas.style.cursor = hovered >= 0 && this.requests[hovered] && !this.requests[hovered].delivered ? "pointer" : "default";
+    const hoveredRequest = this.requests[hovered];
+    const hoveredCanDeliver = !!hoveredRequest && !hoveredRequest.delivered && this.getOwnedAmount(hoveredRequest) >= hoveredRequest.amount;
+    this.scene.game.canvas.style.cursor = hoveredCanDeliver ? "pointer" : "default";
   };
 
   private updateInterface(): void {
@@ -353,8 +364,8 @@ export class VillageBoardSystem {
       ? this.language.t("board.allComplete")
       : this.language.t("board.subtitle", { count: this.requests.length }));
     this.boardLabel.setText(this.language.t("board.label"));
-    this.promptText.setText(this.language.t("board.prompt"));
-    this.exitHintText.setText(this.language.t("board.exitHint"));
+    this.promptText.setText(this.language.t(this.touchMode ? "board.mobilePrompt" : "board.prompt"));
+    this.exitHintText.setText(this.language.t(this.touchMode ? "board.mobileExitHint" : "board.exitHint"));
 
     this.requestRows.forEach((row, index) => {
       const request = this.requests[index];
@@ -378,7 +389,8 @@ export class VillageBoardSystem {
           : "board.needMoreButton", { amount: Math.max(0, request.amount - owned) }));
       row.background.setFillStyle(request.delivered ? 0x33412f : 0x3d4b34, 1);
       row.deliverButton.setFillStyle(request.delivered ? 0x493629 : canDeliver ? 0x527044 : 0x6b5034, 1);
-      row.deliverButton.setAlpha(request.delivered ? 0.8 : 1);
+      row.deliverButton.setAlpha(request.delivered ? 0.8 : canDeliver ? 1 : 0.72);
+      row.deliverText.setColor(request.delivered ? "#d9c5a2" : canDeliver ? "#fff1cf" : "#c7b69b");
       for (const text of [row.requestText, row.progressText, row.rewardText, row.deliverText]) text.setFontFamily(font);
     });
     this.titleText.setFontFamily(font);
@@ -414,6 +426,8 @@ export class VillageBoardSystem {
         current: owned
       }));
       row.progressText.setColor("#f2c08f");
+      row.deliverButton.setFillStyle(0x6b5034, 1).setAlpha(0.72);
+      row.deliverText.setColor("#c7b69b");
       return;
     }
     request.delivered = true;

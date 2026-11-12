@@ -3,6 +3,7 @@ import Phaser from "phaser";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
 import { createRedCloseButton, modalClosePosition, modalPanel, pixelPanel } from "../ui/PixelUI";
+import { isMobilePlatform } from "../utils/DeviceMode";
 import { HOMES } from "../data/villageLayout";
 import { NpcFarmingSystem, type NpcFarmAction, type NpcFarmerId } from "./NpcFarmingSystem";
 
@@ -159,7 +160,7 @@ export class VillageSystem {
   private lastPlayerX = 0;
   private lastPlayerY = 0;
   private activeVillager: Villager | null = null;
-  private readonly touchMode = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
+  private readonly touchMode = isMobilePlatform();
   private dialogueIndex = 0;
 
   private dialoguePanel!: Phaser.GameObjects.Container;
@@ -284,7 +285,7 @@ export class VillageSystem {
       padding: { x: 3, y: 2 }
     }).setOrigin(0.5).setAlpha(0);
 
-    const promptText = this.scene.add.text(0, 44, this.language.t("village.talk"), {
+    const promptText = this.scene.add.text(0, 44, this.language.t(this.touchMode ? "village.mobileTalk" : "village.talk"), {
       fontFamily: this.language.getFontFamily(),
       fontSize: "10px",
       color: "#fff1b8",
@@ -480,11 +481,7 @@ export class VillageSystem {
   }
 
   private updateDialogueLabels(): void {
-    this.instructionText.setText(
-      this.language.getLanguage() === "my"
-        ? "ဆက်လက်ရန် နှိပ်ပါ"
-        : "CLICK / TAP TO CONTINUE"
-    );
+    this.instructionText.setText(this.language.t(this.touchMode ? "village.mobileContinue" : "village.desktopContinue"));
     const font = this.language.getFontFamily();
     this.speakerText.setFontFamily(font);
     this.dialogueText.setFontFamily(font);
@@ -501,7 +498,7 @@ export class VillageSystem {
     for (const villager of this.villagers) {
       villager.nameText.setText(this.language.t(NAME_KEYS[villager.id]));
       villager.activityText.setText(this.language.t(villager.activityKey));
-      villager.promptText.setText(this.language.t("village.talk"));
+      villager.promptText.setText(this.language.t(this.touchMode ? "village.mobileTalk" : "village.talk"));
       villager.nameText.setFontFamily(font);
       villager.activityText.setFontFamily(font);
       villager.promptText.setFontFamily(font);

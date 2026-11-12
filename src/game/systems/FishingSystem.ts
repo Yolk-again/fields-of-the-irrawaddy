@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { LanguageSystem } from "./LanguageSystem";
 import { ModalUIManager } from "./ModalUIManager";
+import { isMobilePlatform } from "../utils/DeviceMode";
 
 export type FishKind = "silverBarb" | "catfish" | "goldenCarp";
 export type FishingBaitKind = "worm" | "shrimp" | "goldenCricket";
@@ -32,6 +33,7 @@ export class FishingSystem {
   private language: LanguageSystem;
   private ui: ModalUIManager;
   private getGameHour: () => number;
+  private readonly mobileMode = isMobilePlatform();
   private lastPlayerX = 0;
   private lastPlayerY = 0;
 
@@ -395,7 +397,7 @@ export class FishingSystem {
         this.state = "bite";
         this.stateTimer = 0;
         this.biteWindow = 2300;
-        this.prompt.setText(this.language.t("fishing.bite"));
+        this.prompt.setText(this.language.t(this.mobileMode ? "fishing.mobileBite" : "fishing.bite"));
         this.scene.events.emit("sound-effect", { name: "bite", x: this.soundX, y: this.soundY, maxDistance: 245 });
       }
       return true;
@@ -430,11 +432,11 @@ export class FishingSystem {
 
     const availableBait = this.selectedBait && this.baits[this.selectedBait] > 0 ? this.selectedBait : null;
     this.prompt.setText(availableBait
-      ? this.language.t("fishing.castHintWithBait", {
+      ? this.language.t(this.mobileMode ? "fishing.mobileCastHintWithBait" : "fishing.castHintWithBait", {
           bait: this.language.t(this.baitNameKey(availableBait)),
           amount: this.baits[availableBait]
         })
-      : this.language.t("fishing.castHint"));
+      : this.language.t(this.mobileMode ? "fishing.mobileCastHint" : "fishing.castHint"));
     this.prompt.setVisible(true);
     if (Phaser.Input.Keyboard.JustDown(this.castKey)) {
       this.beginCast(playerX, playerY, spot);

@@ -6,6 +6,7 @@ import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
 import { createRedCloseButton, modalClosePosition, modalPanel } from "../ui/PixelUI";
 import { INVENTORY_ITEM_DEFINITIONS, type InventoryItemId } from "../ui/InventoryItems";
+import { isMobilePlatform } from "../utils/DeviceMode";
 
 type InventoryZone = "hotbar" | "backpack";
 interface SlotAddress { zone: InventoryZone; index: number; }
@@ -60,6 +61,7 @@ export class InventorySystem {
   private dragPreviewBackground!: Phaser.GameObjects.Rectangle;
   private dragPreviewIcon!: Phaser.GameObjects.Image;
   private readonly defaultCanvasCursor = "default";
+  private readonly mobileMode = isMobilePlatform();
 
   constructor(
     scene: Phaser.Scene,
@@ -168,7 +170,7 @@ export class InventorySystem {
     const keyLabel = hotkey ? this.scene.add.text(x - width / 2 + 4, y - 18, hotkey, {
       fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#fff1cf",
       stroke: "#2a1a14", strokeThickness: 2
-    }).setOrigin(0, 0) : undefined;
+    }).setOrigin(0, 0).setVisible(!this.mobileMode) : undefined;
     this.cells.push({
       address,
       x,
@@ -244,8 +246,8 @@ export class InventorySystem {
       tomato: this.farming.getSeedCount("tomato"),
       greenBean: this.farming.getSeedCount("greenBean")
     }));
-    this.instructionText.setText(this.language.t("inventory.dragInstructions"));
-    this.exitHintText.setText(this.language.t("common.clickCrossExit"));
+    this.instructionText.setText(this.language.t(this.mobileMode ? "inventory.mobileDragInstructions" : "inventory.dragInstructions"));
+    this.exitHintText.setText(this.language.t(this.mobileMode ? "common.mobileExitHint" : "common.desktopExitHint"));
     for (const text of [this.titleText, this.hotbarTitleText, this.seedPacketText, this.backpackTitleText, this.instructionText, this.exitHintText]) {
       text.setFontFamily(font);
     }

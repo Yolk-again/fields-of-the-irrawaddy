@@ -17,6 +17,7 @@ import { HelpSystem } from "../systems/HelpSystem";
 import { MusicSystem } from "../systems/MusicSystem";
 import { getGraphicsQuality } from "../systems/GraphicsQuality";
 import type { GraphicsQuality } from "../systems/GraphicsQuality";
+import { isMobilePlatform } from "../utils/DeviceMode";
 import { OpeningCutsceneSystem } from "../systems/OpeningCutsceneSystem";
 import { NpcFarmingSystem } from "../systems/NpcFarmingSystem";
 import {
@@ -364,8 +365,7 @@ export class FarmScene extends Phaser.Scene {
       return;
     }
 
-    this.isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0 ||
-      window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(max-width: 900px)").matches;
+    this.isTouchDevice = isMobilePlatform();
     document.body.classList.toggle("foi-touch-device", this.isTouchDevice);
 
     this.language = new LanguageSystem();
@@ -1378,8 +1378,7 @@ export class FarmScene extends Phaser.Scene {
   }
 
   private createHUD(): void {
-    this.isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0 ||
-      window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(max-width: 900px)").matches;
+    this.isTouchDevice = isMobilePlatform();
 
     const headerY = this.isTouchDevice ? 24 : 22;
     const positions = this.isTouchDevice

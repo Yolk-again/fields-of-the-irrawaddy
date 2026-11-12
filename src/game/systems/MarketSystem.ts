@@ -6,6 +6,7 @@ import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
 import { createRedCloseButton, modalClosePosition, modalPanel } from "../ui/PixelUI";
 import { adjustQuantity, maximumQuantity, maximumQuantitySelection, normalizeQuantity, quantityAdjustmentStep } from "../ui/QuantityMath";
+import { isMobilePlatform } from "../utils/DeviceMode";
 
 type SaleKind = "wheat" | "tomatoes" | "greenBeans" | "meals" | "fish" | "seeds" | "tomatoSeeds" | "greenBeanSeeds" | "rod" | "wormBait" | "shrimpBait" | "goldenCricketBait";
 
@@ -78,7 +79,7 @@ export class MarketSystem {
   private seedMenuOpen = false;
   private baitMenuOpen = false;
   private produceMenuOpen = false;
-  private readonly touchMode = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
+  private readonly touchMode = isMobilePlatform();
 
   private readonly cardY = [80, 112, 144, 176, 208, 240, 272];
 
@@ -398,10 +399,12 @@ export class MarketSystem {
         golden: GOLDEN_WHEAT_PRICE
       }));
     }
-    this.exitHintText.setText(this.language.t("market.exitHint"));
-    this.clickHintText.setText(this.language.t(this.upgradeMenuOpen ? "market.upgradesClickHint" : this.seedMenuOpen ? "market.seedPacketHint" : this.baitMenuOpen ? "market.baitHint" : this.produceMenuOpen ? "market.produceHint" : "market.clickHint"));
+    this.exitHintText.setText(this.language.t(this.touchMode ? "market.mobileExitHint" : "market.exitHint"));
+    const desktopHintKey = this.upgradeMenuOpen ? "market.upgradesClickHint" : this.seedMenuOpen ? "market.seedPacketHint" : this.baitMenuOpen ? "market.baitHint" : this.produceMenuOpen ? "market.produceHint" : "market.clickHint";
+    const mobileHintKey = this.upgradeMenuOpen ? "market.mobileUpgradesClickHint" : this.seedMenuOpen ? "market.mobileSeedPacketHint" : this.baitMenuOpen ? "market.mobileBaitHint" : this.produceMenuOpen ? "market.mobileProduceHint" : "market.mobileClickHint";
+    this.clickHintText.setText(this.language.t(this.touchMode ? mobileHintKey : desktopHintKey));
     this.stallLabel.setText(this.language.t("market.stallName"));
-    this.promptText.setText(this.language.t("market.prompt"));
+    this.promptText.setText(this.language.t(this.touchMode ? "market.mobilePrompt" : "market.prompt"));
     for (const text of [this.titleText, ...this.actionTexts, ...this.actionStatusBadges, this.moneyText, this.messageText, this.exitHintText, this.clickHintText, this.stallLabel, this.promptText]) text.setFontFamily(font);
     this.updateMoney();
   }

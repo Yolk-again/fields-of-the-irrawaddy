@@ -6,6 +6,7 @@ import { LanguageSystem } from "./LanguageSystem";
 import { ModalUIManager } from "./ModalUIManager";
 import { createRedCloseButton, modalClosePosition, modalPanel } from "../ui/PixelUI";
 import { adjustQuantity, maximumQuantitySelection, normalizeQuantity, quantityAdjustmentStep } from "../ui/QuantityMath";
+import { isMobilePlatform } from "../utils/DeviceMode";
 
 export type ChestItem = "seeds" | "tomatoSeeds" | "greenBeanSeeds" | "wheat" | "tomatoes" | "greenBeans" | FishKind | MealKind;
 export type ChestContents = Record<ChestItem, number>;
@@ -72,6 +73,7 @@ export class ChestStorageSystem {
   private putLabels: Phaser.GameObjects.Text[] = [];
   private takeLabels: Phaser.GameObjects.Text[] = [];
   private messageValue = "";
+  private readonly mobileMode = isMobilePlatform();
   private readonly rowY = ITEMS.map((_item, index) => 78 + index * 20);
 
   constructor(scene: Phaser.Scene, farming: FarmingSystem, fishing: FishingSystem, cooking: CookingSystem, ui: ModalUIManager, language: LanguageSystem) {
@@ -280,10 +282,10 @@ export class ChestStorageSystem {
 
   private updateInterface(): void {
     this.title.setText(this.language.t("chest.title"));
-    this.subtitle.setText(this.language.t("chest.subtitle"));
+    this.subtitle.setText(this.language.t(this.mobileMode ? "chest.mobileSubtitle" : "chest.subtitle"));
     this.columns.setText(`${this.language.t("chest.bag")}     ${this.language.t("chest.chest")}`);
     this.quantityHeader.setText(this.language.t("chest.quantity"));
-    this.exitHint.setText(this.language.t("common.clickCrossExit"));
+    this.exitHint.setText(this.language.t(this.mobileMode ? "common.mobileExitHint" : "common.desktopExitHint"));
     this.message.setText(this.messageValue);
     this.rowNames.forEach((text, index) => text.setText(this.language.t(ITEMS[index].key)));
     this.visibleRowIndices = [];
