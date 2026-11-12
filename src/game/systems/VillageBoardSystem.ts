@@ -64,6 +64,8 @@ export class VillageBoardSystem {
   private readonly boardX = 435;
   private readonly boardY = 258;
   private day = 1;
+  private lastPlayerX = 0;
+  private lastPlayerY = 0;
   private requests: DailyRequest[] = [];
   private lastRiceRequired = 0;
   private isOpen = false;
