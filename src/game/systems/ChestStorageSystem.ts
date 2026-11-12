@@ -16,7 +16,7 @@ export interface ChestSaveData {
 }
 
 const ITEMS: { id: ChestItem; key: string; texture: string }[] = [
-  { id: "seeds", key: "chest.seeds", texture: "rice_seed_bag_asset" },
+  { id: "seeds", key: "chest.seeds", texture: "wheat_seed_bag_asset" },
   { id: "tomatoSeeds", key: "chest.tomatoSeeds", texture: "tomato_seed_bag_asset" },
   { id: "greenBeanSeeds", key: "chest.greenBeanSeeds", texture: "green_bean_seed_bag_asset" },
   { id: "wheat", key: "chest.wheat", texture: "wheat_basket_asset" },
@@ -108,7 +108,8 @@ export class ChestStorageSystem {
 
     ITEMS.forEach((item, index) => {
       const y = this.rowY[index];
-      const card = this.scene.add.rectangle(320, y, 520, 19, index % 2 ? 0x394a32 : 0x40513a, 1).setStrokeStyle(1, 0x8b6742);
+      const card = this.scene.add.rectangle(320, y, 520, 19, index % 2 ? 0x35462f : 0x3d5136, 1)
+        .setStrokeStyle(1, 0xb58a55);
       const icon = this.scene.add.image(73, y, item.texture).setDisplaySize(20, 17);
       const name = this.scene.add.text(92, y, "", { fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#fff1cf" }).setOrigin(0, 0.5);
       const bag = this.scene.add.text(238, y, "0", { fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#ffffff" }).setOrigin(0.5);

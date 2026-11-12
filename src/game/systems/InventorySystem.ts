@@ -157,8 +157,8 @@ export class InventorySystem {
   }
 
   private createCell(address: SlotAddress, x: number, y: number, width: number, hotkey?: string): void {
-    const background = this.scene.add.rectangle(x, y, width, address.zone === "hotbar" ? 48 : 42, 0x3d4b34, 1)
-      .setStrokeStyle(1, 0x9b7047);
+    const background = this.scene.add.rectangle(x, y, width, address.zone === "hotbar" ? 48 : 42, 0x394a32, 1)
+      .setStrokeStyle(1, 0xc29a62);
     const icon = this.scene.add.image(x, y - 5, "ui_icon_hand").setScale(1.15).setVisible(false);
     const name = this.scene.add.text(x, y + (address.zone === "hotbar" ? 15 : 13), "", {
       fontFamily: this.language.getFontFamily(), fontSize: "7px", color: "#fff1cf", align: "center"
@@ -259,8 +259,8 @@ export class InventorySystem {
       const selected = cell.address.zone === "hotbar" && this.farming.getSelectedHotbarIndex() === cell.address.index;
       const isSource = this.dragSource?.zone === cell.address.zone && this.dragSource?.index === cell.address.index;
       const isTarget = this.dragTarget?.zone === cell.address.zone && this.dragTarget?.index === cell.address.index;
-      cell.background.setFillStyle(isSource ? 0x58734b : selected ? 0x527044 : 0x3d4b34, 1);
-      cell.background.setStrokeStyle(isTarget && !isSource ? 3 : selected ? 2 : 1, isTarget ? 0xffd978 : selected ? 0xd6b36b : 0x9b7047);
+      cell.background.setFillStyle(isSource ? 0x5d784a : selected ? 0x506d43 : 0x394a32, 1);
+      cell.background.setStrokeStyle(isTarget && !isSource ? 3 : selected ? 2 : 1, isTarget ? 0xffe08a : selected ? 0xe0bb70 : 0xc29a62);
       cell.name.setFontFamily(font);
       cell.amount.setFontFamily(font);
       if (!item || (!INVENTORY_ITEM_DEFINITIONS[item].tool && this.countFor(item) <= 0)) {

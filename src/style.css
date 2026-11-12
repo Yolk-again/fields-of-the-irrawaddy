@@ -2203,3 +2203,84 @@ body.foi-mobile-fullscreen #game-container > .game-hud-stack {
   top: max(8px, env(safe-area-inset-top)) !important;
   right: max(8px, env(safe-area-inset-right)) !important;
 }
+
+
+/* Shared pixel UI polish: consistent raised controls, readable focus and subtle feedback. */
+.game-hud-stack .mobile-game-hud button,
+.game-menu-button,
+.opening-cutscene-skip,
+.opening-cutscene-next,
+.save-button,
+.mobile-context-action {
+  transition: filter 90ms steps(2, end), transform 90ms steps(2, end), box-shadow 90ms steps(2, end);
+}
+
+.game-hud-stack .mobile-game-hud button:hover,
+.game-menu-button:hover,
+.opening-cutscene-skip:hover,
+.opening-cutscene-next:hover,
+.save-button:hover,
+.mobile-context-action:hover {
+  filter: brightness(1.08);
+}
+
+.game-hud-stack .mobile-game-hud button:focus-visible,
+.game-menu-button:focus-visible,
+.opening-cutscene-skip:focus-visible,
+.opening-cutscene-next:focus-visible,
+.save-button:focus-visible,
+.mobile-context-action:focus-visible {
+  outline: 2px solid #ffe49a;
+  outline-offset: 2px;
+}
+
+/* The story panel normally covers the HUD. During the mobile intro, keep only
+   the fullscreen control above it so the player can enter fullscreen at once. */
+body.foi-touch-device.foi-cutscene-active .game-hud-stack {
+  z-index: 10040 !important;
+  top: max(8px, env(safe-area-inset-top)) !important;
+  right: max(8px, env(safe-area-inset-right)) !important;
+}
+
+body.foi-touch-device.foi-cutscene-active .game-hud-stack > .mobile-game-hud {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+body.foi-touch-device.foi-cutscene-active .game-hud-stack > .mobile-game-hud button:not([data-action="fullscreen"]) {
+  display: none !important;
+}
+
+body.foi-touch-device.foi-cutscene-active .game-hud-stack > .mobile-game-hud button[data-action="fullscreen"] {
+  display: grid !important;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  border-color: #f0cf80;
+  box-shadow: inset 2px 2px 0 #8a5a34, inset -2px -2px 0 #2a1a14, 0 2px 0 #21150f, 0 0 0 2px rgba(255, 226, 153, .35);
+}
+
+.game-hud-stack .mobile-game-hud button.is-fullscreen {
+  border-color: #f0cf80;
+  background: #5d7942;
+  box-shadow: inset 2px 2px 0 #b8d58a, inset -2px -2px 0 #2a1a14, 0 2px 0 #21150f;
+}
+
+.game-hud-stack .mobile-game-hud button.is-fullscreen-warning {
+  border-color: #ff9886;
+  background: #8b4035;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-hud-stack .mobile-game-hud button,
+  .game-menu-button,
+  .opening-cutscene-skip,
+  .opening-cutscene-next,
+  .save-button,
+  .mobile-context-action {
+    transition: none;
+  }
+}

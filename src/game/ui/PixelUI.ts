@@ -90,7 +90,13 @@ export function pixelPanel(
   // gold inlay + body
   g.fillStyle(PALETTE.gold, 1).fillRect(x + 3, y + 3, w - 6, h - 6);
   g.fillStyle(fill, alpha).fillRect(x + 4, y + 4, w - 8, h - 8);
-  g.fillStyle(0x000000, 0.22).fillRect(x + 4, y + 4, w - 8, 2);
+  g.fillStyle(0x000000, 0.16).fillRect(x + 4, y + 4, w - 8, 2);
+
+  // Fine inset bevels keep every modal crisp and consistent at native pixel scale.
+  g.fillStyle(0xffe9b8, 0.12).fillRect(x + 6, y + 6, w - 12, 1);
+  g.fillStyle(0xffe9b8, 0.07).fillRect(x + 5, y + 7, 1, h - 14);
+  g.fillStyle(0x1c281c, 0.18).fillRect(x + 6, y + h - 7, w - 12, 1);
+  g.fillStyle(0x1c281c, 0.12).fillRect(x + w - 7, y + 7, 1, h - 14);
 
   // rivets
   g.fillStyle(PALETTE.goldBright, 1);
@@ -116,8 +122,10 @@ export function createRedCloseButton(
     new Phaser.Geom.Rectangle(-20, -20, 40, 40),
     Phaser.Geom.Rectangle.Contains
   );
+  const shadow = scene.add.rectangle(1, 2, 26, 26, 0x140d09, 0.72);
   const background = scene.add.rectangle(0, 0, 24, 24, 0x9b3d32, 1);
   background.setStrokeStyle(2, PALETTE.goldBright);
+  const highlight = scene.add.rectangle(0, -8, 16, 2, 0xf08b72, 0.85);
   button.on("pointerover", () => background.setFillStyle(0xc45142, 1));
   button.on("pointerout", () => background.setFillStyle(0x9b3d32, 1));
 
@@ -128,6 +136,6 @@ export function createRedCloseButton(
     fontStyle: "bold"
   }).setOrigin(0.5);
 
-  button.add([background, cross]);
+  button.add([shadow, background, highlight, cross]);
   return button;
 }

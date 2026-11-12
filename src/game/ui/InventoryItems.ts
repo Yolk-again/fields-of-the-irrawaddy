@@ -30,7 +30,7 @@ export interface InventoryItemDefinition {
 
 export const INVENTORY_ITEM_DEFINITIONS: Record<InventoryItemId, InventoryItemDefinition> = {
   hoe: { nameKey: "farm.hoe", texture: "hoe_asset", tool: "hoe" },
-  seeds: { nameKey: "inventory.seeds", texture: "rice_seed_bag_asset", tool: "seeds", cropSeed: "rice" },
+  seeds: { nameKey: "inventory.seeds", texture: "wheat_seed_bag_asset", tool: "seeds", cropSeed: "rice" },
   tomatoSeeds: { nameKey: "inventory.tomatoSeeds", texture: "tomato_seed_bag_asset", tool: "seeds", cropSeed: "tomato" },
   greenBeanSeeds: { nameKey: "inventory.greenBeanSeeds", texture: "green_bean_seed_bag_asset", tool: "seeds", cropSeed: "greenBean" },
   water: { nameKey: "farm.water", texture: "watering_can_asset", tool: "water" },

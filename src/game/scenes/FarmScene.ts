@@ -105,7 +105,6 @@ export class FarmScene extends Phaser.Scene {
   private obstacles: Obstacle[] = [];
   private worldLabels: { text: Phaser.GameObjects.Text; key: string; radius: number }[] = [];
 
-  private fullscreenIcon!: Phaser.GameObjects.Image;
   private coinText!: Phaser.GameObjects.Text;
   private isTouchDevice = false;
   private joystickPointerId: number | null = null;
@@ -273,6 +272,7 @@ export class FarmScene extends Phaser.Scene {
       ["rice_bowl_asset", publicAsset("/assets/agriculture/rice_bowl.png")],
       ["rice_grain_asset", publicAsset("/assets/agriculture/rice_grain.png")],
       ["rice_seed_bag_asset", publicAsset("/assets/tools/rice_seed_bag.png")],
+      ["wheat_seed_bag_asset", publicAsset("/assets/tools/wheat_seed_bag.png")],
       ["tomato_seed_bag_asset", publicAsset("/assets/tools/tomato_seed_bag.png")],
       ["green_bean_seed_bag_asset", publicAsset("/assets/tools/green_bean_seed_bag.png")],
       ["tomato_basket_asset", publicAsset("/assets/agriculture/tomato_basket.png")],
@@ -987,9 +987,15 @@ export class FarmScene extends Phaser.Scene {
     return true;
   }
 
-  /** Chickens use the same collision-aware four-way route planner as villagers. */
+  /** Chickens use the shared route planner with their own sprite footprint. */
   private findChickenPath(animal: Wanderer, targetX: number, targetY: number): Array<{ x: number; y: number }> {
-    return this.village?.findAnimalRoute(animal.sprite.x, animal.sprite.y, targetX, targetY) ?? [];
+    return this.village?.findAnimalRoute(
+      animal.sprite.x,
+      animal.sprite.y,
+      targetX,
+      targetY,
+      (x, y) => this.chickenCanStand(animal, x, y)
+    ) ?? [];
   }
 
   private planChickenEscape(animal: Wanderer, threat: { x: number; y: number }): boolean {
@@ -1382,18 +1388,20 @@ export class FarmScene extends Phaser.Scene {
 
     const headerY = this.isTouchDevice ? 24 : 22;
     const positions = this.isTouchDevice
-      ? { bag: 420, profile: 460, language: 500, help: 540, fullscreen: 620 }
-      : { bag: 466, profile: 498, language: 530, help: 562, fullscreen: 626 };
+      ? { bag: 420, profile: 460, language: 500, help: 540 }
+      : { bag: 466, profile: 498, language: 530, help: 562 };
 
     if (this.isTouchDevice) {
       window.addEventListener("foi-mobile-hud-action", this.handleMobileHudAction);
+      this.registerFullscreenEvents();
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
         window.removeEventListener("foi-mobile-hud-action", this.handleMobileHudAction);
       });
       return;
     }
 
-    this.createFullscreenButton(positions.fullscreen, headerY);
+    // Desktop/windowed play intentionally has no fullscreen icon. The fullscreen
+    // action is provided by the mobile DOM HUD only.
     this.createIconButton(positions.help, headerY, "ui_icon_help", "hud.tip.help",
       () => this.help.mobileToggle());
     this.createIconButton(positions.language, headerY, "ui_icon_globe", "hud.tip.language",
@@ -1717,15 +1725,11 @@ export class FarmScene extends Phaser.Scene {
     }
   }
 
-  private createFullscreenButton(x = 626, y = 22): void {
-    this.fullscreenIcon = this.createIconButton(x, y, "ui_icon_expand", "hud.tip.fullscreen",
-      () => this.toggleFullscreenForDevice());
-
+  private registerFullscreenEvents(): void {
     this.scale.on("enterfullscreen", this.handleFullscreenEntered, this);
     this.scale.on("leavefullscreen", this.handleFullscreenLeft, this);
     this.scale.on("fullscreenfailed", this.handleFullscreenFailed, this);
     this.scale.on("fullscreenunsupported", this.handleFullscreenFailed, this);
-
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off("enterfullscreen", this.handleFullscreenEntered, this);
       this.scale.off("leavefullscreen", this.handleFullscreenLeft, this);
@@ -1735,6 +1739,7 @@ export class FarmScene extends Phaser.Scene {
   }
 
   private toggleFullscreenForDevice(): void {
+    if (!this.isTouchDevice) return;
     const container = document.getElementById("game-container");
     if (!container) return;
     if (document.body.classList.contains("foi-mobile-fullscreen")) {
@@ -1767,18 +1772,19 @@ export class FarmScene extends Phaser.Scene {
   }
 
   private handleFullscreenEntered(): void {
-    this.fullscreenIcon.setTint(0xffd978);
+    document.querySelector<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"]')?.classList.add("is-fullscreen");
+    this.scale.refresh();
   }
 
   private handleFullscreenLeft(): void {
-    this.fullscreenIcon.clearTint();
+    document.querySelector<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"]')?.classList.remove("is-fullscreen");
+    this.scale.refresh();
   }
 
   private handleFullscreenFailed(): void {
-    this.fullscreenIcon.setTint(0xff6a5a);
-    this.time.delayedCall(1800, () => {
-      if (this.fullscreenIcon.active) this.fullscreenIcon.clearTint();
-    });
+    const button = document.querySelector<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"]');
+    button?.classList.add("is-fullscreen-warning");
+    this.time.delayedCall(1800, () => button?.classList.remove("is-fullscreen-warning"));
   }
 
   private handleGraphicsQualityChange = (quality: GraphicsQuality): void => {

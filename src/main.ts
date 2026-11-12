@@ -3,6 +3,7 @@ import "./style.css";
 import "./game/assets.css";
 import { FarmScene } from "./game/scenes/FarmScene";
 import { getGraphicsQuality } from "./game/systems/GraphicsQuality";
+import { isMobilePlatform } from "./game/utils/DeviceMode";
 import {
   SAVE_SLOT_COUNT,
   deleteSaveSlot,
@@ -89,8 +90,7 @@ const menuButton = document.getElementById("game-menu-button");
 const mobileContextAction = document.getElementById("mobile-context-action") as HTMLButtonElement | null;
 const titleScrollCue = document.getElementById("title-scroll-cue");
 
-const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0 ||
-  window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(max-width: 900px)").matches;
+const isTouchDevice = isMobilePlatform();
 if (isTouchDevice) document.body.classList.add("foi-touch-device");
 
 document.body.classList.remove("foi-in-game", "foi-launching");

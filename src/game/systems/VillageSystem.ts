@@ -39,6 +39,8 @@ interface GridAnchor {
   connectorLength: number;
 }
 
+type WalkabilityTest = (x: number, y: number) => boolean;
+
 interface DailySchedule {
   key: string;
   activityKey: string;
@@ -767,7 +769,7 @@ export class VillageSystem {
       meditate: "ui_icon_sprout", chant: "ui_icon_note", play: "ui_icon_sun",
       school: "ui_icon_note", skip: "water_glint", alms: "rice_bowl_asset",
       offer: "rice_bowl_asset", homage: "ui_icon_person", walkMeditate: "ui_icon_sprout",
-      talk: "ui_icon_person", hoe: "hoe_asset", plant: "rice_seed_bag_asset",
+      talk: "ui_icon_person", hoe: "hoe_asset", plant: "wheat_seed_bag_asset",
       water: "watering_can_asset", harvest: "sickle_asset", clear: "sickle_asset"
     };
     if (villager.currentAnimationKey === key && sprite.anims.isPlaying) {
@@ -870,7 +872,8 @@ export class VillageSystem {
     fromX: number,
     fromY: number,
     toX: number,
-    toY: number
+    toY: number,
+    walkable: WalkabilityTest = (x, y) => this.canNavigateTo(x, y)
   ): { points: { x: number; y: number }[]; length: number } | null {
     const options = [
       [{ x: toX, y: fromY }, { x: toX, y: toY }],
@@ -884,7 +887,7 @@ export class VillageSystem {
       const compact: { x: number; y: number }[] = [];
       for (const point of points) {
         if (Phaser.Math.Distance.Between(from.x, from.y, point.x, point.y) < 1) continue;
-        if (!this.isWalkSegmentClear(from.x, from.y, point.x, point.y)) {
+        if (!this.isWalkSegmentClear(from.x, from.y, point.x, point.y, walkable)) {
           clear = false;
           break;
         }
@@ -903,7 +906,12 @@ export class VillageSystem {
    * where the single nearest cell was separated by a collider even though a
    * neighbouring cell had a clear approach.
    */
-  private getGridAnchors(x: number, y: number, allowNearBlockedTarget = false): GridAnchor[] {
+  private getGridAnchors(
+    x: number,
+    y: number,
+    allowNearBlockedTarget = false,
+    walkable: WalkabilityTest = (px, py) => this.canNavigateTo(px, py)
+  ): GridAnchor[] {
     const cell = this.navigationCellSize;
     const { columns, rows } = this.navigationDimensions();
     const centerCol = Phaser.Math.Clamp(Math.floor(x / cell), 0, columns - 1);
@@ -920,9 +928,9 @@ export class VillageSystem {
           if (col < 0 || row < 0 || col >= columns || row >= rows) continue;
           const px = col * cell + cell / 2;
           const py = row * cell + cell / 2;
-          if (!this.canNavigateTo(px, py)) continue;
+          if (!walkable(px, py)) continue;
           const index = row * columns + col;
-          if (allowNearBlockedTarget && !this.canNavigateTo(x, y)) {
+          if (allowNearBlockedTarget && !walkable(x, y)) {
             const distance = Phaser.Math.Distance.Between(px, py, x, y);
             if (distance <= 72) {
               anchors.push({ index, x: px, y: py, connector: [], connectorLength: distance * 0.8 });
@@ -932,8 +940,8 @@ export class VillageSystem {
           // Source connectors run exact-position -> grid centre; goal
           // connectors run grid centre -> exact-position.
           const connector = allowNearBlockedTarget
-            ? this.getOrthogonalConnector(px, py, x, y)
-            : this.getOrthogonalConnector(x, y, px, py);
+            ? this.getOrthogonalConnector(px, py, x, y, walkable)
+            : this.getOrthogonalConnector(x, y, px, py, walkable);
           if (connector) {
             anchors.push({ index, x: px, y: py, connector: connector.points, connectorLength: connector.length });
           }
@@ -946,12 +954,18 @@ export class VillageSystem {
     return anchors.slice(0, 40);
   }
 
-  private isWalkSegmentClear(x1: number, y1: number, x2: number, y2: number): boolean {
+  private isWalkSegmentClear(
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    walkable: WalkabilityTest = (x, y) => this.canNavigateTo(x, y)
+  ): boolean {
     const distance = Phaser.Math.Distance.Between(x1, y1, x2, y2);
     const steps = Math.max(1, Math.ceil(distance / 6));
     for (let i = 1; i <= steps; i++) {
       const t = i / steps;
-      if (!this.canNavigateTo(Phaser.Math.Linear(x1, x2, t), Phaser.Math.Linear(y1, y2, t))) return false;
+      if (!walkable(Phaser.Math.Linear(x1, x2, t), Phaser.Math.Linear(y1, y2, t))) return false;
     }
     return true;
   }
@@ -962,8 +976,12 @@ export class VillageSystem {
    * later chooses the shortest escape + path, rather than blindly choosing the
    * first direction that happens to be open.
    */
-  private getEscapeCandidates(x: number, y: number): { x: number; y: number; distance: number; escape: boolean }[] {
-    if (this.canNavigateTo(x, y)) return [{ x, y, distance: 0, escape: false }];
+  private getEscapeCandidates(
+    x: number,
+    y: number,
+    walkable: WalkabilityTest = (px, py) => this.canNavigateTo(px, py)
+  ): { x: number; y: number; distance: number; escape: boolean }[] {
+    if (walkable(x, y)) return [{ x, y, distance: 0, escape: false }];
     const directions = [
       { x: 0, y: 1 },   // down / doorway side
       { x: 1, y: 0 },   // right
@@ -979,7 +997,7 @@ export class VillageSystem {
         const px = x + direction.x * distance;
         const py = y + direction.y * distance;
         if (px < 12 || px > 1428 || py < 16 || py > 616) break;
-        if (!this.canNavigateTo(px, py)) {
+        if (!walkable(px, py)) {
           // Once we have exited the starting obstruction, a second obstacle
           // ends this candidate corridor. Never let an escape shortcut pass
           // through a different building or prop.
@@ -1000,7 +1018,7 @@ export class VillageSystem {
         // A nearest exit can be beside a second wall and have no usable grid
         // connection; the alternatives let the full route score choose better.
         if (distance - firstClearDistance >= alternativesForDirection * 16 &&
-            lastClearPoint && this.isWalkSegmentClear(lastClearPoint.x, lastClearPoint.y, px, py)) {
+            lastClearPoint && this.isWalkSegmentClear(lastClearPoint.x, lastClearPoint.y, px, py, walkable)) {
           candidates.push({ x: px, y: py, distance, escape: true });
           lastClearPoint = point;
           alternativesForDirection++;
@@ -1016,12 +1034,18 @@ export class VillageSystem {
    * goal anchors, so it can select the genuinely shortest clear route rather
    * than committing to one nearest grid cell. Every grid edge is orthogonal.
    */
-  private findGridPath(startX: number, startY: number, targetX: number, targetY: number): Waypoint[] {
+  private findGridPath(
+    startX: number,
+    startY: number,
+    targetX: number,
+    targetY: number,
+    walkable: WalkabilityTest = (x, y) => this.canNavigateTo(x, y)
+  ): Waypoint[] {
     const cell = this.navigationCellSize;
     const { columns, rows } = this.navigationDimensions();
     const total = columns * rows;
-    const starts = this.getGridAnchors(startX, startY, false);
-    const goals = this.getGridAnchors(targetX, targetY, true);
+    const starts = this.getGridAnchors(startX, startY, false, walkable);
+    const goals = this.getGridAnchors(targetX, targetY, true, walkable);
     if (starts.length === 0 || goals.length === 0) return [];
 
     const goalByIndex = new Map<number, GridAnchor>();
@@ -1113,12 +1137,12 @@ export class VillageSystem {
         const nx = nc * cell + cell / 2;
         const ny = nr * cell + cell / 2;
         if (walkability[next] === 0) {
-          walkability[next] = this.canNavigateTo(nx, ny) ? 1 : -1;
+          walkability[next] = walkable(nx, ny) ? 1 : -1;
         }
         if (walkability[next] !== 1) continue;
         const currentX = col * cell + cell / 2;
         const currentY = row * cell + cell / 2;
-        if (!this.isWalkSegmentClear(currentX, currentY, nx, ny)) continue;
+        if (!this.isWalkSegmentClear(currentX, currentY, nx, ny, walkable)) continue;
         const nextCost = current.cost + cell;
         if (nextCost >= distances[next] || nextCost > bestScore) continue;
         distances[next] = nextCost;
@@ -1167,12 +1191,18 @@ export class VillageSystem {
   }
 
   /** Score all four possible escape directions and return the shortest clear path. */
-  private findWalkablePath(startX: number, startY: number, targetX: number, targetY: number): Waypoint[] {
-    const candidates = this.getEscapeCandidates(startX, startY);
+  private findWalkablePath(
+    startX: number,
+    startY: number,
+    targetX: number,
+    targetY: number,
+    walkable: WalkabilityTest = (x, y) => this.canNavigateTo(x, y)
+  ): Waypoint[] {
+    const candidates = this.getEscapeCandidates(startX, startY, walkable);
     let bestPath: Waypoint[] = [];
     let bestCost = Infinity;
     for (const candidate of candidates) {
-      const path = this.findGridPath(candidate.x, candidate.y, targetX, targetY);
+      const path = this.findGridPath(candidate.x, candidate.y, targetX, targetY, walkable);
       if (path.length === 0) continue;
       const fullPath: Waypoint[] = [];
       if (candidate.escape) fullPath.push({ x: candidate.x, y: candidate.y, wait: 0, escape: true });
@@ -1187,7 +1217,7 @@ export class VillageSystem {
         if (!(index === 0 && candidate.escape)) {
           const sameX = Math.abs(from.x - point.x) < 1;
           const sameY = Math.abs(from.y - point.y) < 1;
-          if ((!sameX && !sameY) || !this.isWalkSegmentClear(from.x, from.y, point.x, point.y)) {
+          if ((!sameX && !sameY) || !this.isWalkSegmentClear(from.x, from.y, point.x, point.y, walkable)) {
             pathIsClear = false;
             break;
           }
@@ -1789,8 +1819,25 @@ export class VillageSystem {
   }
 
   /** Shared collision-aware path used by animals so they navigate like villagers. */
-  findAnimalRoute(startX: number, startY: number, targetX: number, targetY: number): { x: number; y: number }[] {
-    return this.findWalkablePath(startX, startY, targetX, targetY).map(({ x, y }) => ({ x, y }));
+  findAnimalRoute(
+    startX: number,
+    startY: number,
+    targetX: number,
+    targetY: number,
+    canStand?: WalkabilityTest
+  ): { x: number; y: number }[] {
+    const walkable: WalkabilityTest = canStand
+      ? (x, y) => {
+          const margin = this.navigationClearance;
+          return canStand(x, y) &&
+            canStand(x - margin, y) && canStand(x + margin, y) &&
+            canStand(x, y - margin) && canStand(x, y + margin) &&
+            canStand(x - margin, y - margin) && canStand(x + margin, y - margin) &&
+            canStand(x - margin, y + margin) && canStand(x + margin, y + margin);
+        }
+      : (x, y) => this.canNavigateTo(x, y);
+    return this.findWalkablePath(startX, startY, targetX, targetY, walkable)
+      .map(({ x, y }) => ({ x, y }));
   }
 
   /** Places Ko Aung or Ma Thiri in the foreground for their own opening dialogue. */
