@@ -621,7 +621,6 @@ const translations: Record<Language, TranslationTable> = {
     "house.cooker": "မီးဖို",
     "house.enterPrompt": "E ကိုနှိပ်ပါ သို့မဟုတ် အိမ်ထဲဝင်ရန် နှိပ်ပါ",
     "house.mobileEnterPrompt": "အိမ်ထဲဝင်ရန် နှိပ်ပါ",
-    "house.mobileEnterPrompt": "အိမ်ထဲဝင်ရန် နှိပ်ပါ",
     "house.controls": "W A S D / မြှားခလုတ်များဖြင့် ရွှေ့ပါ · ပစ္စည်းအနီးတွင် E ကိုနှိပ်ပါ",
     "house.useBed": "အိပ်ရန်",
     "house.openChest": "သေတ္တာဖွင့်ရန်",
