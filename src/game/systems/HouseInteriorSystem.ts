@@ -27,6 +27,8 @@ export class HouseInteriorSystem {
 
   private inside = false;
   private outsidePosition = { x: 320, y: 330 };
+  private lastPlayerX = 0;
+  private lastPlayerY = 0;
   private avatar!: Phaser.GameObjects.Sprite;
   private panel!: Phaser.GameObjects.Container;
   private closeButton!: Phaser.GameObjects.Container;
@@ -104,7 +106,11 @@ export class HouseInteriorSystem {
     this.outsidePrompt = this.scene.add.text(320, 288, "", {
       fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf",
       backgroundColor: "#2a1a14", padding: { x: 7, y: 4 }, stroke: "#2a1a14", strokeThickness: 2
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(7200).setVisible(false);
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(7200).setVisible(false).setInteractive({ useHandCursor: true });
+    this.outsidePrompt.on("pointerdown", () => {
+      const near = Phaser.Math.Distance.Between(this.lastPlayerX, this.lastPlayerY, this.entrance.x, this.entrance.y) < 76;
+      if (!this.inside && near && !this.ui.hasActiveModal()) this.enterHouse();
+    });
     this.updateLanguage();
   }
 
@@ -419,6 +425,8 @@ export class HouseInteriorSystem {
     delta = this.scene.game.loop.delta,
     mobileVector: { x: number; y: number } = { x: 0, y: 0 }
   ): void {
+    this.lastPlayerX = playerX;
+    this.lastPlayerY = playerY;
     if (!this.inside) {
       const near = Phaser.Math.Distance.Between(playerX, playerY, this.entrance.x, this.entrance.y) < 76;
       this.outsidePrompt.setVisible(near && !this.ui.hasActiveModal() && !this.touchMode);

@@ -320,7 +320,12 @@ export class VillageBoardSystem {
   }
 
   private handleBoardPointerUp = (pointer: Phaser.Input.Pointer): void => {
-    if (!this.isOpen || !this.ui.isOpen("board")) return;
+    if (!this.isOpen || !this.ui.isOpen("board")) {
+      const nearBoard = Phaser.Math.Distance.Between(this.lastPlayerX, this.lastPlayerY, this.boardX, this.boardY) < 90;
+      const clickedPrompt = pointer.x >= 220 && pointer.x <= 420 && pointer.y >= 270 && pointer.y <= 304;
+      if (!this.touchMode && nearBoard && clickedPrompt && !this.ui.hasActiveModal()) this.openBoard();
+      return;
+    }
     const index = this.getDeliverButtonIndex(pointer);
     if (index >= 0 && index < this.requests.length) this.deliverRequest(index);
   };
@@ -491,6 +496,8 @@ export class VillageBoardSystem {
   }
 
   update(playerX: number, playerY: number): void {
+    this.lastPlayerX = playerX;
+    this.lastPlayerY = playerY;
     this.refreshForNewDay();
     if (this.isOpen) {
       this.deliverKeys.forEach((key, index) => {

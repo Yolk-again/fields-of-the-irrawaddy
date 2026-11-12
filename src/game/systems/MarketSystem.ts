@@ -32,6 +32,8 @@ export class MarketSystem {
 
   private marketX = 570;
   private marketY = 250;
+  private lastPlayerX = 0;
+  private lastPlayerY = 0;
   private interactKey!: Phaser.Input.Keyboard.Key;
   private buyKey!: Phaser.Input.Keyboard.Key;
   private sellKey!: Phaser.Input.Keyboard.Key;
@@ -306,7 +308,12 @@ export class MarketSystem {
 
   /** Screen-space hit boxes intentionally match the rendered action cards. */
   private handleMarketPointerUp = (pointer: Phaser.Input.Pointer): void => {
-    if (!this.isOpen || !this.ui.isOpen("market")) return;
+    if (!this.isOpen || !this.ui.isOpen("market")) {
+      const nearMarket = Phaser.Math.Distance.Between(this.lastPlayerX, this.lastPlayerY, this.marketX, this.marketY) < 90;
+      const clickedPrompt = pointer.x >= 220 && pointer.x <= 420 && pointer.y >= 270 && pointer.y <= 304;
+      if (!this.touchMode && nearMarket && clickedPrompt && !this.ui.hasActiveModal()) this.openMarket();
+      return;
+    }
     if (this.saleKind) { this.handleSaleSelectorPointer(pointer); return; }
     if (pointer.x < 110 || pointer.x > 530) return;
     const index = this.cardY.findIndex(y => pointer.y >= y - 15 && pointer.y <= y + 15);
@@ -754,6 +761,8 @@ export class MarketSystem {
   }
 
   update(playerX: number, playerY: number): void {
+    this.lastPlayerX = playerX;
+    this.lastPlayerY = playerY;
     if (this.isOpen) {
       if (!this.saleKind) {
         if (this.upgradeMenuOpen) {

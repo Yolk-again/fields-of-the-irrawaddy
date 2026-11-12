@@ -156,6 +156,8 @@ export class VillageSystem {
 
   private talkKey!: Phaser.Input.Keyboard.Key;
   private isTalking = false;
+  private lastPlayerX = 0;
+  private lastPlayerY = 0;
   private activeVillager: Villager | null = null;
   private readonly touchMode = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
   private dialogueIndex = 0;
@@ -290,10 +292,15 @@ export class VillageSystem {
       padding: { x: 5, y: 3 },
       stroke: "#2a1a14",
       strokeThickness: 2
-    }).setOrigin(0.5).setVisible(false);
+    }).setOrigin(0.5).setVisible(false).setInteractive({ useHandCursor: true });
+    promptText.on("pointerdown", () => {
+      if (this.isTalking || this.ui.hasActiveModal()) return;
+      const nearest = this.getNearestVillager(this.lastPlayerX, this.lastPlayerY);
+      if (nearest && nearest.promptText === promptText) this.openDialogue(nearest);
+    });
 
     // Ambient remarks are intentionally compact world-space bubbles. They are
-    // separate from the larger dialogue panel opened when the player presses E.
+    // separate from the larger dialogue panel opened through the talk prompt.
     const speechText = this.scene.add.text(0, -52, "", {
       fontFamily: this.language.getFontFamily(),
       fontSize: "10px",
@@ -475,8 +482,8 @@ export class VillageSystem {
   private updateDialogueLabels(): void {
     this.instructionText.setText(
       this.language.getLanguage() === "my"
-        ? "E နှိပ်၍ ဆက်လက်ဖတ်ရှုပါ"
-        : "PRESS E TO CONTINUE"
+        ? "ဆက်လက်ရန် နှိပ်ပါ"
+        : "CLICK / TAP TO CONTINUE"
     );
     const font = this.language.getFontFamily();
     this.speakerText.setFontFamily(font);
@@ -1934,6 +1941,8 @@ export class VillageSystem {
   }
 
   update(playerX: number, playerY: number): void {
+    this.lastPlayerX = playerX;
+    this.lastPlayerY = playerY;
     this.updateClockAndSchedules();
 
     const dt = Math.min(this.scene.game.loop.delta, 50) / 1000;

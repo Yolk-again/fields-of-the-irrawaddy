@@ -16,6 +16,7 @@ interface FishingSpot {
 }
 
 const FISH_KEYS: FishKind[] = ["silverBarb", "catfish", "goldenCarp"];
+const FISHING_INTERACTION_RADIUS = 30;
 
 /** Riverbank fishing with a timed bite-and-reel interaction. */
 export class FishingSystem {
@@ -23,6 +24,8 @@ export class FishingSystem {
   private language: LanguageSystem;
   private ui: ModalUIManager;
   private getGameHour: () => number;
+  private lastPlayerX = 0;
+  private lastPlayerY = 0;
 
   private rodOwned = false;
   private soundX = 320;
@@ -105,7 +108,8 @@ export class FishingSystem {
       backgroundColor: "#2a1a14",
       padding: { x: 7, y: 4 },
       align: "center"
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(7000).setVisible(false);
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(7000).setVisible(false).setInteractive({ useHandCursor: true });
+    this.prompt.on("pointerdown", this.handlePromptPointerDown, this);
 
     this.toastText = this.scene.add.text(320, 264, "", {
       fontFamily: this.language.getFontFamily(),
@@ -183,7 +187,7 @@ export class FishingSystem {
 
   private nearestSpot(playerX: number, playerY: number): FishingSpot | null {
     let best: FishingSpot | null = null;
-    let bestDistance = 74;
+    let bestDistance = FISHING_INTERACTION_RADIUS;
     for (const spot of this.spots) {
       const distance = Phaser.Math.Distance.Between(playerX, playerY, spot.x, spot.y);
       if (distance < bestDistance) {
@@ -262,8 +266,27 @@ export class FishingSystem {
     });
   }
 
+  private handlePromptPointerDown(): void {
+    if (this.ui.hasActiveModal()) return;
+    if (this.state === "bite") {
+      this.catchFish();
+      return;
+    }
+    if (this.state === "waiting") return;
+
+    const spot = this.nearestSpot(this.lastPlayerX, this.lastPlayerY);
+    if (!spot) return;
+    if (!this.rodOwned) {
+      this.prompt.setText(this.language.t("fishing.needRod")).setVisible(true);
+      return;
+    }
+    this.beginCast(this.lastPlayerX, this.lastPlayerY, spot);
+  }
+
   /** Touch equivalent of cast/reel. Returns false when the player is not at water. */
   mobileAction(playerX: number, playerY: number): boolean {
+    this.lastPlayerX = playerX;
+    this.lastPlayerY = playerY;
     if (this.state === "bite") {
       this.catchFish();
       return true;
@@ -282,6 +305,8 @@ export class FishingSystem {
 
   /** Returns true while fishing consumes SPACE so farming cannot use the tool. */
   update(playerX: number, playerY: number, delta: number, modalOpen = false): boolean {
+    this.lastPlayerX = playerX;
+    this.lastPlayerY = playerY;
     if (modalOpen) {
       this.prompt.setVisible(false);
       return false;
