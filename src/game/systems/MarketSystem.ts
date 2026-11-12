@@ -7,10 +7,15 @@ import { LanguageSystem } from "./LanguageSystem";
 import { createRedCloseButton, modalClosePosition, modalPanel } from "../ui/PixelUI";
 import { adjustQuantity, maximumQuantity, maximumQuantitySelection, normalizeQuantity, quantityAdjustmentStep } from "../ui/QuantityMath";
 
-type SaleKind = "wheat" | "tomatoes" | "greenBeans" | "meals" | "fish" | "seeds" | "tomatoSeeds" | "greenBeanSeeds" | "rod";
+type SaleKind = "wheat" | "tomatoes" | "greenBeans" | "meals" | "fish" | "seeds" | "tomatoSeeds" | "greenBeanSeeds" | "rod" | "wormBait" | "shrimpBait" | "goldenCricketBait";
 
 const SEED_PACK_COST = 25;
 const FISHING_ROD_COST = 120;
+const BAIT_PRICES: Record<"wormBait" | "shrimpBait" | "goldenCricketBait", number> = {
+  wormBait: 10,
+  shrimpBait: 25,
+  goldenCricketBait: 50
+};
 const GOLDEN_WHEAT_PRICE = 20;
 const UPGRADE_ORDER: FarmUpgradeId[] = ["hoe", "wateringCan", "sickle", "expansion", "riceMill"];
 
@@ -71,6 +76,7 @@ export class MarketSystem {
   private saleAmount = 1;
   private upgradeMenuOpen = false;
   private seedMenuOpen = false;
+  private baitMenuOpen = false;
   private produceMenuOpen = false;
   private readonly touchMode = ("ontouchstart" in window) || navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
 
@@ -223,6 +229,9 @@ export class MarketSystem {
     if (this.saleKind === "tomatoes") return this.farming.getCropCount("tomato");
     if (this.saleKind === "greenBeans") return this.farming.getCropCount("greenBean");
     if (this.saleKind === "seeds" || this.saleKind === "tomatoSeeds" || this.saleKind === "greenBeanSeeds") return Math.floor(this.coins / SEED_PACK_COST);
+    if (this.saleKind === "wormBait" || this.saleKind === "shrimpBait" || this.saleKind === "goldenCricketBait") {
+      return Math.floor(this.coins / BAIT_PRICES[this.saleKind]);
+    }
     if (this.saleKind === "rod") return this.fishing.getHasRod() || this.coins < FISHING_ROD_COST ? 0 : 1;
     return 0;
   }
@@ -231,7 +240,7 @@ export class MarketSystem {
     if (!this.salePanel) return;
     const available = this.availableSaleAmount();
     this.saleAmount = normalizeQuantity(this.saleAmount, available);
-    const isBuying = this.saleKind === "seeds" || this.saleKind === "tomatoSeeds" || this.saleKind === "greenBeanSeeds" || this.saleKind === "rod";
+    const isBuying = this.saleKind === "seeds" || this.saleKind === "tomatoSeeds" || this.saleKind === "greenBeanSeeds" || this.saleKind === "rod" || this.saleKind === "wormBait" || this.saleKind === "shrimpBait" || this.saleKind === "goldenCricketBait";
     const kindLabel = this.saleKind ? this.language.t(`market.quantity.${this.saleKind}`) : "";
     this.saleTitleText.setText(this.language.t(isBuying ? "market.quantity.buyTitle" : "market.quantity.title", { item: kindLabel }));
     this.saleAvailableText.setText(this.language.t("market.quantity.available", { amount: available }));
@@ -275,6 +284,7 @@ export class MarketSystem {
     const amount = Math.min(this.saleAmount, maximumQuantity(this.availableSaleAmount()));
     if (amount <= 0) { this.closeSaleSelector(); return; }
     if (kind === "wheat") this.sellWheat(amount);
+    else if (kind === "wormBait" || kind === "shrimpBait" || kind === "goldenCricketBait") this.buyFishingBait(kind, amount);
     else if (kind === "meals") this.sellMeals(amount);
     else if (kind === "fish") this.sellFish(amount);
     else if (kind === "seeds") this.buySeeds(amount);
@@ -350,13 +360,15 @@ export class MarketSystem {
   private updateInterface(): void {
     const font = this.language.getFontFamily();
     this.titleText.setText(this.language.t(
-      this.upgradeMenuOpen ? "market.upgradesTitle" : this.seedMenuOpen ? "market.seedPacketsTitle" : this.produceMenuOpen ? "market.produceTitle" : "market.title"
+      this.upgradeMenuOpen ? "market.upgradesTitle" : this.seedMenuOpen ? "market.seedPacketsTitle" : this.baitMenuOpen ? "market.baitTitle" : this.produceMenuOpen ? "market.produceTitle" : "market.title"
     ));
     if (this.upgradeMenuOpen) {
       this.updateUpgradeMenu();
       this.updateUpgradeStatuses();
     } else if (this.seedMenuOpen) {
       this.updateSeedPacketMenu();
+    } else if (this.baitMenuOpen) {
+      this.updateBaitMenu();
     } else if (this.produceMenuOpen) {
       this.updateProduceMenu();
     } else {
@@ -367,9 +379,9 @@ export class MarketSystem {
       this.actionTexts[2].setText(this.fishing.getHasRod() ? this.language.t("market.rodOwned") : this.language.t("market.buyRod", { cost: FISHING_ROD_COST }));
       this.actionTexts[3].setText(this.language.t("market.sellMealsWithOwned", { owned: meals }));
       this.actionTexts[4].setText(this.language.t("market.sellFishWithOwned", { owned: fish }));
-      this.actionTexts[5].setText(this.language.t("market.openUpgrades"));
-      this.actionTexts[6].setText(this.language.t("market.close"));
-      const icons = ["rice_seed_bag_asset", "wheat_basket_asset", "fishing_rod_asset", "meal_fish_rice_asset", "fish_silver_barb_asset", "hoe_asset", "ui_icon_hand"];
+      this.actionTexts[5].setText(this.language.t("market.openBaits"));
+      this.actionTexts[6].setText(this.language.t("market.openUpgrades"));
+      const icons = ["rice_seed_bag_asset", "wheat_basket_asset", "fishing_rod_asset", "meal_fish_rice_asset", "fish_silver_barb_asset", "worm_bait_asset", "hoe_asset"];
       this.actionIcons.forEach((icon, index) => icon.setVisible(true).setTexture(icons[index]).setDisplaySize(22, 22));
       this.setActionStatus(0, "market.status.open", "info");
       this.setActionStatus(1, "market.status.open", "info");
@@ -377,7 +389,7 @@ export class MarketSystem {
       this.setActionStatus(3, meals > 0 ? "market.status.sell" : "market.status.none", meals > 0 ? "good" : "muted");
       this.setActionStatus(4, fish > 0 ? "market.status.sell" : "market.status.none", fish > 0 ? "good" : "muted");
       this.setActionStatus(5, "market.status.open", "info");
-      this.setActionStatus(6, "market.status.close", "muted");
+      this.setActionStatus(6, "market.status.open", "info");
     }
     this.updateSaleSelector();
     if (this.produceMenuOpen && !this.saleKind) {
@@ -387,7 +399,7 @@ export class MarketSystem {
       }));
     }
     this.exitHintText.setText(this.language.t("market.exitHint"));
-    this.clickHintText.setText(this.language.t(this.upgradeMenuOpen ? "market.upgradesClickHint" : this.seedMenuOpen ? "market.seedPacketHint" : this.produceMenuOpen ? "market.produceHint" : "market.clickHint"));
+    this.clickHintText.setText(this.language.t(this.upgradeMenuOpen ? "market.upgradesClickHint" : this.seedMenuOpen ? "market.seedPacketHint" : this.baitMenuOpen ? "market.baitHint" : this.produceMenuOpen ? "market.produceHint" : "market.clickHint"));
     this.stallLabel.setText(this.language.t("market.stallName"));
     this.promptText.setText(this.language.t("market.prompt"));
     for (const text of [this.titleText, ...this.actionTexts, ...this.actionStatusBadges, this.moneyText, this.messageText, this.exitHintText, this.clickHintText, this.stallLabel, this.promptText]) text.setFontFamily(font);
@@ -414,6 +426,30 @@ export class MarketSystem {
     this.actionTexts[6].setText(this.language.t("market.back"));
     this.setActionStatus(6, "market.status.back", "muted");
   }
+  private updateBaitMenu(): void {
+    const options = [
+      { kind: "wormBait" as const, icon: "worm_bait_asset", label: this.language.t("market.buyWormBait", { cost: BAIT_PRICES.wormBait, owned: this.fishing.getBaitCount("worm") }) },
+      { kind: "shrimpBait" as const, icon: "shrimp_bait_asset", label: this.language.t("market.buyShrimpBait", { cost: BAIT_PRICES.shrimpBait, owned: this.fishing.getBaitCount("shrimp") }) },
+      { kind: "goldenCricketBait" as const, icon: "golden_cricket_bait_asset", label: this.language.t("market.buyGoldenCricketBait", { cost: BAIT_PRICES.goldenCricketBait, owned: this.fishing.getBaitCount("goldenCricket") }) }
+    ];
+    options.forEach((option, index) => {
+      this.actionIcons[index].setVisible(true).setTexture(option.icon).setDisplaySize(23, 23);
+      this.actionTexts[index].setText(option.label);
+      const affordable = this.coins >= BAIT_PRICES[option.kind];
+      this.setActionStatus(index, affordable ? "market.status.ready" : "market.status.need", affordable ? "good" : "bad", {
+        amount: Math.max(0, BAIT_PRICES[option.kind] - this.coins)
+      });
+    });
+    for (let index = 3; index < 6; index++) {
+      this.actionIcons[index].setVisible(false);
+      this.actionTexts[index].setText("");
+      this.actionStatusBadges[index].setText("");
+    }
+    this.actionIcons[6].setVisible(true).setTexture("ui_icon_hand").setDisplaySize(22, 22);
+    this.actionTexts[6].setText(this.language.t("market.back"));
+    this.setActionStatus(6, "market.status.back", "muted");
+  }
+
   private updateProduceMenu(): void {
     const wheatCount = this.farming.getRice() + this.farming.getGoldenWheat();
     const options = [
@@ -481,6 +517,7 @@ export class MarketSystem {
 
   private openSeedMenu(): void {
     this.seedMenuOpen = true;
+    this.baitMenuOpen = false;
     this.produceMenuOpen = false;
     this.upgradeMenuOpen = false;
     this.messageText.setText(this.language.t("market.seedPacketsTitle"));
@@ -493,9 +530,25 @@ export class MarketSystem {
     this.updateInterface();
   }
 
+  private openBaitMenu(): void {
+    this.baitMenuOpen = true;
+    this.seedMenuOpen = false;
+    this.produceMenuOpen = false;
+    this.upgradeMenuOpen = false;
+    this.messageText.setText(this.language.t("market.baitWelcome"));
+    this.updateInterface();
+  }
+
+  private closeBaitMenu(): void {
+    this.baitMenuOpen = false;
+    this.messageText.setText(this.language.t("market.welcome"));
+    this.updateInterface();
+  }
+
   private openProduceMenu(): void {
     this.produceMenuOpen = true;
     this.seedMenuOpen = false;
+    this.baitMenuOpen = false;
     this.upgradeMenuOpen = false;
     this.messageText.setText(this.language.t("market.wheatPriceInfo", {
       normal: 4 + this.farming.getRiceSaleBonus(),
@@ -513,6 +566,7 @@ export class MarketSystem {
   private openUpgradeMenu(): void {
     this.upgradeMenuOpen = true;
     this.seedMenuOpen = false;
+    this.baitMenuOpen = false;
     this.produceMenuOpen = false;
     this.messageText.setText(this.language.t("market.upgradesWelcome"));
     this.updateInterface();
@@ -557,6 +611,7 @@ export class MarketSystem {
   private openMarket(): void {
     this.isOpen = true;
     this.seedMenuOpen = false;
+    this.baitMenuOpen = false;
     this.produceMenuOpen = false;
     this.upgradeMenuOpen = false;
     this.ui.open("market");
@@ -568,6 +623,7 @@ export class MarketSystem {
   private closeMarket = (): void => {
     this.closeSaleSelector();
     this.seedMenuOpen = false;
+    this.baitMenuOpen = false;
     this.produceMenuOpen = false;
     this.upgradeMenuOpen = false;
     this.isOpen = false;
@@ -623,6 +679,25 @@ export class MarketSystem {
     this.scene.events.emit("sound-effect", { name: "sell", x: this.marketX, y: this.marketY, maxDistance: 185 });
     this.messageText.setText(this.language.t("market.wheatSold", {
       regular: regularAmount, golden: goldenAmount, coins: earnings
+    }));
+    this.updateInterface();
+  }
+
+  private buyFishingBait(kind: "wormBait" | "shrimpBait" | "goldenCricketBait", requested: number): void {
+    const cost = BAIT_PRICES[kind];
+    const amount = Math.min(maximumQuantity(requested), Math.floor(this.coins / cost));
+    if (amount <= 0) {
+      this.messageText.setText(this.language.t("market.notEnough"));
+      return;
+    }
+    const baitKind = kind === "wormBait" ? "worm" : kind === "shrimpBait" ? "shrimp" : "goldenCricket";
+    this.coins -= amount * cost;
+    this.fishing.addBait(baitKind, amount);
+    this.scene.events.emit("sound-effect", { name: "buy", x: this.marketX, y: this.marketY, maxDistance: 185 });
+    this.messageText.setText(this.language.t("market.baitBought", {
+      amount,
+      bait: this.language.t(kind === "wormBait" ? "inventory.wormBait" : kind === "shrimpBait" ? "inventory.shrimpBait" : "inventory.goldenCricketBait"),
+      coins: amount * cost
     }));
     this.updateInterface();
   }
@@ -717,6 +792,13 @@ export class MarketSystem {
       else if (index === 6) this.closeSeedMenu();
       return;
     }
+    if (this.baitMenuOpen) {
+      if (index === 0) this.beginSale("wormBait");
+      else if (index === 1) this.beginSale("shrimpBait");
+      else if (index === 2) this.beginSale("goldenCricketBait");
+      else if (index === 6) this.closeBaitMenu();
+      return;
+    }
     if (this.produceMenuOpen) {
       if (index === 0) this.beginSale("wheat");
       else if (index === 1) this.beginSale("tomatoes");
@@ -730,8 +812,8 @@ export class MarketSystem {
       case 2: this.beginSale("rod"); break;
       case 3: this.beginSale("meals"); break;
       case 4: this.beginSale("fish"); break;
-      case 5: this.openUpgradeMenu(); break;
-      case 6: this.closeMarket(); break;
+      case 5: this.openBaitMenu(); break;
+      case 6: this.openUpgradeMenu(); break;
     }
   }
 
@@ -777,6 +859,11 @@ export class MarketSystem {
           if (Phaser.Input.Keyboard.JustDown(this.sellKey)) this.beginSale("tomatoSeeds");
           if (Phaser.Input.Keyboard.JustDown(this.rodKey)) this.beginSale("greenBeanSeeds");
           if (Phaser.Input.Keyboard.JustDown(this.upgradesKey)) this.closeSeedMenu();
+        } else if (this.baitMenuOpen) {
+          if (Phaser.Input.Keyboard.JustDown(this.buyKey)) this.beginSale("wormBait");
+          if (Phaser.Input.Keyboard.JustDown(this.sellKey)) this.beginSale("shrimpBait");
+          if (Phaser.Input.Keyboard.JustDown(this.rodKey)) this.beginSale("goldenCricketBait");
+          if (Phaser.Input.Keyboard.JustDown(this.upgradesKey)) this.closeBaitMenu();
         } else if (this.produceMenuOpen) {
           if (Phaser.Input.Keyboard.JustDown(this.buyKey)) this.beginSale("wheat");
           if (Phaser.Input.Keyboard.JustDown(this.sellKey)) this.beginSale("tomatoes");
@@ -788,14 +875,15 @@ export class MarketSystem {
           if (Phaser.Input.Keyboard.JustDown(this.rodKey)) this.beginSale("rod");
           if (Phaser.Input.Keyboard.JustDown(this.mealSellKey)) this.beginSale("meals");
           if (Phaser.Input.Keyboard.JustDown(this.fishSellKey)) this.beginSale("fish");
-          if (Phaser.Input.Keyboard.JustDown(this.menuSixKey)) this.openUpgradeMenu();
-          if (Phaser.Input.Keyboard.JustDown(this.upgradesKey)) this.closeMarket();
+          if (Phaser.Input.Keyboard.JustDown(this.menuSixKey)) this.openBaitMenu();
+          if (Phaser.Input.Keyboard.JustDown(this.upgradesKey)) this.openUpgradeMenu();
         }
       }
       if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {
         if (this.saleKind) this.closeSaleSelector();
         else if (this.upgradeMenuOpen) this.closeUpgradeMenu();
         else if (this.seedMenuOpen) this.closeSeedMenu();
+        else if (this.baitMenuOpen) this.closeBaitMenu();
         else if (this.produceMenuOpen) this.closeProduceMenu();
         else this.closeMarket();
       }

@@ -366,6 +366,7 @@ export class FarmingSystem {
     this.tool = item ? (INVENTORY_ITEM_DEFINITIONS[item].tool ?? null) : null;
     this.selectedSeedKind = item ? (INVENTORY_ITEM_DEFINITIONS[item].cropSeed ?? "rice") : "rice";
     this.updateInterface();
+    this.scene.events.emit("hotbar-selection-changed", item);
   }
 
   setHotbarItems(items: Array<InventoryItemId | null>): void {
@@ -375,6 +376,7 @@ export class FarmingSystem {
     this.tool = selected ? (INVENTORY_ITEM_DEFINITIONS[selected].tool ?? null) : null;
     this.selectedSeedKind = selected ? (INVENTORY_ITEM_DEFINITIONS[selected].cropSeed ?? "rice") : "rice";
     this.updateInterface();
+    this.scene.events.emit("hotbar-selection-changed", selected);
   }
 
   getHotbarItems(): Array<InventoryItemId | null> {
@@ -383,6 +385,10 @@ export class FarmingSystem {
 
   getSelectedHotbarIndex(): number {
     return this.selectedHotbarIndex;
+  }
+
+  getSelectedHotbarItem(): InventoryItemId | null {
+    return this.hotbarItems[this.selectedHotbarIndex] ?? null;
   }
 
   mobileSelectTool(index: number): void {

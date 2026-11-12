@@ -26,11 +26,12 @@ type InventorySaveData = {
   collected: boolean[];
   hotbarSlots?: Array<InventoryItemId | null>;
   backpackSlots?: Array<InventoryItemId | null>;
+  selectedHotbarIndex?: number;
 };
 
 const HOTBAR_DEFAULT: Array<InventoryItemId | null> = ["hoe", "seeds", "water", "harvest"];
 const BACKPACK_DEFAULT: Array<InventoryItemId | null> = Array(15).fill(null);
-const ALL_ITEMS: InventoryItemId[] = ["hoe", "seeds", "tomatoSeeds", "greenBeanSeeds", "water", "harvest", "rice", "tomatoes", "greenBeans", "silverBarb", "catfish", "goldenCarp", "meals", "rod"];
+const ALL_ITEMS: InventoryItemId[] = ["hoe", "seeds", "tomatoSeeds", "greenBeanSeeds", "water", "harvest", "rice", "tomatoes", "greenBeans", "silverBarb", "catfish", "goldenCarp", "meals", "rod", "wormBait", "shrimpBait", "goldenCricketBait"];
 
 /** Minecraft-inspired movable backpack and four-slot quick toolbar. */
 export class InventorySystem {
@@ -197,6 +198,9 @@ export class InventorySystem {
       case "tomatoes": return this.farming.getCropCount("tomato");
       case "greenBeans": return this.farming.getCropCount("greenBean");
       case "silverBarb": case "catfish": case "goldenCarp": return this.fishing.getFishCount(item);
+      case "wormBait": return this.fishing.getBaitCount("worm");
+      case "shrimpBait": return this.fishing.getBaitCount("shrimp");
+      case "goldenCricketBait": return this.fishing.getBaitCount("goldenCricket");
       case "meals": return this.cooking.getTotalMeals();
     }
   }
@@ -376,7 +380,7 @@ export class InventorySystem {
       } else {
         const tappedItem = sourceSlots[source.index];
         const definition = tappedItem ? INVENTORY_ITEM_DEFINITIONS[tappedItem] : null;
-        if (tappedItem && definition?.tool === "seeds") {
+        if (tappedItem && (definition?.tool === "seeds" || definition?.fishingBait)) {
           const selectedIndex = this.farming.getSelectedHotbarIndex();
           const previousItem = this.hotbarSlots[selectedIndex] ?? null;
           this.hotbarSlots[selectedIndex] = tappedItem;
@@ -419,7 +423,8 @@ export class InventorySystem {
       items: {},
       collected: [],
       hotbarSlots: [...this.hotbarSlots],
-      backpackSlots: [...this.backpackSlots]
+      backpackSlots: [...this.backpackSlots],
+      selectedHotbarIndex: this.farming.getSelectedHotbarIndex()
     };
   }
 
@@ -452,6 +457,10 @@ export class InventorySystem {
       }
     }
     this.farming.setHotbarItems(this.hotbarSlots);
+    const selectedIndex = Number.isInteger(data.selectedHotbarIndex)
+      ? Math.max(0, Math.min(3, Number(data.selectedHotbarIndex)))
+      : 0;
+    this.farming.mobileSelectTool(selectedIndex);
     this.lastCounts.clear();
     for (const item of ALL_ITEMS) this.lastCounts.set(item, this.countFor(item));
     this.ensureNewItemsHaveSlots();

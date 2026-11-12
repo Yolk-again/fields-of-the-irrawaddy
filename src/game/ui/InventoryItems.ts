@@ -1,4 +1,5 @@
 import type { FarmCropKind } from "../systems/FarmingSystem";
+import type { FishingBaitKind } from "../systems/FishingSystem";
 
 export type InventoryItemId =
   | "hoe"
@@ -14,13 +15,17 @@ export type InventoryItemId =
   | "catfish"
   | "goldenCarp"
   | "meals"
-  | "rod";
+  | "rod"
+  | "wormBait"
+  | "shrimpBait"
+  | "goldenCricketBait";
 
 export interface InventoryItemDefinition {
   nameKey: string;
   texture: string;
   tool?: "hoe" | "seeds" | "water" | "harvest";
   cropSeed?: FarmCropKind;
+  fishingBait?: FishingBaitKind;
 }
 
 export const INVENTORY_ITEM_DEFINITIONS: Record<InventoryItemId, InventoryItemDefinition> = {
@@ -37,5 +42,8 @@ export const INVENTORY_ITEM_DEFINITIONS: Record<InventoryItemId, InventoryItemDe
   catfish: { nameKey: "inventory.catfish", texture: "fish_catfish_asset" },
   goldenCarp: { nameKey: "inventory.goldenCarp", texture: "fish_golden_carp_asset" },
   meals: { nameKey: "inventory.meals", texture: "meal_fish_rice_asset" },
-  rod: { nameKey: "inventory.rod", texture: "fishing_rod_asset" }
+  rod: { nameKey: "inventory.rod", texture: "fishing_rod_asset" },
+  wormBait: { nameKey: "inventory.wormBait", texture: "worm_bait_asset", fishingBait: "worm" },
+  shrimpBait: { nameKey: "inventory.shrimpBait", texture: "shrimp_bait_asset", fishingBait: "shrimp" },
+  goldenCricketBait: { nameKey: "inventory.goldenCricketBait", texture: "golden_cricket_bait_asset", fishingBait: "goldenCricket" }
 };

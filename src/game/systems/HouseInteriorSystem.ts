@@ -43,6 +43,9 @@ export class HouseInteriorSystem {
   private wasd!: { W: Phaser.Input.Keyboard.Key; A: Phaser.Input.Keyboard.Key; S: Phaser.Input.Keyboard.Key; D: Phaser.Input.Keyboard.Key };
   private avatarX = 320;
   private avatarY = 278;
+  private avatarVelocityX = 0;
+  private avatarVelocityY = 0;
+  private movementAccumulator = 0;
   private sleeping = false;
   private sleepBreathTween?: Phaser.Tweens.Tween;
   private promptTarget: RoomTarget | null = null;
@@ -215,6 +218,9 @@ export class HouseInteriorSystem {
     this.roomPrompt.setVisible(false);
     this.avatarX = 320;
     this.avatarY = 278;
+    this.avatarVelocityX = 0;
+    this.avatarVelocityY = 0;
+    this.movementAccumulator = 0;
     this.avatar.setPosition(this.avatarX, this.avatarY);
     this.avatarTexture = this.getPlayerTexture();
     if (this.scene.textures.exists(this.avatarTexture)) this.avatar.setTexture(this.avatarTexture, 0);
@@ -230,6 +236,9 @@ export class HouseInteriorSystem {
     this.sleepBreathTween = undefined;
     this.inside = false;
     this.sleeping = false;
+    this.avatarVelocityX = 0;
+    this.avatarVelocityY = 0;
+    this.movementAccumulator = 0;
     this.promptTarget = null;
     this.roomPrompt.setVisible(false);
     this.roomPromptHitArea.setVisible(false);
@@ -281,6 +290,9 @@ export class HouseInteriorSystem {
 
   private sleep(): void {
     if (this.sleeping) return;
+    this.avatarVelocityX = 0;
+    this.avatarVelocityY = 0;
+    this.movementAccumulator = 0;
     this.sleeping = true;
     this.closeButton.setVisible(false);
     this.statusText.setText(this.language.t("house.sleeping")).setVisible(true);
@@ -369,23 +381,63 @@ export class HouseInteriorSystem {
       dx += mobileVector.x;
       dy += mobileVector.y;
     }
-    const length = Math.hypot(dx, dy);
-    if (length > 0) {
-      dx /= length; dy /= length;
-      const step = 125 * Math.min(delta, 40) / 1000;
-      const nx = Phaser.Math.Clamp(this.avatarX + dx * step, 56, 584);
-      const ny = Phaser.Math.Clamp(this.avatarY + dy * step, 100, 314);
-      const hitsFurniture = (x: number, y: number): boolean =>
-        (x > 75 && x < 215 && y > 103 && y < 200) ||
-        (x > 262 && x < 378 && y > 108 && y < 190) ||
-        (x > 438 && x < 565 && y > 124 && y < 202);
-      if (!hitsFurniture(nx, this.avatarY)) this.avatarX = nx;
-      if (!hitsFurniture(this.avatarX, ny)) this.avatarY = ny;
-      this.avatar.setPosition(this.avatarX, this.avatarY);
-      if (Math.abs(dx) > Math.abs(dy)) {
-        this.avatar.setFlipX(dx < 0).anims.play(`${this.avatarTexture}-side`, true);
-      } else this.avatar.anims.play(`${this.avatarTexture}-${dy < 0 ? "up" : "down"}`, true);
+
+    const inputLength = Math.hypot(dx, dy);
+    if (inputLength > 1) {
+      dx /= inputLength;
+      dy /= inputLength;
+    }
+
+    const targetVelocityX = dx * 125;
+    const targetVelocityY = dy * 125;
+    const fixedStep = 1 / 120;
+    // A fixed 120 Hz movement step keeps indoor motion consistent when the
+    // browser delivers slightly uneven frame times. The accumulator is reset
+    // on room transitions so old frame time never creates a movement burst.
+    this.movementAccumulator += Math.min(Math.max(delta, 0), 100) / 1000;
+    let steps = 0;
+
+    const hitsFurniture = (x: number, y: number): boolean =>
+      (x > 75 && x < 215 && y > 103 && y < 200) ||
+      (x > 262 && x < 378 && y > 108 && y < 190) ||
+      (x > 438 && x < 565 && y > 124 && y < 202);
+
+    while (this.movementAccumulator >= fixedStep && steps < 12) {
+      const response = inputLength > 0.08 ? 26 : 30;
+      const blend = 1 - Math.exp(-response * fixedStep);
+      this.avatarVelocityX = Phaser.Math.Linear(this.avatarVelocityX, targetVelocityX, blend);
+      this.avatarVelocityY = Phaser.Math.Linear(this.avatarVelocityY, targetVelocityY, blend);
+
+      const rawX = this.avatarX + this.avatarVelocityX * fixedStep;
+      const rawY = this.avatarY + this.avatarVelocityY * fixedStep;
+      const nextX = Phaser.Math.Clamp(rawX, 56, 584);
+      const nextY = Phaser.Math.Clamp(rawY, 100, 314);
+
+      if (nextX !== rawX || hitsFurniture(nextX, this.avatarY)) this.avatarVelocityX = 0;
+      else this.avatarX = nextX;
+
+      if (nextY !== rawY || hitsFurniture(this.avatarX, nextY)) this.avatarVelocityY = 0;
+      else this.avatarY = nextY;
+
+      this.movementAccumulator -= fixedStep;
+      steps += 1;
+    }
+
+    // Avoid carrying an unusually large backlog after a suspended tab or a
+    // slow frame; the next visible frame should resume at normal speed.
+    if (steps >= 12 && this.movementAccumulator >= fixedStep) this.movementAccumulator = 0;
+
+    this.avatar.setPosition(this.avatarX, this.avatarY);
+    const speed = Math.hypot(this.avatarVelocityX, this.avatarVelocityY);
+    if (speed > 4) {
+      if (Math.abs(this.avatarVelocityX) > Math.abs(this.avatarVelocityY)) {
+        this.avatar.setFlipX(this.avatarVelocityX < 0).anims.play(`${this.avatarTexture}-side`, true);
+      } else {
+        this.avatar.anims.play(`${this.avatarTexture}-${this.avatarVelocityY < 0 ? "up" : "down"}`, true);
+      }
     } else if (!this.sleeping) {
+      this.avatarVelocityX = 0;
+      this.avatarVelocityY = 0;
       this.avatar.anims.play(`${this.avatarTexture}-down`, true);
     }
   }

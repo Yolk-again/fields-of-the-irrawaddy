@@ -1139,5 +1139,26 @@
     "height": 26,
     "mode": "RGBA",
     "bytes": 330
+  },
+  {
+    "path": "tools/worm_bait.png",
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 254
+  },
+  {
+    "path": "tools/shrimp_bait.png",
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 247
+  },
+  {
+    "path": "tools/golden_cricket_bait.png",
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 221
   }
 ]

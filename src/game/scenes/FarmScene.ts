@@ -285,6 +285,9 @@ export class FarmScene extends Phaser.Scene {
       ["road_lamp_glow", publicAsset("/assets/village/road_lamp_glow.png")],
       ["cooking_hearth_asset", publicAsset("/assets/village/cooking_hearth.png")],
       ["fishing_rod_asset", publicAsset("/assets/tools/fishing_rod.png")],
+      ["worm_bait_asset", publicAsset("/assets/tools/worm_bait.png")],
+      ["shrimp_bait_asset", publicAsset("/assets/tools/shrimp_bait.png")],
+      ["golden_cricket_bait_asset", publicAsset("/assets/tools/golden_cricket_bait.png")],
       ["fish_silver_barb_asset", publicAsset("/assets/agriculture/fish_silver_barb.png")],
       ["fish_catfish_asset", publicAsset("/assets/agriculture/fish_catfish.png")],
       ["fish_golden_carp_asset", publicAsset("/assets/agriculture/fish_golden_carp.png")],
@@ -394,6 +397,7 @@ export class FarmScene extends Phaser.Scene {
       this.language,
       () => this.village?.getTimeOfDayHours() ?? 8
     );
+    this.fishing.setSelectedBaitFromHotbarItem(this.farming.getSelectedHotbarItem());
     this.cooking = new CookingSystem(this, this.farming, this.fishing, this.ui, this.language);
     this.market = new MarketSystem(this, this.farming, this.fishing, this.cooking, this.ui, this.language);
     this.npcFarming = new NpcFarmingSystem(this, this.language);

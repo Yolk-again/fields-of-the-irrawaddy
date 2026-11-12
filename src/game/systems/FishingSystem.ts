@@ -3,10 +3,12 @@ import { LanguageSystem } from "./LanguageSystem";
 import { ModalUIManager } from "./ModalUIManager";
 
 export type FishKind = "silverBarb" | "catfish" | "goldenCarp";
+export type FishingBaitKind = "worm" | "shrimp" | "goldenCricket";
 
 export interface FishingSaveData {
   rodOwned: boolean;
   fish: Record<FishKind, number>;
+  baits?: Partial<Record<FishingBaitKind, number>>;
 }
 
 interface FishingSpot {
@@ -16,7 +18,13 @@ interface FishingSpot {
 }
 
 const FISH_KEYS: FishKind[] = ["silverBarb", "catfish", "goldenCarp"];
+const BAIT_KEYS: FishingBaitKind[] = ["worm", "shrimp", "goldenCricket"];
 const FISHING_INTERACTION_RADIUS = 30;
+const BAIT_ITEM_TO_KIND: Record<string, FishingBaitKind> = {
+  wormBait: "worm",
+  shrimpBait: "shrimp",
+  goldenCricketBait: "goldenCricket"
+};
 
 /** Riverbank fishing with a timed bite-and-reel interaction. */
 export class FishingSystem {
@@ -28,6 +36,9 @@ export class FishingSystem {
   private lastPlayerY = 0;
 
   private rodOwned = false;
+  private baits: Record<FishingBaitKind, number> = { worm: 0, shrimp: 0, goldenCricket: 0 };
+  private selectedBait: FishingBaitKind | null = null;
+  private currentCastBait: FishingBaitKind | null = null;
   private soundX = 320;
   private soundY = 330;
   private fish: Record<FishKind, number> = {
@@ -73,8 +84,10 @@ export class FishingSystem {
 
     this.createFishingSpots();
     this.createInterface();
+    scene.events.on("hotbar-selection-changed", this.handleHotbarSelection, this);
     this.language.onChange(() => this.updateInterface());
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      scene.events.off("hotbar-selection-changed", this.handleHotbarSelection, this);
       this.markers.forEach(marker => marker.destroy());
       this.line.destroy();
       this.bobber.destroy();
@@ -148,6 +161,39 @@ export class FishingSystem {
     return this.fish[kind];
   }
 
+  getBaitCount(kind: FishingBaitKind): number {
+    return this.baits[kind];
+  }
+
+  addBait(kind: FishingBaitKind, amount = 1): void {
+    this.baits[kind] += Math.max(0, Math.floor(amount));
+  }
+
+  removeBait(kind: FishingBaitKind, amount = 1): boolean {
+    const safeAmount = Math.max(0, Math.floor(amount));
+    if (this.baits[kind] < safeAmount) return false;
+    this.baits[kind] -= safeAmount;
+    return true;
+  }
+
+  getSelectedBait(): FishingBaitKind | null {
+    return this.selectedBait;
+  }
+
+  setSelectedBaitFromHotbarItem(item: string | null): void {
+    this.selectedBait = item ? BAIT_ITEM_TO_KIND[item] ?? null : null;
+  }
+
+  private handleHotbarSelection(item: string | null): void {
+    this.setSelectedBaitFromHotbarItem(item);
+  }
+
+  private baitNameKey(kind: FishingBaitKind): string {
+    if (kind === "worm") return "fishing.bait.worm";
+    if (kind === "shrimp") return "fishing.bait.shrimp";
+    return "fishing.bait.goldenCricket";
+  }
+
   getFishTotal(): number {
     return FISH_KEYS.reduce((sum, key) => sum + this.fish[key], 0);
   }
@@ -199,6 +245,11 @@ export class FishingSystem {
   }
 
   private beginCast(playerX: number, playerY: number, spot: FishingSpot): void {
+    this.currentCastBait = this.selectedBait && this.baits[this.selectedBait] > 0 ? this.selectedBait : null;
+    if (this.currentCastBait) {
+      this.removeBait(this.currentCastBait, 1);
+      this.showToast(this.language.t("fishing.baitUsed", { bait: this.language.t(this.baitNameKey(this.currentCastBait)) }));
+    }
     this.state = "waiting";
     this.stateTimer = 0;
     this.biteWindow = 0;
@@ -218,26 +269,50 @@ export class FishingSystem {
     this.scene.events.emit("sound-effect", { name: "cast", x: this.soundX, y: this.soundY, maxDistance: 245 });
   }
 
-  private pickFish(): FishKind {
+  private pickFish(bait: FishingBaitKind | null): FishKind {
     const hour = ((this.getGameHour() % 24) + 24) % 24;
-    const roll = Math.random();
+    let carpChance: number;
+    let catfishChance: number;
+
     if (hour < 6 || hour >= 18) {
-      if (roll < 0.48) return "catfish";
-      if (roll < 0.74) return "goldenCarp";
-      return "silverBarb";
+      carpChance = 0.26;
+      catfishChance = 0.48;
+    } else if ((hour >= 6 && hour < 9) || (hour >= 16 && hour < 18)) {
+      carpChance = 0.34;
+      catfishChance = 0.23;
+    } else {
+      carpChance = 0.20;
+      catfishChance = 0.18;
     }
-    if (hour >= 6 && hour < 9 || hour >= 16 && hour < 18) {
-      if (roll < 0.34) return "goldenCarp";
-      if (roll < 0.57) return "catfish";
-      return "silverBarb";
+
+    // Better bait shifts the catch table toward valuable fish without
+    // removing the common Silver Barb from the river.
+    if (bait === "worm") {
+      catfishChance += 0.08;
+      carpChance += 0.02;
+    } else if (bait === "shrimp") {
+      catfishChance += 0.12;
+      carpChance += 0.12;
+    } else if (bait === "goldenCricket") {
+      catfishChance += 0.08;
+      carpChance += 0.24;
     }
-    if (roll < 0.20) return "goldenCarp";
-    if (roll < 0.38) return "catfish";
+
+    const combinedChance = carpChance + catfishChance;
+    if (combinedChance > 0.88) {
+      const scale = 0.88 / combinedChance;
+      carpChance *= scale;
+      catfishChance *= scale;
+    }
+
+    const roll = Math.random();
+    if (roll < carpChance) return "goldenCarp";
+    if (roll < carpChance + catfishChance) return "catfish";
     return "silverBarb";
   }
 
   private catchFish(): void {
-    const kind = this.pickFish();
+    const kind = this.pickFish(this.currentCastBait);
     this.addFish(kind);
     this.scene.events.emit("player-action", "fish");
     this.scene.events.emit("sound-effect", { name: "catch", x: this.soundX, y: this.soundY, maxDistance: 245 });
@@ -249,6 +324,7 @@ export class FishingSystem {
     this.state = "idle";
     this.stateTimer = 0;
     this.biteWindow = 0;
+    this.currentCastBait = null;
     this.line.clear();
     this.bobber.setVisible(false);
     this.prompt.setVisible(false);
@@ -352,7 +428,13 @@ export class FishingSystem {
       return false;
     }
 
-    this.prompt.setText(this.language.t("fishing.castHint"));
+    const availableBait = this.selectedBait && this.baits[this.selectedBait] > 0 ? this.selectedBait : null;
+    this.prompt.setText(availableBait
+      ? this.language.t("fishing.castHintWithBait", {
+          bait: this.language.t(this.baitNameKey(availableBait)),
+          amount: this.baits[availableBait]
+        })
+      : this.language.t("fishing.castHint"));
     this.prompt.setVisible(true);
     if (Phaser.Input.Keyboard.JustDown(this.castKey)) {
       this.beginCast(playerX, playerY, spot);
@@ -362,7 +444,7 @@ export class FishingSystem {
   }
 
   getSaveData(): FishingSaveData {
-    return { rodOwned: this.rodOwned, fish: { ...this.fish } };
+    return { rodOwned: this.rodOwned, fish: { ...this.fish }, baits: { ...this.baits } };
   }
 
   loadSaveData(data?: FishingSaveData): void {
@@ -370,6 +452,9 @@ export class FishingSystem {
     this.rodOwned = data.rodOwned === true;
     for (const key of FISH_KEYS) {
       this.fish[key] = Math.max(0, Math.floor(Number(data.fish?.[key]) || 0));
+    }
+    for (const key of BAIT_KEYS) {
+      this.baits[key] = Math.max(0, Math.floor(Number(data.baits?.[key]) || 0));
     }
   }
 }

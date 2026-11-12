@@ -16,3 +16,5 @@ golden zedi, toddy palms, bamboo, banana, lotus pond, water buffalo, rice paddy.
 
 V3 additions: monk + kid sheets (4x5 frames: down, up, side, work, sit), village props (assets/village),
 HUD icons (assets/ui/icon_*.png). Layout lives in src/game/data/villageLayout.ts.
+
+Fishing bait: worm, river shrimp and golden cricket bait icons are 16x16 transparent pixel sprites used by the fishing market and backpack.
