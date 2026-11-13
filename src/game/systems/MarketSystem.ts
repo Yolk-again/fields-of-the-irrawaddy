@@ -501,8 +501,8 @@ export class MarketSystem {
       this.setActionStatus(0, "market.status.open", "info");
       this.setActionStatus(1, "market.status.open", "info");
       this.setActionStatus(2, this.fishing.getHasRod() ? "market.status.owned" : "market.status.price", this.fishing.getHasRod() ? "good" : "info", { amount: FISHING_ROD_COST });
-      this.setActionStatus(3, "market.status.priceRange", "info", { min: 18, max: 36 });
-      this.setActionStatus(4, "market.status.priceRange", "info", { min: FISH_SELL_PRICES.silverBarb, max: FISH_SELL_PRICES.goldenCarp });
+      this.setActionStatus(3, "market.status.open", "info");
+      this.setActionStatus(4, "market.status.open", "info");
       this.setActionStatus(5, "market.status.open", "info");
       this.setActionStatus(6, "market.status.open", "info");
     }
@@ -569,8 +569,8 @@ export class MarketSystem {
       {
         icon: "wheat_basket_asset",
         label: this.language.t("inventory.wheat"),
-        statusKey: "market.status.priceRange",
-        values: { min: NORMAL_WHEAT_PRICE + this.farming.getRiceSaleBonus(), max: GOLDEN_WHEAT_PRICE }
+        statusKey: "market.status.open",
+        values: {}
       },
       { icon: "tomato_basket_asset", label: this.language.t("inventory.tomatoes"), statusKey: "market.status.unitSell", values: { amount: CROP_SELL_PRICES.tomato } },
       { icon: "green_bean_basket_asset", label: this.language.t("inventory.greenBeans"), statusKey: "market.status.unitSell", values: { amount: CROP_SELL_PRICES.greenBean } }

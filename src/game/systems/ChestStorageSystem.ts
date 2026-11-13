@@ -4,7 +4,7 @@ import { FishingSystem, type FishKind } from "./FishingSystem";
 import { CookingSystem, type MealKind } from "./CookingSystem";
 import { LanguageSystem } from "./LanguageSystem";
 import { ModalUIManager } from "./ModalUIManager";
-import { createRedCloseButton, modalClosePosition, modalPanel, uiFontSize } from "../ui/PixelUI";
+import { createRedCloseButton, modalClosePosition, modalPanel, uiDescriptionStyle, uiFontSize } from "../ui/PixelUI";
 import { adjustQuantity, maximumQuantitySelection, normalizeQuantity, quantityAdjustmentStep } from "../ui/QuantityMath";
 import { isMobilePlatform } from "../utils/DeviceMode";
 
@@ -75,7 +75,8 @@ export class ChestStorageSystem {
   private takeLabels: Phaser.GameObjects.Text[] = [];
   private messageValue = "";
   private readonly mobileMode = isMobilePlatform();
-  private readonly rowY = ITEMS.map((_item, index) => 78 + index * 20);
+  private readonly rowStartY = 84;
+  private readonly rowY = ITEMS.map((_item, index) => 84 + index * 20);
 
   constructor(scene: Phaser.Scene, farming: FarmingSystem, fishing: FishingSystem, cooking: CookingSystem, ui: ModalUIManager, language: LanguageSystem) {
     this.scene = scene;
@@ -101,11 +102,11 @@ export class ChestStorageSystem {
   private createInterface(): void {
     this.panel = this.scene.add.container(0, 0).setScrollFactor(0);
     const background = modalPanel(this.scene, 320, 180, 570, 340);
-    this.title = this.scene.add.text(320, 28, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(16), color: "#e6c47e", fontStyle: "bold", align: "center", wordWrap: { width: 450, useAdvancedWrap: true } }).setOrigin(0.5).setMaxLines(1);
-    this.subtitle = this.scene.add.text(320, 50, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(6.5), color: "#d7e6c5", align: "center", wordWrap: { width: 450, useAdvancedWrap: true } }).setOrigin(0.5).setMaxLines(1);
-    this.bagColumn = this.scene.add.text(238, 68, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(6), color: "#e6c47e", align: "center", wordWrap: { width: 54, useAdvancedWrap: true } }).setOrigin(0.5).setMaxLines(1);
-    this.chestColumn = this.scene.add.text(302, 68, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(6), color: "#e6c47e", align: "center", wordWrap: { width: 54, useAdvancedWrap: true } }).setOrigin(0.5).setMaxLines(1);
-    this.quantityHeader = this.scene.add.text(390, 68, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(6.5), color: "#e6c47e", align: "center", wordWrap: { width: 150, useAdvancedWrap: true } }).setOrigin(0.5).setMaxLines(1);
+    this.title = this.scene.add.text(320, 26, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(16), color: "#e6c47e", fontStyle: "bold", align: "center", wordWrap: { width: 450, useAdvancedWrap: true } }).setOrigin(0.5).setMaxLines(1);
+    this.subtitle = this.scene.add.text(320, 49, "", { ...uiDescriptionStyle(this.language.getFontFamily(), 470, 8), align: "center" }).setOrigin(0.5).setMaxLines(2);
+    this.bagColumn = this.scene.add.text(238, 72, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(6), color: "#e6c47e", align: "center", wordWrap: { width: 54, useAdvancedWrap: true } }).setOrigin(0.5).setMaxLines(1);
+    this.chestColumn = this.scene.add.text(302, 72, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(6), color: "#e6c47e", align: "center", wordWrap: { width: 54, useAdvancedWrap: true } }).setOrigin(0.5).setMaxLines(1);
+    this.quantityHeader = this.scene.add.text(390, 72, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(6.5), color: "#e6c47e", align: "center", wordWrap: { width: 150, useAdvancedWrap: true } }).setOrigin(0.5).setMaxLines(1);
     this.panel.add([background, this.title, this.subtitle, this.bagColumn, this.chestColumn, this.quantityHeader]);
 
     ITEMS.forEach((item, index) => {
@@ -226,7 +227,7 @@ export class ChestStorageSystem {
 
   private visibleRowAt(y: number): number {
     const slot = this.visibleRowIndices.findIndex((_itemIndex, visibleSlot) =>
-      Math.abs(y - (78 + visibleSlot * 20)) <= 10
+      Math.abs(y - (this.rowStartY + visibleSlot * 20)) <= 10
     );
     return slot < 0 ? -1 : this.visibleRowIndices[slot];
   }
@@ -297,7 +298,7 @@ export class ChestStorageSystem {
       const item = ITEMS[index].id;
       const visible = this.playerCount(item) > 0 || this.stored[item] > 0;
       const visibleSlot = this.visibleRowIndices.length;
-      const targetY = 78 + visibleSlot * 20;
+      const targetY = this.rowStartY + visibleSlot * 20;
       row.forEach(object => {
         const display = object as Phaser.GameObjects.GameObject & {
           x: number;
