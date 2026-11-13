@@ -1167,5 +1167,12 @@
     "height": 38,
     "mode": "RGBA",
     "bytes": 689
+  },
+  {
+    "path": "ui/icon_settings.png",
+    "width": 16,
+    "height": 16,
+    "mode": "RGBA",
+    "bytes": 340
   }
 ]

@@ -10,14 +10,20 @@ import { isMobilePlatform } from "../utils/DeviceMode";
 
 type SaleKind = "wheat" | "tomatoes" | "greenBeans" | MealKind | "silverBarb" | "catfish" | "goldenCarp" | "seeds" | "tomatoSeeds" | "greenBeanSeeds" | "wormBait" | "shrimpBait" | "goldenCricketBait";
 
-const SEED_PACK_COST = 25;
+const SEED_PACK_PRICES: Record<"seeds" | "tomatoSeeds" | "greenBeanSeeds", number> = {
+  seeds: 25,
+  greenBeanSeeds: 35,
+  tomatoSeeds: 45
+};
 const FISHING_ROD_COST = 120;
 const BAIT_PRICES: Record<"wormBait" | "shrimpBait" | "goldenCricketBait", number> = {
   wormBait: 10,
   shrimpBait: 25,
   goldenCricketBait: 50
 };
-const GOLDEN_WHEAT_PRICE = 20;
+const NORMAL_WHEAT_PRICE = 6;
+const GOLDEN_WHEAT_PRICE = 24;
+const CROP_SELL_PRICES: Record<"tomato" | "greenBean", number> = { tomato: 14, greenBean: 10 };
 const FISH_SELL_PRICES: Record<FishKind, number> = { silverBarb: 3, catfish: 8, goldenCarp: 15 };
 const UPGRADE_ORDER: FarmUpgradeId[] = ["hoe", "wateringCan", "sickle", "expansion", "riceMill"];
 
@@ -268,7 +274,7 @@ export class MarketSystem {
     if (this.saleKind === "silverBarb" || this.saleKind === "catfish" || this.saleKind === "goldenCarp") return this.fishing.getFishCount(this.saleKind);
     if (this.saleKind === "tomatoes") return this.farming.getCropCount("tomato");
     if (this.saleKind === "greenBeans") return this.farming.getCropCount("greenBean");
-    if (this.saleKind === "seeds" || this.saleKind === "tomatoSeeds" || this.saleKind === "greenBeanSeeds") return Math.floor(this.coins / SEED_PACK_COST);
+    if (this.saleKind === "seeds" || this.saleKind === "tomatoSeeds" || this.saleKind === "greenBeanSeeds") return Math.floor(this.coins / SEED_PACK_PRICES[this.saleKind]);
     if (this.saleKind === "wormBait" || this.saleKind === "shrimpBait" || this.saleKind === "goldenCricketBait") {
       return Math.floor(this.coins / BAIT_PRICES[this.saleKind]);
     }
@@ -295,16 +301,16 @@ export class MarketSystem {
       goldenCricketBait: "market.inspect.goldenCricketBait"
     };
     const values: Record<string, string | number> = this.saleKind === "wheat"
-      ? { normal: 4 + this.farming.getRiceSaleBonus(), golden: GOLDEN_WHEAT_PRICE }
-      : this.saleKind === "tomatoes" ? { price: 8 }
-        : this.saleKind === "greenBeans" ? { price: 7 }
+      ? { normal: NORMAL_WHEAT_PRICE + this.farming.getRiceSaleBonus(), golden: GOLDEN_WHEAT_PRICE }
+      : this.saleKind === "tomatoes" ? { price: CROP_SELL_PRICES.tomato }
+        : this.saleKind === "greenBeans" ? { price: CROP_SELL_PRICES.greenBean }
         : this.saleKind === "fishRice" ? { price: 18 }
           : this.saleKind === "mohinga" ? { price: 32 }
             : this.saleKind === "fishCurry" ? { price: 36 }
               : this.saleKind === "silverBarb" || this.saleKind === "catfish" || this.saleKind === "goldenCarp"
             ? { price: FISH_SELL_PRICES[this.saleKind] }
             : this.saleKind === "seeds" || this.saleKind === "tomatoSeeds" || this.saleKind === "greenBeanSeeds"
-              ? { cost: SEED_PACK_COST }
+              ? { cost: SEED_PACK_PRICES[this.saleKind as "seeds" | "tomatoSeeds" | "greenBeanSeeds"] }
               : this.saleKind === "wormBait" || this.saleKind === "shrimpBait" || this.saleKind === "goldenCricketBait"
                 ? { cost: BAIT_PRICES[this.saleKind] }
                 : {};
@@ -503,7 +509,7 @@ export class MarketSystem {
     this.updateSaleSelector();
     if (this.produceMenuOpen && !this.saleKind) {
       this.messageText.setText(this.language.t("market.wheatPriceInfo", {
-        normal: 4 + this.farming.getRiceSaleBonus(),
+        normal: NORMAL_WHEAT_PRICE + this.farming.getRiceSaleBonus(),
         golden: GOLDEN_WHEAT_PRICE
       }));
     }
@@ -762,7 +768,7 @@ export class MarketSystem {
     this.mealMenuOpen = false;
     this.closeUpgradeDetail();
     this.messageText.setText(this.language.t("market.wheatPriceInfo", {
-      normal: 4 + this.farming.getRiceSaleBonus(),
+      normal: NORMAL_WHEAT_PRICE + this.farming.getRiceSaleBonus(),
       golden: GOLDEN_WHEAT_PRICE
     }));
     this.updateInterface();
@@ -892,10 +898,11 @@ export class MarketSystem {
   };
 
   private buySeeds(requestedPacks: number): void {
-    const packs = Math.min(maximumQuantity(requestedPacks), Math.floor(this.coins / SEED_PACK_COST));
+    const packCost = SEED_PACK_PRICES.seeds;
+    const packs = Math.min(maximumQuantity(requestedPacks), Math.floor(this.coins / packCost));
     if (packs <= 0) { this.messageText.setText(this.language.t("market.notEnough")); return; }
     const totalSeeds = packs * 5;
-    const totalCost = packs * SEED_PACK_COST;
+    const totalCost = packs * packCost;
     this.coins -= totalCost;
     this.farming.addSeeds(totalSeeds);
     this.scene.events.emit("sound-effect", { name: "buy", x: this.marketX, y: this.marketY, maxDistance: 185 });
@@ -904,10 +911,11 @@ export class MarketSystem {
   }
 
   private buyCropSeeds(kind: "tomato" | "greenBean", requestedPacks: number): void {
-    const packs = Math.min(maximumQuantity(requestedPacks), Math.floor(this.coins / SEED_PACK_COST));
+    const packCost = kind === "tomato" ? SEED_PACK_PRICES.tomatoSeeds : SEED_PACK_PRICES.greenBeanSeeds;
+    const packs = Math.min(maximumQuantity(requestedPacks), Math.floor(this.coins / packCost));
     if (packs <= 0) { this.messageText.setText(this.language.t("market.notEnough")); return; }
     const amount = packs * 5;
-    const cost = packs * SEED_PACK_COST;
+    const cost = packs * packCost;
     this.coins -= cost;
     this.farming.addCropSeeds(kind, amount);
     this.scene.events.emit("sound-effect", { name: "buy", x: this.marketX, y: this.marketY, maxDistance: 185 });
@@ -933,7 +941,7 @@ export class MarketSystem {
       return;
     }
 
-    const regularPrice = 4 + this.farming.getRiceSaleBonus();
+    const regularPrice = NORMAL_WHEAT_PRICE + this.farming.getRiceSaleBonus();
     const earnings = regularAmount * regularPrice + goldenAmount * GOLDEN_WHEAT_PRICE;
     this.coins += earnings;
     this.scene.events.emit("sound-effect", { name: "sell", x: this.marketX, y: this.marketY, maxDistance: 185 });
@@ -1020,7 +1028,7 @@ export class MarketSystem {
       this.messageText.setText(this.language.t(kind === "tomato" ? "market.noTomatoes" : "market.noGreenBeans"));
       return;
     }
-    const price = kind === "tomato" ? 8 : 7;
+    const price = CROP_SELL_PRICES[kind];
     const earnings = amount * price;
     this.coins += earnings;
     this.scene.events.emit("sound-effect", { name: "sell", x: this.marketX, y: this.marketY, maxDistance: 185 });

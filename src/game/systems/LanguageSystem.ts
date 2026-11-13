@@ -76,7 +76,7 @@ const translations: Record<Language, TranslationTable> = {
     "menu.footer": "CHOOSE A SLOT TO CONTINUE OR BEGIN A NEW JOURNEY",
 
     "help.title": "HOW TO PLAY",
-    "help.subtitle": "WINDOWS GUIDE · I ITEMS · P PROFILE · L LANGUAGE · H HELP · M AUDIO",
+    "help.subtitle": "WINDOWS GUIDE · I ITEMS · P PROFILE · L LANGUAGE · H HELP · M SETTINGS",
     "help.moveTitle": "MOVE AROUND",
     "help.moveBody": "WASD / ARROWS TO MOVE\nTOOLS: 1–4",
     "help.villageTitle": "VILLAGE ACTIONS",
@@ -107,7 +107,7 @@ const translations: Record<Language, TranslationTable> = {
     "help.mobileActivitiesTitle": "FISHING & HOME",
     "help.mobileActivitiesBody": "Tap CAST or REEL by the river. At home, tap an object action.",
     "help.mobileIconsTitle": "TOP BUTTONS",
-    "help.mobileIconsBody": "Bag: items · Person: profile · Globe: language · Note: audio · Expand: fullscreen.",
+    "help.mobileIconsBody": "Bag: items · Person: profile · Globe: language · Gear: settings · Expand: fullscreen.",
 
     "house.title": "MY HOME",
     "house.bed": "BED",
@@ -654,7 +654,7 @@ const translations: Record<Language, TranslationTable> = {
     "menu.footer": "ဆက်ကစားရန် သို့မဟုတ် ဂိမ်းအသစ်စရန် နေရာရွေးပါ",
 
     "help.title": "ကစားနည်း လမ်းညွှန်",
-    "help.subtitle": "ကီးဘုတ်လမ်းညွှန် · I ပစ္စည်း · P ကိုယ်ရေး · L ဘာသာ · H အကူအညီ · M အသံ",
+    "help.subtitle": "ကီးဘုတ်လမ်းညွှန် · I ပစ္စည်း · P ကိုယ်ရေး · L ဘာသာ · H အကူအညီ · M ဆက်တင်များ",
     "help.moveTitle": "ရွှေ့လျားရန်",
     "help.moveBody": "W A S D / မြှားခလုတ်များ\nကိရိယာ: 1–4",
     "help.villageTitle": "ရွာတွင်း လုပ်ဆောင်ချက်",
@@ -685,7 +685,7 @@ const translations: Record<Language, TranslationTable> = {
     "help.mobileActivitiesTitle": "ငါးမျှားခြင်းနှင့် အိမ်",
     "help.mobileActivitiesBody": "မြစ်အနီး CAST / REEL ကိုနှိပ်ပါ။ အိမ်တွင် အနီးဆုံးလုပ်ဆောင်ချက်ခလုတ်ကိုနှိပ်ပါ။",
     "help.mobileIconsTitle": "အပေါ်ဘက်ခလုတ်များ",
-    "help.mobileIconsBody": "အိတ်: ပစ္စည်း · လူ: ကိုယ်ရေး · ကမ္ဘာလုံး: ဘာသာ · မှတ်စု: အသံ · ချဲ့ရန်: မျက်နှာပြင်ပြည့်။",
+    "help.mobileIconsBody": "အိတ်: ပစ္စည်း · လူ: ကိုယ်ရေး · ကမ္ဘာလုံး: ဘာသာ · ဂီယာ: ဆက်တင်များ · ချဲ့ရန်: မျက်နှာပြင်ပြည့်။",
 
     "house.title": "ကျွန်ုပ်၏အိမ်",
     "house.bed": "အိပ်ရာ",

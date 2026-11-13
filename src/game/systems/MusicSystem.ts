@@ -3,7 +3,7 @@ import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
 import { getGraphicsQuality, saveGraphicsQuality } from "./GraphicsQuality";
 import type { GraphicsQuality } from "./GraphicsQuality";
-import { createRedCloseButton, modalClosePosition, modalPanel, pixelPanel, uiFontSize } from "../ui/PixelUI";
+import { createRedCloseButton, modalClosePosition, modalPanel, uiFontSize } from "../ui/PixelUI";
 
 /**
  * Original Fields of the Irrawaddy audio system.

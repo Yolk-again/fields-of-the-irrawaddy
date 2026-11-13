@@ -2869,3 +2869,58 @@ body.foi-in-game:not(.foi-touch-device) #game-container:-webkit-full-screen > .g
   .title-install-button,
   .desktop-fullscreen-button { transition: none; }
 }
+
+
+/* Desktop shares the same top-right game controls as mobile. The Settings gear
+   replaces the former music-note button; the separate desktop fullscreen tile
+   is hidden to avoid showing fullscreen twice. */
+body.foi-in-game:not(.foi-touch-device) .game-hud-stack {
+  position: absolute !important;
+  top: max(8px, env(safe-area-inset-top)) !important;
+  right: max(8px, env(safe-area-inset-right)) !important;
+  bottom: auto !important;
+  left: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  z-index: 10020 !important;
+}
+body.foi-in-game:not(.foi-touch-device) .game-hud-stack > .mobile-game-hud {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  position: relative !important;
+  inset: auto !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+}
+body.foi-in-game:not(.foi-touch-device) .game-hud-stack > .mobile-game-hud button {
+  display: grid !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+body.foi-in-game:not(.foi-touch-device) .game-hud-stack > .desktop-fullscreen-button {
+  display: none !important;
+}
+body.foi-in-game:not(.foi-touch-device).foi-cutscene-active .game-hud-stack {
+  top: max(8px, env(safe-area-inset-top)) !important;
+  right: max(8px, env(safe-area-inset-right)) !important;
+  bottom: auto !important;
+  left: auto !important;
+}
+body.foi-in-game:not(.foi-touch-device).foi-cutscene-active .game-hud-stack > .mobile-game-hud button:not([data-action="fullscreen"]) {
+  display: none !important;
+}
+body.foi-in-game:not(.foi-touch-device).foi-cutscene-active .game-hud-stack > .game-menu-button {
+  display: none !important;
+}
+body.foi-in-game:not(.foi-touch-device) #game-container:fullscreen > .game-hud-stack,
+body.foi-in-game:not(.foi-touch-device) #game-container:-webkit-full-screen > .game-hud-stack {
+  top: max(8px, env(safe-area-inset-top)) !important;
+  right: max(8px, env(safe-area-inset-right)) !important;
+  bottom: auto !important;
+  left: auto !important;
+}

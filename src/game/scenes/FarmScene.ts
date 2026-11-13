@@ -184,7 +184,6 @@ export class FarmScene extends Phaser.Scene {
       this.toggleFullscreenForDevice();
       return;
     }
-    if (!this.isTouchDevice) return;
     switch (action) {
       case "inventory":
         this.inventory?.mobileToggle();
@@ -198,6 +197,7 @@ export class FarmScene extends Phaser.Scene {
       case "help":
         this.help?.mobileToggle();
         break;
+      case "settings":
       case "audio":
         this.music?.mobileToggle();
         break;
