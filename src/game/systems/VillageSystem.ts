@@ -426,6 +426,7 @@ export class VillageSystem {
       fontFamily: this.language.getFontFamily(),
       fontSize: uiFontSize(15),
       color: "#e6c47e",
+      wordWrap: { width: 430 },
       stroke: "#21170f",
       strokeThickness: 1
     });
@@ -443,7 +444,8 @@ export class VillageSystem {
     this.instructionText = this.scene.add.text(48, 335, "", {
       fontFamily: this.language.getFontFamily(),
       fontSize: uiFontSize(10),
-      color: "#d6e6c2"
+      color: "#d6e6c2",
+      wordWrap: { width: 430 }, align: "left"
     });
 
     this.speakerPortrait = this.scene.add.image(548, 300, PORTRAIT_KEYS.ko)

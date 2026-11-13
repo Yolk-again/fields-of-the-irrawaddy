@@ -282,7 +282,9 @@ export class FarmingSystem {
       fontSize: uiFontSize(9),
       color: "#ffd978",
       stroke: "#2a1a14",
-      strokeThickness: 3
+      strokeThickness: 3,
+      align: "center",
+      wordWrap: { width: 440 }
     }).setOrigin(0.5, 1).setScrollFactor(0).setDepth(103).setAlpha(0);
 
     this.ui.registerHud(

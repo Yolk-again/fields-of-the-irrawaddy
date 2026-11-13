@@ -177,7 +177,7 @@ export class HouseInteriorSystem {
     this.title = this.scene.add.text(28, 18, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(15), color: "#fff0cf", fontStyle: "bold" });
     const cookerArt = this.scene.add.image(502, 166, "cooking_hearth_asset").setScale(1.8);
     this.avatar = this.scene.add.sprite(this.avatarX, this.avatarY, "farmer_green_sheet", 0).setOrigin(0.5, 1).setScale(2);
-    this.statusText = this.scene.add.text(320, 310, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#f0d69e", backgroundColor: "#39271e", padding: { x: 4, y: 2 } }).setOrigin(0.5).setVisible(false);
+    this.statusText = this.scene.add.text(320, 310, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#f0d69e", backgroundColor: "#39271e", padding: { x: 4, y: 2 }, align: "center", wordWrap: { width: 420 } }).setOrigin(0.5).setVisible(false);
     this.roomPromptHitArea = this.scene.add.rectangle(320, 245, 250, 42, 0x527044, 0.98)
       .setStrokeStyle(2, 0xd6b36b, 1)
       .setVisible(false);

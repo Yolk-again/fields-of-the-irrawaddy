@@ -136,12 +136,12 @@ export class MarketSystem {
       .setOrigin(0.5, 1).setScale(2).setDepth(260);
     this.stallLabel = this.scene.add.text(this.marketX, 135, this.language.t("market.stallName"), {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#fff3d3",
-      backgroundColor: "#34271d", padding: { x: 5, y: 3 }
+      backgroundColor: "#34271d", padding: { x: 5, y: 3 }, align: "center", wordWrap: { width: 190 }
     }).setOrigin(0.5).setDepth(261);
     this.promptText = this.scene.add.text(320, 286, this.language.t("market.prompt"), {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#fff1cf",
       backgroundColor: "#2a1a14", padding: { x: 7, y: 4 },
-      stroke: "#2a1a14", strokeThickness: 2
+      stroke: "#2a1a14", strokeThickness: 2, wordWrap: { width: 440 }
     }).setOrigin(0.5).setScrollFactor(0).setDepth(7200).setVisible(false);
   }
 
@@ -162,7 +162,7 @@ export class MarketSystem {
     const background = modalPanel(this.scene, 320, 180, 500, 350);
     const divider = this.scene.add.rectangle(320, 57, 450, 2, 0x9b7047, 0.8);
     this.titleText = this.scene.add.text(320, 33, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(18), color: "#e6c47e", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(18), color: "#e6c47e", fontStyle: "bold", align: "center", wordWrap: { width: 430 }
     }).setOrigin(0.5);
     this.marketPanel.add([background, divider, this.titleText]);
 
@@ -178,7 +178,7 @@ export class MarketSystem {
       }).setOrigin(0, 0.5);
       const status = this.scene.add.text(492, y, "", {
         fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#fff1cf", fontStyle: "bold",
-        align: "center", backgroundColor: "#527044", padding: { x: 5, y: 3 }
+        align: "center", backgroundColor: "#527044", padding: { x: 4, y: 2 }, wordWrap: { width: 74 }, lineSpacing: 0
       }).setOrigin(0.5);
       this.actionCards.push(card);
       this.actionIcons.push(icon);
@@ -190,17 +190,17 @@ export class MarketSystem {
     const balanceCard = this.scene.add.rectangle(320, 302, 230, 24, 0x2f432f, 1).setStrokeStyle(1, 0xe0bb70);
     this.coinBalanceIcon = this.scene.add.image(232, 302, "coin_asset").setScale(1.1);
     this.moneyText = this.scene.add.text(342, 302, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(13), color: "#ffe49a", fontStyle: "bold", align: "center"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(13), color: "#ffe49a", fontStyle: "bold", align: "center", wordWrap: { width: 200 }
     }).setOrigin(0.5);
     this.clickHintText = this.scene.add.text(320, 322, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#b9dca3", align: "center"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#b9dca3", align: "center", wordWrap: { width: 440 }
     }).setOrigin(0.5);
     this.messageText = this.scene.add.text(320, 337, "", {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5", align: "center",
       wordWrap: { width: 440 }
     }).setOrigin(0.5);
     this.exitHintText = this.scene.add.text(320, 349, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#d7e6c5", align: "center"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5", align: "center", wordWrap: { width: 440 }
     }).setOrigin(0.5);
 
     const closePosition = modalClosePosition(320, 180, 500, 350);
@@ -217,13 +217,13 @@ export class MarketSystem {
     this.salePanel = this.scene.add.container(0, 0).setVisible(false);
     const background = modalPanel(this.scene, 320, 180, 410, 212);
     this.saleTitleText = this.scene.add.text(320, 94, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(15), color: "#e6c47e", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(15), color: "#e6c47e", fontStyle: "bold", align: "center", wordWrap: { width: 360 }
     }).setOrigin(0.5);
     this.saleDescriptionText = this.scene.add.text(320, 125, "", {
       ...uiDescriptionStyle(this.language.getFontFamily(), 346, 9), align: "center"
     }).setOrigin(0.5);
     this.saleAvailableText = this.scene.add.text(320, 161, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#d7e6c5"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#d7e6c5", align: "center", wordWrap: { width: 420 }
     }).setOrigin(0.5);
     this.saleMinus = this.scene.add.rectangle(238, 194, 40, 30, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
     const minusLabel = this.scene.add.text(238, 194, "−", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(17), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
@@ -231,7 +231,7 @@ export class MarketSystem {
     this.salePlus = this.scene.add.rectangle(402, 194, 40, 30, 0x527044, 1).setStrokeStyle(1, 0xd6b36b);
     const plusLabel = this.scene.add.text(402, 194, "+", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(17), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
     this.saleMax = this.scene.add.rectangle(320, 228, 90, 22, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
-    const maxLabel = this.scene.add.text(320, 228, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
+    const maxLabel = this.scene.add.text(320, 228, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold", align: "center", wordWrap: { width: 100 } }).setOrigin(0.5);
     this.saleConfirm = this.scene.add.rectangle(262, 263, 112, 27, 0x527044, 1).setStrokeStyle(1, 0xd6b36b);
     const confirmLabel = this.scene.add.text(262, 263, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
     this.saleCancel = this.scene.add.rectangle(378, 263, 112, 27, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
@@ -251,10 +251,10 @@ export class MarketSystem {
       ...uiDescriptionStyle(this.language.getFontFamily(), 346, 11), align: "center"
     }).setOrigin(0.5);
     this.upgradeDetailInfo = this.scene.add.text(320, 207, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#ffe49a", fontStyle: "bold", align: "center"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#ffe49a", fontStyle: "bold", align: "center", wordWrap: { width: 350 }
     }).setOrigin(0.5);
     this.upgradeDetailBuy = this.scene.add.rectangle(260, 263, 112, 28, 0x527044, 1).setStrokeStyle(1, 0xd6b36b);
-    const buyLabel = this.scene.add.text(260, 263, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
+    const buyLabel = this.scene.add.text(260, 263, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#fff1cf", fontStyle: "bold", align: "center", wordWrap: { width: 100 } }).setOrigin(0.5);
     this.upgradeDetailBack = this.scene.add.rectangle(378, 263, 112, 28, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
     const backLabel = this.scene.add.text(378, 263, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
     this.upgradeDetailButtons = [buyLabel, backLabel];

@@ -109,16 +109,16 @@ export class InventorySystem {
     this.inventoryPanel = this.scene.add.container(0, 0).setScrollFactor(0);
     const background = modalPanel(this.scene, 320, 180, 540, 330);
     this.titleText = this.scene.add.text(320, 31, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(18), color: "#e6c47e"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(18), color: "#e6c47e", align: "center", wordWrap: { width: 460 }
     }).setOrigin(0.5);
     this.hotbarTitleText = this.scene.add.text(320, 61, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#d6b36b"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#d6b36b", align: "center", wordWrap: { width: 460 }
     }).setOrigin(0.5);
     this.seedPacketText = this.scene.add.text(320, 119, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5", align: "center"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5", align: "center", wordWrap: { width: 460 }
     }).setOrigin(0.5);
     this.backpackTitleText = this.scene.add.text(320, 140, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#d6b36b"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#d6b36b", align: "center", wordWrap: { width: 460 }
     }).setOrigin(0.5);
     this.inventoryPanel.add([background, this.titleText, this.hotbarTitleText, this.seedPacketText, this.backpackTitleText]);
 
@@ -136,7 +136,7 @@ export class InventorySystem {
       wordWrap: { width: 490 }
     }).setOrigin(0.5);
     this.exitHintText = this.scene.add.text(320, 322, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5", align: "center", wordWrap: { width: 460 }
     }).setOrigin(0.5);
     const closePosition = modalClosePosition(320, 180, 540, 330);
     this.closeButton = createRedCloseButton(this.scene, closePosition.x, closePosition.y);
@@ -161,7 +161,7 @@ export class InventorySystem {
       .setStrokeStyle(1, 0xc29a62);
     const icon = this.scene.add.image(x, y - 5, "ui_icon_hand").setScale(1.15).setVisible(false);
     const name = this.scene.add.text(x, y + (address.zone === "hotbar" ? 15 : 13), "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#fff1cf", align: "center"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#fff1cf", align: "center", wordWrap: { width: width - 6 }, lineSpacing: 0
     }).setOrigin(0.5).setVisible(false);
     const amount = this.scene.add.text(x + width / 2 - 4, y - 17, "", {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#ffe070",

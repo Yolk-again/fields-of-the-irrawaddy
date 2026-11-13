@@ -2440,3 +2440,226 @@ body.foi-in-game:not(.foi-touch-device).foi-cutscene-active .game-hud-stack > .m
   .save-slot-title { font-size: 12px; }
   .save-slot-details { font-size: 10px; }
 }
+
+
+/* Title screen: make installation a clear central step between the hero and saves. */
+.title-screen-content {
+  grid-template-areas:
+    "heading landscape"
+    "install install"
+    "saves saves"
+    "footer footer";
+}
+.title-install-row {
+  grid-area: install;
+  justify-self: center;
+  align-self: center;
+  width: min(100%, 460px);
+  margin: 2px auto 4px;
+  padding-inline: 8px;
+}
+.title-install-button {
+  min-width: min(220px, 100%);
+  min-height: 44px;
+  padding: 10px 22px;
+  font-size: 13px;
+  letter-spacing: .06em;
+}
+.title-install-hint {
+  width: min(100%, 36rem);
+  line-height: 1.55;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+@media (max-width: 760px) {
+  .title-screen-content {
+    grid-template-areas:
+      "heading landscape"
+      "install install"
+      "saves saves"
+      "footer footer";
+    grid-template-columns: minmax(0, 1fr) minmax(0, .9fr);
+  }
+}
+
+@media (max-width: 700px) and (orientation: portrait) {
+  .title-screen-content {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "heading"
+      "landscape"
+      "install"
+      "saves"
+      "footer";
+  }
+  .title-install-row {
+    width: min(100%, 360px);
+    margin: 2px auto 5px;
+  }
+  .title-install-button {
+    width: min(100%, 260px);
+    min-height: 46px;
+    font-size: 13px;
+  }
+}
+
+/* Text safety for all browser-rendered overlays and title/save components. */
+.title-screen,
+.title-screen *,
+.character-creation-overlay,
+.character-creation-overlay *,
+.save-name-dialog,
+.save-name-dialog *,
+.save-confirmation,
+.save-confirmation * {
+  box-sizing: border-box;
+}
+.title-screen h1,
+.title-screen h2,
+.title-screen h3,
+.title-screen p,
+.title-screen span,
+.character-creation-card h1,
+.character-creation-card h2,
+.character-creation-card h3,
+.character-creation-card p,
+.character-creation-card label,
+.save-name-card h1,
+.save-name-card h2,
+.save-name-card p,
+.save-name-card label,
+.save-confirmation-card h1,
+.save-confirmation-card h2,
+.save-confirmation-card p {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: normal;
+  text-wrap: pretty;
+}
+.title-screen button,
+.character-creation-card button,
+.save-name-card button,
+.save-confirmation-card button {
+  max-width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 38px;
+  padding-block: 8px;
+  line-height: 1.3;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+.title-screen-content,
+.title-screen-heading,
+.title-screen-saves,
+.save-slot-grid,
+.save-slot-card,
+.title-install-row,
+.title-screen-footer {
+  min-width: 0;
+  max-width: 100%;
+}
+.save-slot-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 5px;
+}
+.save-slot-title,
+.save-slot-details {
+  width: 100%;
+  min-width: 0;
+  overflow-wrap: break-word;
+  line-height: 1.45;
+}
+.save-slot-actions,
+.save-slot-secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  gap: 6px;
+}
+.save-slot-actions > *,
+.save-slot-secondary-actions > * {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.character-creation-card,
+.save-name-card,
+.save-confirmation-card {
+  width: min(94vw, 440px);
+  max-height: min(90dvh, 760px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Windows HUD controls no longer occupy the upper-right corner. Keep the
+   fullscreen and menu actions together at the lower-left, clear of the HUD. */
+body.foi-in-game:not(.foi-touch-device) .game-hud-stack {
+  top: auto !important;
+  right: auto !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  left: max(12px, env(safe-area-inset-left)) !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+}
+body.foi-in-game:not(.foi-touch-device) .game-hud-stack > .mobile-game-hud {
+  position: relative !important;
+  inset: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+}
+body.foi-in-game:not(.foi-touch-device) .game-hud-stack > .mobile-game-hud button:not([data-action="fullscreen"]) {
+  display: none !important;
+}
+body.foi-in-game:not(.foi-touch-device) .game-hud-stack > .mobile-game-hud button[data-action="fullscreen"],
+body.foi-in-game:not(.foi-touch-device) .game-hud-stack > .game-menu-button {
+  display: grid !important;
+}
+body.foi-in-game:not(.foi-touch-device) #game-container:fullscreen > .game-hud-stack,
+body.foi-in-game:not(.foi-touch-device) #game-container:-webkit-full-screen > .game-hud-stack {
+  top: auto !important;
+  right: auto !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  left: max(12px, env(safe-area-inset-left)) !important;
+}
+body.foi-in-game:not(.foi-touch-device).foi-cutscene-active .game-hud-stack {
+  top: auto !important;
+  right: auto !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  left: max(12px, env(safe-area-inset-left)) !important;
+}
+body.foi-in-game:not(.foi-touch-device).foi-cutscene-active #game-container:fullscreen > .game-hud-stack,
+body.foi-in-game:not(.foi-touch-device).foi-cutscene-active #game-container:-webkit-full-screen > .game-hud-stack {
+  top: auto !important;
+  right: auto !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  left: max(12px, env(safe-area-inset-left)) !important;
+}
+
+@media (max-width: 760px) {
+  .title-screen-content { gap: 10px 12px; padding: 18px 14px; }
+  .title-screen-heading h2 { overflow-wrap: break-word; line-height: 1.12; }
+  .title-screen-subtitle,
+  .title-screen-intro,
+  .title-screen-footer { line-height: 1.55; }
+  .title-landscape-photo-topline { max-width: calc(100% - 24px); white-space: normal; overflow-wrap: break-word; }
+  .title-landscape-photo-caption { max-width: calc(100% - 28px); }
+}
+
+@media (max-width: 700px) and (orientation: landscape) {
+  .title-screen-content { gap: 7px 10px; padding: 12px 12px; }
+  .title-install-row { margin-block: 0; }
+  .title-install-button { min-height: 38px; padding-block: 7px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title-screen *,
+  .title-scroll-cue { animation: none !important; scroll-behavior: auto !important; }
+}

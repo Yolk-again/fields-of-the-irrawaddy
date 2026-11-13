@@ -1,6 +1,1 @@
-FOI-DEPLOYMENT-V8-2026-11-11
-Fields of the Irrawaddy
-
-Profile save/load, new crop and request content, mobile house interaction, and audio tooltip update.
-Expected build command: npm run build
-Expected output directory: dist
+title-install-centered-overflow-desktop-hud-2026-11-13

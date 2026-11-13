@@ -123,7 +123,8 @@ export class FishingSystem {
       color: "#fff1cf",
       backgroundColor: "#2a1a14",
       padding: { x: 7, y: 4 },
-      align: "center"
+      align: "center",
+      wordWrap: { width: 440 }
     }).setOrigin(0.5).setScrollFactor(0).setDepth(7000).setVisible(false).setInteractive({ useHandCursor: true });
     this.prompt.on("pointerdown", this.handlePromptPointerDown, this);
 
@@ -133,7 +134,8 @@ export class FishingSystem {
       color: "#ffe18a",
       backgroundColor: "#2a1a14",
       padding: { x: 7, y: 4 },
-      align: "center"
+      align: "center",
+      wordWrap: { width: 430 }
     }).setOrigin(0.5).setScrollFactor(0).setDepth(7001).setAlpha(0);
 
     this.line = this.scene.add.graphics().setDepth(530);

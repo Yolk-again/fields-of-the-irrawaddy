@@ -227,38 +227,38 @@ export class PlayerProfileSystem {
     this.previewSprite = this.scene.add.image(320, 75, this.getCurrentPortraitAsset()).setScale(2.1);
 
     this.nameText = this.scene.add.text(320, 105, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#ffffff"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#ffffff", align: "center", wordWrap: { width: 300 }
     }).setOrigin(0.5);
 
     const renameButton = this.scene.add.rectangle(320, 132, 170, 25, 0x527044).setStrokeStyle(1, 0xd6b36b);
     this.renameLabel = this.scene.add.text(320, 132, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#ffffff", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#ffffff", fontStyle: "bold", align: "center", wordWrap: { width: 152 }
     }).setOrigin(0.5);
 
     this.farmNameText = this.scene.add.text(320, 157, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#f4e4bd"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#f4e4bd", align: "center", wordWrap: { width: 300 }
     }).setOrigin(0.5);
 
     const renameFarmButton = this.scene.add.rectangle(320, 176, 170, 24, 0x725332).setStrokeStyle(1, 0xd6b36b);
     this.farmRenameLabel = this.scene.add.text(320, 176, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#ffffff", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#ffffff", fontStyle: "bold", align: "center", wordWrap: { width: 152 }
     }).setOrigin(0.5);
 
     this.genderLabel = this.scene.add.text(320, 204, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#f0d69e", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#f0d69e", fontStyle: "bold", align: "center", wordWrap: { width: 300 }
     }).setOrigin(0.5);
 
     this.maleButton = this.scene.add.rectangle(253, 224, 124, 26, 0x527044).setStrokeStyle(2, 0xd6b36b);
     this.femaleButton = this.scene.add.rectangle(387, 224, 124, 26, 0x493729).setStrokeStyle(2, 0x9b7047);
     this.maleLabel = this.scene.add.text(253, 224, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold", align: "center", wordWrap: { width: 110 }
     }).setOrigin(0.5);
     this.femaleLabel = this.scene.add.text(387, 224, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold", align: "center", wordWrap: { width: 110 }
     }).setOrigin(0.5);
 
     this.outfitLabel = this.scene.add.text(320, 253, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#f0d69e", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#f0d69e", fontStyle: "bold", align: "center", wordWrap: { width: 300 }
     }).setOrigin(0.5);
 
     const swatchColors = [0x4c8c62, 0x477caf, 0xa84d3e, 0x79559c];
@@ -273,7 +273,7 @@ export class PlayerProfileSystem {
     });
 
     this.outfitText = this.scene.add.text(320, 288, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d6e6c2"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d6e6c2", align: "center", wordWrap: { width: 300 }
     }).setOrigin(0.5);
 
     this.instructionText = this.scene.add.text(320, 331, "", {
@@ -284,10 +284,10 @@ export class PlayerProfileSystem {
     this.saveButton = this.scene.add.rectangle(250, 307, 116, 23, 0x527044).setStrokeStyle(2, 0xd6b36b);
     this.loadButton = this.scene.add.rectangle(390, 307, 116, 23, 0x725332).setStrokeStyle(2, 0xd6b36b);
     this.saveButtonText = this.scene.add.text(250, 307, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold", align: "center", wordWrap: { width: 104 }
     }).setOrigin(0.5);
     this.loadButtonText = this.scene.add.text(390, 307, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold", align: "center", wordWrap: { width: 104 }
     }).setOrigin(0.5);
 
     this.profilePanel.add([

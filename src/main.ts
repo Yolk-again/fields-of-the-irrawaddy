@@ -89,6 +89,8 @@ const mobileHud = document.getElementById("mobile-game-hud");
 const menuButton = document.getElementById("game-menu-button");
 const mobileContextAction = document.getElementById("mobile-context-action") as HTMLButtonElement | null;
 const titleScrollCue = document.getElementById("title-scroll-cue");
+const titleScrollCueLabel = titleScrollCue?.querySelector("span");
+const titleScrollCueMyanmar = titleScrollCue?.querySelector("em");
 const installGameButton = document.getElementById("install-game-button") as HTMLButtonElement | null;
 const installGameHint = document.getElementById("install-game-hint");
 
@@ -363,9 +365,20 @@ function setupMobileHud(): void {
 
 function updateTitleScrollCue(): void {
   if (!titleScreen || !titleScrollCue) return;
-  const needsScroll = titleScreen.scrollHeight > titleScreen.clientHeight + 8;
-  const atBottom = titleScreen.scrollTop + titleScreen.clientHeight >= titleScreen.scrollHeight - 8;
-  titleScrollCue.toggleAttribute("hidden", !needsScroll || atBottom);
+  if (titleScrollCueLabel) {
+    titleScrollCueLabel.textContent = isTouchDevice ? "SWIPE UP TO INSTALL" : "SCROLL DOWN TO INSTALL";
+  }
+  if (titleScrollCueMyanmar) {
+    titleScrollCueMyanmar.textContent = isTouchDevice
+      ? "အပေါ်သို့ ပွတ်ဆွဲပြီး ဂိမ်းကို ထည့်သွင်းပါ"
+      : "အောက်သို့ ဆင်းပြီး ဂိမ်းကို ထည့်သွင်းပါ";
+  }
+  const installRow = document.querySelector<HTMLElement>(".title-install-row");
+  const titleBounds = titleScreen.getBoundingClientRect();
+  const installBounds = installRow?.getBoundingClientRect();
+  const pageCanScroll = titleScreen.scrollHeight > titleScreen.clientHeight + 8;
+  const installBelowViewport = Boolean(installBounds && installBounds.bottom > titleBounds.bottom + 8);
+  titleScrollCue.toggleAttribute("hidden", !pageCanScroll || !installBelowViewport);
 }
 
 window.addEventListener("resize", updateTitleScrollCue);

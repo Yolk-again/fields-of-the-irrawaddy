@@ -14,7 +14,7 @@ export const PALETTE = {
 };
 
 /** Shared readable type scale for canvas-based game interfaces. */
-export function uiFontSize(size: number, mobileScale = 1.16): string {
+export function uiFontSize(size: number, mobileScale = 1.1): string {
   const scaled = isMobilePlatform() ? Math.max(size + 1, size * mobileScale) : size;
   return `${Math.round(scaled * 10) / 10}px`;
 }
@@ -25,7 +25,7 @@ export function uiDescriptionStyle(languageFont: string, width: number, size = 1
     fontFamily: languageFont,
     fontSize: uiFontSize(size),
     color: "#eadfca",
-    lineSpacing: 2,
+    lineSpacing: 1,
     wordWrap: { width, useAdvancedWrap: true }
   };
 }
