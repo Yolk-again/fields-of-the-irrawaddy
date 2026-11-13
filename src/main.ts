@@ -392,17 +392,15 @@ function setupMobileHud(): void {
 
 function updateTitleScrollCue(): void {
   if (!titleScreen || !titleScrollCue) return;
-  if (isTouchDevice) {
-    titleScrollCue.hidden = true;
-    return;
-  }
   if (titleScrollCueLabel) {
-    titleScrollCueLabel.textContent = isTouchDevice ? "SWIPE UP TO INSTALL" : "SCROLL DOWN TO INSTALL";
+    titleScrollCueLabel.textContent = isTouchDevice
+      ? "SWIPE UP TO SEE SAVE SLOTS & INSTALL"
+      : "SCROLL DOWN TO SEE SAVE SLOTS & INSTALL";
   }
   if (titleScrollCueMyanmar) {
     titleScrollCueMyanmar.textContent = isTouchDevice
-      ? "အပေါ်သို့ ပွတ်ဆွဲပြီး ဂိမ်းကို ထည့်သွင်းပါ"
-      : "အောက်သို့ ဆင်းပြီး ဂိမ်းကို ထည့်သွင်းပါ";
+      ? "အပေါ်သို့ ပွတ်ဆွဲပြီး သိမ်းဆည်းမှုများနှင့် ဂိမ်းထည့်သွင်းရန်"
+      : "အောက်သို့ ဆင်းပြီး သိမ်းဆည်းမှုများနှင့် ဂိမ်းထည့်သွင်းရန်";
   }
   const installRow = document.querySelector<HTMLElement>(".title-install-row");
   const titleBounds = titleScreen.getBoundingClientRect();

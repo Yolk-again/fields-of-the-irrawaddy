@@ -3363,3 +3363,169 @@ body.foi-in-game:not(.foi-touch-device) #game-container:-webkit-full-screen > .g
     display: none !important;
   }
 }
+
+
+/* Mobile title screen: show the welcome artwork first and scroll to saves/install. */
+@media (orientation: landscape) {
+  body.foi-touch-device:not(.foi-in-game) .title-screen {
+    display: block !important;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+    padding: max(12px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-screen-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto auto auto auto auto;
+    grid-template-areas:
+      "heading"
+      "landscape"
+      "saves"
+      "install"
+      "footer" !important;
+    align-content: start;
+    align-items: stretch;
+    gap: 13px;
+    width: min(100%, 620px);
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    margin: 0 auto;
+    padding: 15px 14px 19px;
+    overflow: visible !important;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-screen-heading {
+    padding: 2px 0 0;
+    text-align: center;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-screen-eyebrow {
+    justify-content: center;
+    margin-bottom: 4px;
+    font-size: 8px;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-screen-burmese {
+    margin-bottom: 2px;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-screen-heading h2 {
+    font-size: clamp(25px, 4.5vw, 36px);
+    line-height: 1.08;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-screen-subtitle {
+    margin-top: 5px;
+    font-size: 11px;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-screen-intro {
+    margin-top: 3px;
+    font-size: 9px;
+    line-height: 1.5;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-screen-landscape {
+    height: clamp(170px, 46vh, 245px);
+    min-height: 170px;
+    max-height: 245px;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-landscape-photo-topline {
+    top: 10px;
+    left: 11px;
+    padding: 4px 7px;
+    font-size: 7px;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-landscape-photo-caption {
+    right: 13px;
+    bottom: 11px;
+    left: 13px;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-screen-saves {
+    padding-top: 4px;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .save-slot-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .save-slot-card {
+    height: auto;
+    min-height: 0;
+    padding: 11px 13px;
+    gap: 5px;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .save-slot-title {
+    font-size: 11px;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .save-slot-details {
+    min-height: 18px;
+    margin: 4px 0 6px;
+    font-size: 9px;
+    line-height: 1.4;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-screen button.save-button {
+    min-height: 36px;
+    font-size: 9px;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-install-row {
+    margin: 5px auto 4px !important;
+    padding: 12px 8px 2px !important;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-install-button {
+    min-height: 44px;
+    min-width: min(230px, 100%);
+    font-size: 11px;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-screen-footer {
+    margin: 0 0 6px;
+    font-size: 8px;
+    line-height: 1.5;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-scroll-cue {
+    display: flex !important;
+    bottom: 0;
+    padding: 16px 10px max(8px, env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, transparent, rgba(13, 39, 31, .96) 40%);
+    font-size: 8px;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-scroll-cue em {
+    font-size: 9px;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-screen-landscape,
+  body.foi-touch-device:not(.foi-in-game) .title-landscape-photo,
+  body.foi-touch-device:not(.foi-in-game) .title-screen-heading,
+  body.foi-touch-device:not(.foi-in-game) .save-slot-card {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-scroll-cue[hidden] {
+    display: none !important;
+  }
+}
+
+/* Chest rows keep names, counts, amounts and transfer buttons on separate baselines. */

@@ -339,7 +339,9 @@ export class MarketSystem {
     this.saleDescriptionText.setText(this.saleDescription());
     if (isBuying) {
       const owned = this.buyOwnedAmount();
-      this.saleAvailableText.setText(this.language.t("market.quantity.buyAvailable", { owned, amount: available }));
+      const isSeedPack = this.saleKind === "seeds" || this.saleKind === "tomatoSeeds" || this.saleKind === "greenBeanSeeds";
+      const availabilityKey = isSeedPack ? "market.quantity.buyAvailablePacks" : "market.quantity.buyAvailable";
+      this.saleAvailableText.setText(this.language.t(availabilityKey, { owned, amount: available }));
     } else {
       this.saleAvailableText.setText(this.language.t("market.quantity.available", { amount: available }));
     }
@@ -487,8 +489,6 @@ export class MarketSystem {
     } else if (this.mealMenuOpen) {
       this.updateMealMenu();
     } else {
-      const meals = this.cooking.getTotalMeals();
-      const fish = this.fishing.getFishTotal();
       this.actionTexts[0].setText(this.language.t("market.seedPackets"));
       this.actionTexts[1].setText(this.language.t("market.sellProduce"));
       this.actionTexts[2].setText(this.fishing.getHasRod() ? this.language.t("market.rodOwned") : this.language.t("market.buyRodShort"));
@@ -501,8 +501,8 @@ export class MarketSystem {
       this.setActionStatus(0, "market.status.open", "info");
       this.setActionStatus(1, "market.status.open", "info");
       this.setActionStatus(2, this.fishing.getHasRod() ? "market.status.owned" : "market.status.price", this.fishing.getHasRod() ? "good" : "info", { amount: FISHING_ROD_COST });
-      this.setActionStatus(3, "market.status.inBag", meals > 0 ? "good" : "muted", { amount: meals });
-      this.setActionStatus(4, "market.status.inBag", fish > 0 ? "good" : "muted", { amount: fish });
+      this.setActionStatus(3, "market.status.priceRange", "info", { min: 18, max: 36 });
+      this.setActionStatus(4, "market.status.priceRange", "info", { min: FISH_SELL_PRICES.silverBarb, max: FISH_SELL_PRICES.goldenCarp });
       this.setActionStatus(5, "market.status.open", "info");
       this.setActionStatus(6, "market.status.open", "info");
     }
@@ -525,14 +525,14 @@ export class MarketSystem {
 
   private updateSeedPacketMenu(): void {
     const options = [
-      { kind: "seeds" as const, icon: "wheat_seed_bag_asset", owned: this.farming.getSeedCount("rice"), label: this.language.t("market.riceSeedShort") },
-      { kind: "tomatoSeeds" as const, icon: "tomato_seed_bag_asset", owned: this.farming.getSeedCount("tomato"), label: this.language.t("inventory.tomatoSeeds") },
-      { kind: "greenBeanSeeds" as const, icon: "green_bean_seed_bag_asset", owned: this.farming.getSeedCount("greenBean"), label: this.language.t("inventory.greenBeanSeeds") }
+      { icon: "wheat_seed_bag_asset", cost: SEED_PACK_PRICES.seeds, label: this.language.t("market.riceSeedShort") },
+      { icon: "tomato_seed_bag_asset", cost: SEED_PACK_PRICES.tomatoSeeds, label: this.language.t("inventory.tomatoSeeds") },
+      { icon: "green_bean_seed_bag_asset", cost: SEED_PACK_PRICES.greenBeanSeeds, label: this.language.t("inventory.greenBeanSeeds") }
     ];
     options.forEach((option, index) => {
       this.actionIcons[index].setTexture(option.icon).setDisplaySize(22, 22);
       this.actionTexts[index].setText(option.label);
-      this.setActionStatus(index, "market.status.inBag", option.owned > 0 ? "good" : "muted", { amount: option.owned });
+      this.setActionStatus(index, "market.status.packCost", "info", { amount: option.cost });
     });
     for (let index = 3; index < 6; index++) {
       this.actionIcons[index].setVisible(false);
@@ -545,14 +545,14 @@ export class MarketSystem {
   }
   private updateBaitMenu(): void {
     const options = [
-      { kind: "wormBait" as const, icon: "worm_bait_asset", owned: this.fishing.getBaitCount("worm"), label: this.language.t("inventory.wormBait") },
-      { kind: "shrimpBait" as const, icon: "shrimp_bait_asset", owned: this.fishing.getBaitCount("shrimp"), label: this.language.t("inventory.shrimpBait") },
-      { kind: "goldenCricketBait" as const, icon: "golden_cricket_bait_asset", owned: this.fishing.getBaitCount("goldenCricket"), label: this.language.t("inventory.goldenCricketBait") }
+      { icon: "worm_bait_asset", cost: BAIT_PRICES.wormBait, label: this.language.t("inventory.wormBait") },
+      { icon: "shrimp_bait_asset", cost: BAIT_PRICES.shrimpBait, label: this.language.t("inventory.shrimpBait") },
+      { icon: "golden_cricket_bait_asset", cost: BAIT_PRICES.goldenCricketBait, label: this.language.t("inventory.goldenCricketBait") }
     ];
     options.forEach((option, index) => {
       this.actionIcons[index].setVisible(true).setTexture(option.icon).setDisplaySize(23, 23);
       this.actionTexts[index].setText(option.label);
-      this.setActionStatus(index, "market.status.inBag", option.owned > 0 ? "good" : "muted", { amount: option.owned });
+      this.setActionStatus(index, "market.status.unitCost", "info", { amount: option.cost });
     });
     for (let index = 3; index < 6; index++) {
       this.actionIcons[index].setVisible(false);
@@ -565,16 +565,20 @@ export class MarketSystem {
   }
 
   private updateProduceMenu(): void {
-    const wheatCount = this.farming.getRice() + this.farming.getGoldenWheat();
-    const options = [
-      { icon: "wheat_basket_asset", label: this.language.t("inventory.wheat"), key: "wheat", owned: wheatCount },
-      { icon: "tomato_basket_asset", label: this.language.t("inventory.tomatoes"), key: "tomatoes", owned: this.farming.getCropCount("tomato") },
-      { icon: "green_bean_basket_asset", label: this.language.t("inventory.greenBeans"), key: "greenBeans", owned: this.farming.getCropCount("greenBean") }
+    const options: { icon: string; label: string; statusKey: string; values: Record<string, string | number> }[] = [
+      {
+        icon: "wheat_basket_asset",
+        label: this.language.t("inventory.wheat"),
+        statusKey: "market.status.priceRange",
+        values: { min: NORMAL_WHEAT_PRICE + this.farming.getRiceSaleBonus(), max: GOLDEN_WHEAT_PRICE }
+      },
+      { icon: "tomato_basket_asset", label: this.language.t("inventory.tomatoes"), statusKey: "market.status.unitSell", values: { amount: CROP_SELL_PRICES.tomato } },
+      { icon: "green_bean_basket_asset", label: this.language.t("inventory.greenBeans"), statusKey: "market.status.unitSell", values: { amount: CROP_SELL_PRICES.greenBean } }
     ];
     options.forEach((option, index) => {
       this.actionIcons[index].setVisible(true).setTexture(option.icon).setDisplaySize(22, 22);
       this.actionTexts[index].setText(option.label);
-      this.setActionStatus(index, "market.status.inBag", option.owned > 0 ? "good" : "muted", { amount: option.owned });
+      this.setActionStatus(index, option.statusKey, "info", option.values);
     });
     for (let index = 3; index < 6; index++) {
       this.actionIcons[index].setVisible(false);
@@ -588,15 +592,15 @@ export class MarketSystem {
 
   private updateFishMenu(): void {
     const options = [
-      { id: "silverBarb" as const, icon: "fish_silver_barb_asset", owned: this.fishing.getFishCount("silverBarb"), price: FISH_SELL_PRICES.silverBarb },
-      { id: "catfish" as const, icon: "fish_catfish_asset", owned: this.fishing.getFishCount("catfish"), price: FISH_SELL_PRICES.catfish },
-      { id: "goldenCarp" as const, icon: "fish_golden_carp_asset", owned: this.fishing.getFishCount("goldenCarp"), price: FISH_SELL_PRICES.goldenCarp }
+      { id: "silverBarb" as const, icon: "fish_silver_barb_asset", price: FISH_SELL_PRICES.silverBarb },
+      { id: "catfish" as const, icon: "fish_catfish_asset", price: FISH_SELL_PRICES.catfish },
+      { id: "goldenCarp" as const, icon: "fish_golden_carp_asset", price: FISH_SELL_PRICES.goldenCarp }
     ];
     options.forEach((option, index) => {
       this.actionIcons[index].setVisible(true).setTexture(option.icon).setDisplaySize(24, 24);
       const fishName = this.language.t(`inventory.${option.id}`);
       this.actionTexts[index].setText(fishName);
-      this.setActionStatus(index, "market.status.inBag", option.owned > 0 ? "good" : "muted", { amount: option.owned });
+      this.setActionStatus(index, "market.status.unitSell", "info", { amount: option.price });
     });
     for (let index = 3; index < 6; index++) {
       this.actionIcons[index].setVisible(false);
@@ -609,17 +613,15 @@ export class MarketSystem {
   }
 
   private updateMealMenu(): void {
-    const counts = this.cooking.getMealCounts();
     const options: { id: MealKind; icon: string; price: number }[] = [
       { id: "fishRice", icon: "meal_fish_rice_asset", price: 18 },
       { id: "mohinga", icon: "meal_mohinga_asset", price: 32 },
       { id: "fishCurry", icon: "meal_fish_curry_asset", price: 36 }
     ];
     options.forEach((option, index) => {
-      const count = counts[option.id];
       this.actionIcons[index].setVisible(true).setTexture(option.icon).setDisplaySize(24, 24);
       this.actionTexts[index].setText(this.language.t(`cooking.recipe.${option.id}`));
-      this.setActionStatus(index, "market.mealBagAndPrice", count > 0 ? "good" : "muted", { amount: count, price: option.price });
+      this.setActionStatus(index, "market.status.unitSell", "info", { amount: option.price });
     });
     for (let index = 3; index < 6; index++) {
       this.actionIcons[index].setVisible(false);
