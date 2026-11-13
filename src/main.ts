@@ -392,6 +392,10 @@ function setupMobileHud(): void {
 
 function updateTitleScrollCue(): void {
   if (!titleScreen || !titleScrollCue) return;
+  if (isTouchDevice) {
+    titleScrollCue.hidden = true;
+    return;
+  }
   if (titleScrollCueLabel) {
     titleScrollCueLabel.textContent = isTouchDevice ? "SWIPE UP TO INSTALL" : "SCROLL DOWN TO INSTALL";
   }

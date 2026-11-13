@@ -2924,3 +2924,442 @@ body.foi-in-game:not(.foi-touch-device) #game-container:-webkit-full-screen > .g
   bottom: auto !important;
   left: auto !important;
 }
+
+/* Stable title-screen layout: one source of truth after the older responsive rules. */
+.title-screen {
+  display: grid !important;
+  place-items: safe center;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding: clamp(10px, 2vh, 22px) clamp(12px, 2vw, 26px);
+  scrollbar-gutter: stable;
+}
+
+.title-screen-content {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  grid-template-rows: auto auto auto auto;
+  grid-template-areas:
+    "heading landscape"
+    "saves saves"
+    "install install"
+    "footer footer" !important;
+  align-items: center;
+  align-content: center;
+  gap: clamp(8px, 1.35vh, 14px) clamp(14px, 2.2vw, 26px);
+  width: min(1120px, 100%);
+  min-width: 0;
+  min-height: 0;
+  max-height: none;
+  height: auto;
+  margin: 0 auto;
+  padding: clamp(14px, 2.4vh, 26px) clamp(14px, 2.6vw, 30px);
+  overflow: visible;
+}
+
+.title-screen-heading,
+.title-screen-saves,
+.title-screen-landscape,
+.title-install-row,
+.title-screen-footer,
+.save-slot-grid,
+.save-slot-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.title-screen-heading {
+  align-self: center;
+  padding: 4px 0;
+}
+
+.title-screen-landscape {
+  height: clamp(140px, 25vh, 230px);
+  min-height: 0;
+  max-height: none;
+  align-self: stretch;
+}
+
+.title-screen-saves {
+  grid-area: saves;
+  align-self: stretch;
+}
+
+.title-screen-section-heading {
+  margin-bottom: clamp(5px, 0.9vh, 9px);
+}
+
+.save-slot-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: clamp(7px, 1.2vw, 14px);
+}
+
+.save-slot-card {
+  min-height: clamp(112px, 17vh, 148px);
+  padding: clamp(8px, 1.25vh, 13px);
+  gap: 4px;
+}
+
+.save-slot-details {
+  min-height: 0;
+  margin: 4px 0 5px;
+  line-height: 1.3;
+}
+
+.save-slot-actions {
+  display: flex;
+  min-width: 0;
+  gap: 4px;
+}
+
+.save-slot-secondary-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-width: 0;
+  gap: 4px;
+}
+
+.save-slot-actions > *,
+.save-slot-secondary-actions > * {
+  min-width: 0;
+}
+
+.save-slot-secondary-actions .save-button {
+  padding-inline: 3px;
+  font-size: clamp(7px, 0.85vw, 9px);
+}
+
+.title-install-row {
+  grid-area: install !important;
+  justify-self: center !important;
+  align-self: center;
+  width: min(100%, 440px);
+  margin: 0 auto !important;
+  padding: 7px 8px 0 !important;
+  gap: 3px;
+}
+
+.title-install-button {
+  min-width: min(210px, 100%);
+  min-height: 42px;
+  padding: 7px 16px;
+  font-size: 12px;
+}
+
+.title-install-hint {
+  max-width: 100%;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.title-screen-footer {
+  grid-area: footer;
+  margin: 0;
+  line-height: 1.35;
+}
+
+@media (max-height: 700px) and (min-width: 701px) {
+  .title-screen {
+    padding: 8px 12px;
+  }
+
+  .title-screen-content {
+    gap: 7px 16px;
+    padding: 12px 18px;
+  }
+
+  .title-screen-heading h2 {
+    font-size: clamp(22px, 3.5vw, 38px);
+  }
+
+  .title-screen-landscape {
+    height: clamp(100px, 21vh, 150px);
+  }
+
+  .title-screen-subtitle {
+    margin-top: 7px;
+  }
+
+  .title-screen-intro {
+    margin-top: 4px;
+    line-height: 1.45;
+  }
+
+  .save-slot-card {
+    min-height: clamp(100px, 17vh, 126px);
+    padding: 8px;
+  }
+
+  .title-screen-section-heading {
+    margin-bottom: 5px;
+  }
+
+  .title-install-row {
+    padding-top: 4px !important;
+  }
+
+  .title-install-button {
+    min-height: 36px;
+    padding-block: 5px;
+  }
+}
+
+@media (max-width: 760px) and (orientation: landscape), (orientation: landscape) and (pointer: coarse) {
+  .title-screen {
+    display: grid !important;
+    place-items: center;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: hidden !important;
+    overscroll-behavior: none;
+    padding: max(6px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    scrollbar-gutter: auto;
+  }
+
+  .title-screen-content {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr) !important;
+    grid-template-rows: minmax(0, 1fr) auto auto auto;
+    grid-template-areas:
+      "heading landscape"
+      "saves saves"
+      "install install"
+      "footer footer" !important;
+    align-content: stretch;
+    align-items: stretch;
+    gap: clamp(4px, 1.1vh, 8px) clamp(8px, 1.5vw, 14px);
+    width: min(100%, 980px);
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
+    margin: 0 auto;
+    padding: clamp(5px, 1.3vh, 10px) clamp(8px, 1.6vw, 14px);
+    overflow: hidden;
+  }
+
+  .title-screen-content::before,
+  .title-screen-content::after {
+    right: 6px;
+    left: 6px;
+    height: 2px;
+  }
+
+  .title-screen-content::before { top: 3px; }
+  .title-screen-content::after { bottom: 3px; }
+
+  .title-screen-heading {
+    align-self: center;
+    padding: 2px 0;
+    text-align: center;
+  }
+
+  .title-screen-eyebrow {
+    justify-content: center;
+    gap: 5px;
+    margin-bottom: 3px;
+    font-size: clamp(6px, 1vw, 8px);
+    letter-spacing: 0.12em;
+  }
+
+  .title-screen-eyebrow::before,
+  .title-screen-eyebrow::after {
+    width: clamp(10px, 2vw, 18px);
+  }
+
+  .title-screen-burmese {
+    margin-bottom: 2px;
+    font-size: clamp(10px, 1.65vh, 14px);
+    line-height: 1.35;
+  }
+
+  .title-screen-heading h2 {
+    font-size: clamp(17px, 3.7vw, 30px);
+    line-height: 1.04;
+    letter-spacing: 0.025em;
+  }
+
+  .title-screen-subtitle {
+    margin: 4px 0 2px;
+    font-size: clamp(8px, 1.45vh, 11px);
+    line-height: 1.25;
+  }
+
+  .title-screen-intro {
+    margin-top: 2px;
+    font-size: clamp(7px, 1.15vh, 9px);
+    line-height: 1.35;
+  }
+
+  .title-screen-landscape {
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    align-self: stretch;
+  }
+
+  .title-landscape-photo-topline {
+    top: 7px;
+    left: 8px;
+    gap: 4px;
+    max-width: calc(100% - 16px);
+    padding: 3px 5px;
+    font-size: 6px;
+    letter-spacing: 0.08em;
+  }
+
+  .title-landscape-photo-caption {
+    right: 9px;
+    bottom: 7px;
+    left: 9px;
+    gap: 1px;
+  }
+
+  .title-landscape-photo-caption-burmese {
+    font-size: clamp(9px, 1.4vh, 11px);
+    line-height: 1.35;
+  }
+
+  .title-landscape-photo-caption-english {
+    font-size: 6px;
+    letter-spacing: 0.12em;
+  }
+
+  .title-screen-saves {
+    align-self: stretch;
+  }
+
+  .title-screen-section-heading {
+    gap: 7px;
+    margin-bottom: 3px;
+  }
+
+  .title-screen-section-heading h3 {
+    font-size: clamp(7px, 1.1vh, 9px);
+    letter-spacing: 0.14em;
+  }
+
+  .title-screen-section-heading p {
+    margin-top: 1px;
+    font-size: clamp(7px, 1vh, 8px);
+    line-height: 1.2;
+  }
+
+  .save-slot-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(4px, 0.9vw, 8px);
+  }
+
+  .save-slot-card {
+    height: 100%;
+    min-height: 0;
+    padding: clamp(4px, 0.9vh, 7px);
+    gap: 2px;
+  }
+
+  .save-slot-title {
+    font-size: clamp(8px, 1.45vh, 10px);
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+  }
+
+  .save-slot-details {
+    min-height: 0;
+    margin: 1px 0 2px;
+    font-size: clamp(6px, 1.1vh, 8px);
+    line-height: 1.2;
+  }
+
+  .save-slot-actions {
+    gap: 2px;
+  }
+
+  .save-slot-secondary-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2px;
+  }
+
+  .title-screen button.save-button,
+  .save-slot-secondary-actions .save-button {
+    min-height: clamp(21px, 5.6vh, 27px);
+    padding: 2px 2px;
+    border-width: 1px;
+    font-size: clamp(6px, 0.95vw, 8px);
+    line-height: 1.05;
+    letter-spacing: 0;
+  }
+
+  .title-install-row {
+    width: min(100%, 340px);
+    margin: 0 auto !important;
+    padding: 3px 6px 0 !important;
+    gap: 1px;
+  }
+
+  .title-install-button {
+    min-width: min(175px, 100%);
+    min-height: clamp(27px, 7vh, 36px);
+    padding: 3px 10px;
+    gap: 7px;
+    font-size: clamp(8px, 1.3vh, 10px);
+  }
+
+  .title-install-button span:first-child {
+    width: 16px;
+    height: 16px;
+    font-size: 13px;
+  }
+
+  .title-install-hint {
+    max-height: 2.5em;
+    overflow: hidden;
+    font-size: clamp(6px, 1vh, 8px);
+    line-height: 1.2;
+  }
+
+  .title-screen-footer {
+    gap: 3px 7px;
+    font-size: clamp(6px, 0.95vh, 8px);
+    line-height: 1.15;
+    letter-spacing: 0.08em;
+  }
+
+  .title-screen-footer-burmese {
+    font-size: clamp(7px, 1vh, 8px);
+  }
+
+  .title-screen-landscape,
+  .title-landscape-photo,
+  .title-screen-heading,
+  .save-slot-card {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .title-scroll-cue {
+    display: none !important;
+  }
+}
+
+@media (max-width: 700px) and (orientation: portrait) {
+  body.foi-touch-device:not(.foi-in-game) .title-screen {
+    overflow: hidden !important;
+    overscroll-behavior: none;
+    touch-action: none;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-screen-content {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
+  }
+
+  body.foi-touch-device:not(.foi-in-game) .title-scroll-cue {
+    display: none !important;
+  }
+}
