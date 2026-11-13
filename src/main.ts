@@ -462,68 +462,11 @@ renderSaveSlots();
 setupMobileHud();
 window.requestAnimationFrame(updateTitleScrollCue);
 
-const currentBuildId = document.querySelector<HTMLMetaElement>('meta[name="foi-build"]')?.content ?? "";
-const currentBundleSignature = [
-  ...Array.from(document.querySelectorAll<HTMLScriptElement>('script[type="module"][src]')).map(script => new URL(script.src, window.location.href).pathname),
-  ...Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"][href]')).map(link => new URL(link.href, window.location.href).pathname)
-].join("|");
-let appUpdatePending = false;
-
-function getRemoteBundleSignature(html: string): string {
-  const scriptPaths = Array.from(html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+\.js(?:\?[^"']*)?)["'][^>]*>/gi))
-    .map(match => new URL(match[1], window.location.href).pathname);
-  const stylePaths = Array.from(html.matchAll(/<link\b[^>]*\brel=["']stylesheet["'][^>]*\bhref=["']([^"']+\.css(?:\?[^"']*)?)["'][^>]*>/gi))
-    .map(match => new URL(match[1], window.location.href).pathname);
-  return [...scriptPaths, ...stylePaths].join("|");
-}
-
-function applyPendingAppUpdateWhenSafe(): void {
-  if (!appUpdatePending || document.body.classList.contains("foi-in-game")) return;
-  appUpdatePending = false;
-  window.location.reload();
-}
-
-function markAppUpdatePending(): void {
-  appUpdatePending = true;
-  applyPendingAppUpdateWhenSafe();
-}
-
-async function checkForPublishedBuild(): Promise<void> {
-  if (document.visibilityState !== "visible" || !currentBuildId) return;
-  try {
-    const response = await fetch(`/?foi-update-check=${Date.now()}`, {
-      cache: "no-store",
-      headers: { "Cache-Control": "no-cache" }
-    });
-    if (!response.ok) return;
-    const html = await response.text();
-    const remoteBuildId = html.match(/<meta\s+name=["']foi-build["']\s+content=["']([^"']+)["']/i)?.[1];
-    const remoteBundleSignature = getRemoteBundleSignature(html);
-    const buildChanged = Boolean(remoteBuildId && remoteBuildId !== currentBuildId);
-    const bundlesChanged = Boolean(remoteBundleSignature && currentBundleSignature && remoteBundleSignature !== currentBundleSignature);
-    if (buildChanged || bundlesChanged) markAppUpdatePending();
-  } catch {
-    // Offline: keep the installed version running and retry when connectivity returns.
-  }
-}
-
-window.addEventListener("foi-return-to-title", () => {
-  if (appUpdatePending) window.requestAnimationFrame(applyPendingAppUpdateWhenSafe);
-});
-
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") void checkForPublishedBuild();
-});
-window.setInterval(() => void checkForPublishedBuild(), 60_000);
-
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.addEventListener("controllerchange", markAppUpdatePending);
   window.addEventListener("load", () => {
     void navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" })
-      .then(registration => registration.update())
       .catch(error => {
         console.warn("Offline install support could not be registered:", error);
       });
-    void checkForPublishedBuild();
   }, { once: true });
 }
