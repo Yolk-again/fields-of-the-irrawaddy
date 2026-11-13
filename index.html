@@ -9,6 +9,7 @@
     <title>Fields of the Irrawaddy | Myanmar Farming Game</title>
     <meta name="description" content="Play Fields of the Irrawaddy, a pixel-art farming adventure set in rural Myanmar. Grow crops, raise animals, fish, cook meals, and help your village thrive." />
     <link rel="canonical" href="https://fields-of-the-irrawaddy.vercel.app/" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" href="/favicon.png" sizes="192x192" />
@@ -117,6 +118,13 @@
             <article class="save-slot-card"><h3 class="save-slot-title">SAVE SLOT 3</h3><p class="save-slot-details is-empty">EMPTY SLOT</p><div class="save-slot-actions"><button type="button" class="save-button save-button-primary" disabled>START NEW GAME</button></div></article>
           </div>
         </section>
+        <div class="title-install-row">
+          <button id="install-game-button" class="title-install-button" type="button">
+            <span aria-hidden="true">↓</span>
+            <span>INSTALL GAME</span>
+          </button>
+          <p id="install-game-hint" class="title-install-hint" hidden aria-live="polite"></p>
+        </div>
         <footer class="title-screen-footer">
           <span class="title-screen-footer-mark">✦</span>
           <span>MADE WITH THE SPIRIT OF MYANMAR</span>

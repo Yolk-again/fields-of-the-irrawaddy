@@ -6,7 +6,7 @@ import {
   migrateLegacySaveToFirstSlot,
   readSaveSlotSummary
 } from "../systems/SaveSlotStorage";
-import { pixelPanel } from "../ui/PixelUI";
+import { pixelPanel, uiFontSize } from "../ui/PixelUI";
 
 interface SaveSlotButton {
   background: Phaser.GameObjects.Rectangle;
@@ -64,7 +64,7 @@ export class SaveSelectScene extends Phaser.Scene {
   private drawTitle(): void {
     this.add.text(320, 34, this.language.t("menu.title"), {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "21px",
+      fontSize: uiFontSize(21),
       color: "#fff1cf",
       fontStyle: "bold",
       stroke: "#2a1a14",
@@ -74,7 +74,7 @@ export class SaveSelectScene extends Phaser.Scene {
 
     this.add.text(320, 66, this.language.t("menu.subtitle"), {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "9px",
+      fontSize: uiFontSize(9),
       color: "#fff1cf",
       stroke: "#2a1a14",
       strokeThickness: 3,
@@ -83,7 +83,7 @@ export class SaveSelectScene extends Phaser.Scene {
 
     this.add.text(320, 344, this.language.t("menu.footer"), {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "8px",
+      fontSize: uiFontSize(8),
       color: "#fff1cf",
       stroke: "#2a1a14",
       strokeThickness: 3,
@@ -107,7 +107,7 @@ export class SaveSelectScene extends Phaser.Scene {
 
       const title = this.add.text(centerX, 132, this.language.t("menu.slot", { number: slotNumber }), {
         fontFamily: this.language.getFontFamily(),
-        fontSize: "11px",
+        fontSize: uiFontSize(11),
         color: "#e6c47e",
         fontStyle: "bold",
         align: "center"
@@ -117,7 +117,7 @@ export class SaveSelectScene extends Phaser.Scene {
       if (!summary.occupied) {
         const emptyText = this.add.text(centerX, 179, this.language.t("menu.empty"), {
           fontFamily: this.language.getFontFamily(),
-          fontSize: "10px",
+          fontSize: uiFontSize(10),
           color: "#d7e6c5",
           align: "center"
         }).setOrigin(0.5).setDepth(12);
@@ -137,7 +137,7 @@ export class SaveSelectScene extends Phaser.Scene {
         : this.language.t("menu.invalid");
       const info = this.add.text(centerX, 163, infoLabel, {
         fontFamily: this.language.getFontFamily(),
-        fontSize: "8px",
+        fontSize: uiFontSize(8),
         color: summary.valid ? "#d7e6c5" : "#f2a28b",
         align: "center",
         wordWrap: { width: 164 }
@@ -212,7 +212,7 @@ export class SaveSelectScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
     const buttonLabel = this.add.text(x, y, label, {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "8px",
+      fontSize: uiFontSize(8),
       color: "#fff1cf",
       fontStyle: "bold",
       align: "center",
@@ -237,7 +237,7 @@ export class SaveSelectScene extends Phaser.Scene {
     const bodyKey = kind === "delete" ? "menu.confirmDeleteBody" : "menu.confirmOverwriteBody";
     const title = this.add.text(320, 128, this.language.t(titleKey), {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "15px",
+      fontSize: uiFontSize(15),
       color: "#e6c47e",
       fontStyle: "bold",
       align: "center",
@@ -245,7 +245,7 @@ export class SaveSelectScene extends Phaser.Scene {
     }).setOrigin(0.5);
     const body = this.add.text(320, 171, this.language.t(bodyKey, { number: slotNumber }), {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "9px",
+      fontSize: uiFontSize(9),
       color: "#fff1cf",
       align: "center",
       wordWrap: { width: 310 }

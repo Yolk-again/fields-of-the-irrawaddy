@@ -25,7 +25,7 @@ import {
   HOMES, LOTUS_POND, MONASTERY, NPC_FARM_PLOTS, NORTH_ROW, WORLD_LABELS
 } from "../data/villageLayout";
 import type { PropDef } from "../data/villageLayout";
-import { pixelPanel } from "../ui/PixelUI";
+import { pixelPanel, uiFontSize } from "../ui/PixelUI";
 
 const WORLD_WIDTH = 1440;
 const WORLD_HEIGHT = 640;
@@ -172,8 +172,12 @@ export class FarmScene extends Phaser.Scene {
   };
 
   private handleMobileHudAction = (event: Event): void => {
-    if (!this.isTouchDevice) return;
     const action = (event as CustomEvent<string>).detail;
+    if (action === "fullscreen") {
+      this.toggleFullscreenForDevice();
+      return;
+    }
+    if (!this.isTouchDevice) return;
     switch (action) {
       case "inventory":
         this.inventory?.mobileToggle();
@@ -189,9 +193,6 @@ export class FarmScene extends Phaser.Scene {
         break;
       case "audio":
         this.music?.mobileToggle();
-        break;
-      case "fullscreen":
-        this.toggleFullscreenForDevice();
         break;
     }
   };
@@ -480,7 +481,9 @@ export class FarmScene extends Phaser.Scene {
     document.body.classList.add("foi-in-game");
     document.getElementById("app")?.setAttribute("aria-hidden", "false");
     document.getElementById("title-screen")?.classList.add("is-hidden");
-    document.getElementById("mobile-game-hud")?.setAttribute("aria-hidden", this.isTouchDevice ? "false" : "true");
+    // Expose the DOM HUD to assistive technology on both platforms; desktop
+    // CSS hides every mobile-only action and leaves the fullscreen button visible.
+    document.getElementById("mobile-game-hud")?.setAttribute("aria-hidden", "false");
 
     if (!this.loadExistingSave) {
       this.profile.openCharacterCreation(() => {
@@ -883,7 +886,7 @@ export class FarmScene extends Phaser.Scene {
   private addWorldLabel(x: number, y: number, key: string, radius: number): void {
     const text = this.add.text(x, y, this.language.t(key), {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
+      fontSize: uiFontSize(10),
       color: "#fff3d3",
       backgroundColor: "#2a1a14",
       padding: { x: 5, y: 3 }
@@ -1391,17 +1394,16 @@ export class FarmScene extends Phaser.Scene {
       ? { bag: 420, profile: 460, language: 500, help: 540 }
       : { bag: 466, profile: 498, language: 530, help: 562 };
 
-    if (this.isTouchDevice) {
-      window.addEventListener("foi-mobile-hud-action", this.handleMobileHudAction);
-      this.registerFullscreenEvents();
-      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-        window.removeEventListener("foi-mobile-hud-action", this.handleMobileHudAction);
-      });
-      return;
-    }
+    // The DOM fullscreen control is available on both desktop and mobile.
+    // Other DOM HUD actions remain mobile-only; desktop keeps its Phaser HUD icons.
+    window.addEventListener("foi-mobile-hud-action", this.handleMobileHudAction);
+    this.registerFullscreenEvents();
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      window.removeEventListener("foi-mobile-hud-action", this.handleMobileHudAction);
+    });
 
-    // Desktop/windowed play intentionally has no fullscreen icon. The fullscreen
-    // action is provided by the mobile DOM HUD only.
+    if (this.isTouchDevice) return;
+
     this.createIconButton(positions.help, headerY, "ui_icon_help", "hud.tip.help",
       () => this.help.mobileToggle());
     this.createIconButton(positions.language, headerY, "ui_icon_globe", "hud.tip.language",
@@ -1437,7 +1439,7 @@ export class FarmScene extends Phaser.Scene {
     const hit = this.add.rectangle(x, y, hitSize, hitSize, 0xffffff, 0.001)
       .setScrollFactor(0).setDepth(8502).setInteractive({ useHandCursor: true });
     const tip = this.add.text(x, y + 22, this.language.t(tipKey), {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf",
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf",
       backgroundColor: "#2a1a14", padding: { x: 4, y: 2 }
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(8503).setVisible(false);
     this.language.onChange(() => {
@@ -1462,7 +1464,7 @@ export class FarmScene extends Phaser.Scene {
   private createResourceHud(): void {
     const panel = pixelPanel(this, 70, 52, 108, 26).setDepth(150);
     const icon = this.add.image(34, 52, "coin_asset").setScrollFactor(0).setDepth(151);
-    const style = { fontFamily: this.language.getFontFamily(), fontSize: "11px", color: "#fff1cf", stroke: "#2a1a14", strokeThickness: 2 };
+    const style = { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(11), color: "#fff1cf", stroke: "#2a1a14", strokeThickness: 2 };
     this.coinText = this.add.text(52, 46, "0", style).setScrollFactor(0).setDepth(151);
     this.ui.registerHud(panel, icon, this.coinText);
   }
@@ -1564,7 +1566,7 @@ export class FarmScene extends Phaser.Scene {
       .setScale(2.65).setScrollFactor(0);
     const label = this.add.text(x, y + 30, "USE", {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "12px",
+      fontSize: uiFontSize(12),
       color: "#ffd978",
       stroke: "#2a1a14",
       strokeThickness: 2,
@@ -1739,11 +1741,12 @@ export class FarmScene extends Phaser.Scene {
   }
 
   private toggleFullscreenForDevice(): void {
-    if (!this.isTouchDevice) return;
     const container = document.getElementById("game-container");
     if (!container) return;
+    const fullscreenButton = document.querySelector<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"]');
     if (document.body.classList.contains("foi-mobile-fullscreen")) {
       document.body.classList.remove("foi-mobile-fullscreen");
+      fullscreenButton?.classList.remove("is-fullscreen");
       this.scale.refresh();
       return;
     }
@@ -1757,17 +1760,30 @@ export class FarmScene extends Phaser.Scene {
         const result = requestFullscreen.call(container);
         if (result && typeof result.then === "function") {
           void result.catch(() => {
-            document.body.classList.add("foi-mobile-fullscreen");
-            this.scale.refresh();
+            if (this.isTouchDevice) {
+              document.body.classList.add("foi-mobile-fullscreen");
+              fullscreenButton?.classList.add("is-fullscreen");
+              this.scale.refresh();
+            } else {
+              this.handleFullscreenFailed();
+            }
           });
         }
       } catch {
-        document.body.classList.add("foi-mobile-fullscreen");
-        this.scale.refresh();
+        if (this.isTouchDevice) {
+          document.body.classList.add("foi-mobile-fullscreen");
+          fullscreenButton?.classList.add("is-fullscreen");
+          this.scale.refresh();
+        } else {
+          this.handleFullscreenFailed();
+        }
       }
-    } else {
+    } else if (this.isTouchDevice) {
       document.body.classList.add("foi-mobile-fullscreen");
+      fullscreenButton?.classList.add("is-fullscreen");
       this.scale.refresh();
+    } else {
+      this.handleFullscreenFailed();
     }
   }
 

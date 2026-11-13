@@ -2,7 +2,7 @@
 import Phaser from "phaser";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
-import { createRedCloseButton, modalClosePosition, modalPanel, pixelPanel } from "../ui/PixelUI";
+import { createRedCloseButton, modalClosePosition, modalPanel, pixelPanel, uiFontSize } from "../ui/PixelUI";
 import { isMobilePlatform } from "../utils/DeviceMode";
 import { HOMES } from "../data/villageLayout";
 import { NpcFarmingSystem, type NpcFarmAction, type NpcFarmerId } from "./NpcFarmingSystem";
@@ -238,7 +238,7 @@ export class VillageSystem {
       this.language.t(labelKey),
       {
         fontFamily: this.language.getFontFamily(),
-        fontSize: "10px",
+        fontSize: uiFontSize(10),
         color: "#fff3d3",
         backgroundColor: "#2a1a14",
         padding: { x: 4, y: 3 }
@@ -273,7 +273,7 @@ export class VillageSystem {
 
     const nameText = this.scene.add.text(0, -36, this.language.t(NAME_KEYS[id]), {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
+      fontSize: uiFontSize(10),
       color: "#ffffff",
       backgroundColor: "#2a1a14",
       padding: { x: 4, y: 2 }
@@ -281,7 +281,7 @@ export class VillageSystem {
 
     const activityText = this.scene.add.text(0, 27, "", {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "9px",
+      fontSize: uiFontSize(9),
       color: "#fff1b8",
       backgroundColor: "#2a1a14",
       padding: { x: 3, y: 2 }
@@ -289,7 +289,7 @@ export class VillageSystem {
 
     const promptText = this.scene.add.text(0, 44, this.language.t(this.touchMode ? "village.mobileTalk" : "village.talk"), {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
+      fontSize: uiFontSize(10),
       color: "#fff1b8",
       backgroundColor: "#79382e",
       padding: { x: 5, y: 3 },
@@ -306,7 +306,7 @@ export class VillageSystem {
     // separate from the larger dialogue panel opened through the talk prompt.
     const speechText = this.scene.add.text(0, -52, "", {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
+      fontSize: uiFontSize(10),
       color: "#302015",
       backgroundColor: "#fff1cf",
       padding: { x: 4, y: 3 },
@@ -323,7 +323,7 @@ export class VillageSystem {
       .setVisible(false);
     const homageText = this.scene.add.text(0, -47, "🙏", {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "18px",
+      fontSize: uiFontSize(18),
       color: "#fff1cf",
       stroke: "#2a1a14",
       strokeThickness: 3
@@ -391,7 +391,7 @@ export class VillageSystem {
 
     this.clockText = this.scene.add.text(38, 16, "", {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
+      fontSize: uiFontSize(10),
       color: "#f0d69e",
       stroke: "#2a1a14",
       strokeThickness: 2
@@ -424,7 +424,7 @@ export class VillageSystem {
 
     this.speakerText = this.scene.add.text(48, 257, "", {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "15px",
+      fontSize: uiFontSize(15),
       color: "#e6c47e",
       stroke: "#21170f",
       strokeThickness: 1
@@ -432,7 +432,7 @@ export class VillageSystem {
 
     this.dialogueText = this.scene.add.text(48, 282, "", {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "13px",
+      fontSize: uiFontSize(13),
       color: "#ffffff",
       wordWrap: { width: 430 },
       lineSpacing: 3,
@@ -442,7 +442,7 @@ export class VillageSystem {
 
     this.instructionText = this.scene.add.text(48, 335, "", {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
+      fontSize: uiFontSize(10),
       color: "#d6e6c2"
     });
 

@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { LanguageSystem } from "./LanguageSystem";
 import { ModalUIManager } from "./ModalUIManager";
 import { isMobilePlatform } from "../utils/DeviceMode";
+import { uiFontSize } from "../ui/PixelUI";
 
 export type FishKind = "silverBarb" | "catfish" | "goldenCarp";
 export type FishingBaitKind = "worm" | "shrimp" | "goldenCricket";
@@ -118,7 +119,7 @@ export class FishingSystem {
   private createInterface(): void {
     this.prompt = this.scene.add.text(320, 292, "", {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
+      fontSize: uiFontSize(10),
       color: "#fff1cf",
       backgroundColor: "#2a1a14",
       padding: { x: 7, y: 4 },
@@ -128,7 +129,7 @@ export class FishingSystem {
 
     this.toastText = this.scene.add.text(320, 264, "", {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "11px",
+      fontSize: uiFontSize(11),
       color: "#ffe18a",
       backgroundColor: "#2a1a14",
       padding: { x: 7, y: 4 },

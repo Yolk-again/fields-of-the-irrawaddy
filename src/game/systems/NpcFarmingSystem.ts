@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { NPC_FARM_PLOTS } from "../data/villageLayout";
 import { LanguageSystem } from "./LanguageSystem";
+import { uiFontSize } from "../ui/PixelUI";
 
 export type NpcFarmerId = "ma" | "ko";
 export type NpcFarmAction = "hoe" | "plant" | "water" | "harvest" | "clear" | "sell";
@@ -247,7 +248,7 @@ export class NpcFarmingSystem {
     const ownerName = this.language.t(owner === "ma" ? "village.maThiri" : "village.koAung");
     const label = this.scene.add.text(570, 218, this.language.t("npcFarm.sold", { name: ownerName, amount: sold }), {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
+      fontSize: uiFontSize(10),
       color: "#ffe070",
       backgroundColor: "#2a1a14",
       padding: { x: 5, y: 3 },

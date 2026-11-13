@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
-import { createRedCloseButton, modalClosePosition, modalPanel } from "../ui/PixelUI";
+import { createRedCloseButton, modalClosePosition, modalPanel, uiFontSize } from "../ui/PixelUI";
 
 interface PlayerProfileData {
   name: string;
@@ -128,7 +128,7 @@ export class PlayerProfileSystem {
   private createPlayerDetails(): void {
     this.nameLabel = this.scene.add.text(0, -48, this.playerName, {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "7px",
+      fontSize: uiFontSize(7),
       color: "#ffffff",
       backgroundColor: "#34271d",
       padding: { x: 2, y: 1 }
@@ -218,7 +218,7 @@ export class PlayerProfileSystem {
     const background = modalPanel(this.scene, 320, 180, 470, 310);
 
     this.titleText = this.scene.add.text(320, 34, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "16px", color: "#e6c47e", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(16), color: "#e6c47e", fontStyle: "bold"
     }).setOrigin(0.5);
 
     const closePosition = modalClosePosition(320, 180, 470, 310);
@@ -227,38 +227,38 @@ export class PlayerProfileSystem {
     this.previewSprite = this.scene.add.image(320, 75, this.getCurrentPortraitAsset()).setScale(2.1);
 
     this.nameText = this.scene.add.text(320, 105, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#ffffff"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#ffffff"
     }).setOrigin(0.5);
 
     const renameButton = this.scene.add.rectangle(320, 132, 170, 25, 0x527044).setStrokeStyle(1, 0xd6b36b);
     this.renameLabel = this.scene.add.text(320, 132, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#ffffff", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#ffffff", fontStyle: "bold"
     }).setOrigin(0.5);
 
     this.farmNameText = this.scene.add.text(320, 157, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#f4e4bd"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#f4e4bd"
     }).setOrigin(0.5);
 
     const renameFarmButton = this.scene.add.rectangle(320, 176, 170, 24, 0x725332).setStrokeStyle(1, 0xd6b36b);
     this.farmRenameLabel = this.scene.add.text(320, 176, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#ffffff", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#ffffff", fontStyle: "bold"
     }).setOrigin(0.5);
 
     this.genderLabel = this.scene.add.text(320, 204, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#f0d69e", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#f0d69e", fontStyle: "bold"
     }).setOrigin(0.5);
 
     this.maleButton = this.scene.add.rectangle(253, 224, 124, 26, 0x527044).setStrokeStyle(2, 0xd6b36b);
     this.femaleButton = this.scene.add.rectangle(387, 224, 124, 26, 0x493729).setStrokeStyle(2, 0x9b7047);
     this.maleLabel = this.scene.add.text(253, 224, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold"
     }).setOrigin(0.5);
     this.femaleLabel = this.scene.add.text(387, 224, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold"
     }).setOrigin(0.5);
 
     this.outfitLabel = this.scene.add.text(320, 253, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#f0d69e", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#f0d69e", fontStyle: "bold"
     }).setOrigin(0.5);
 
     const swatchColors = [0x4c8c62, 0x477caf, 0xa84d3e, 0x79559c];
@@ -266,28 +266,28 @@ export class PlayerProfileSystem {
       const x = 245 + index * 50;
       const swatch = this.scene.add.rectangle(x, 274, 35, 22, color).setStrokeStyle(2, 0xd6b36b);
       const numeral = this.scene.add.text(x, 274, String(index + 1), {
-        fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#ffffff", fontStyle: "bold"
+        fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#ffffff", fontStyle: "bold"
       }).setOrigin(0.5);
       this.outfitNumbers.push(numeral);
       return swatch;
     });
 
     this.outfitText = this.scene.add.text(320, 288, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d6e6c2"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d6e6c2"
     }).setOrigin(0.5);
 
     this.instructionText = this.scene.add.text(320, 331, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "7px", color: "#b9dca3", align: "center",
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#b9dca3", align: "center",
       wordWrap: { width: 400 }
     }).setOrigin(0.5);
 
     this.saveButton = this.scene.add.rectangle(250, 307, 116, 23, 0x527044).setStrokeStyle(2, 0xd6b36b);
     this.loadButton = this.scene.add.rectangle(390, 307, 116, 23, 0x725332).setStrokeStyle(2, 0xd6b36b);
     this.saveButtonText = this.scene.add.text(250, 307, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold"
     }).setOrigin(0.5);
     this.loadButtonText = this.scene.add.text(390, 307, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold"
     }).setOrigin(0.5);
 
     this.profilePanel.add([

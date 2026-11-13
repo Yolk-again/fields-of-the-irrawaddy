@@ -7,7 +7,7 @@ import { VillageBoardSystem } from "./VillageBoardSystem";
 import type { SaveSystem } from "./SaveSystem";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
-import { createRedCloseButton, modalClosePosition } from "../ui/PixelUI";
+import { createRedCloseButton, modalClosePosition, uiFontSize } from "../ui/PixelUI";
 import { isMobilePlatform } from "../utils/DeviceMode";
 
 type RoomTarget = "bed" | "chest" | "cooker" | "door";
@@ -108,7 +108,7 @@ export class HouseInteriorSystem {
 
   private createOutsidePrompt(): void {
     this.outsidePrompt = this.scene.add.text(320, 288, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf",
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#fff1cf",
       backgroundColor: "#2a1a14", padding: { x: 7, y: 4 }, stroke: "#2a1a14", strokeThickness: 2
     }).setOrigin(0.5).setScrollFactor(0).setDepth(7200).setVisible(false).setInteractive({ useHandCursor: true });
     this.outsidePrompt.on("pointerdown", () => {
@@ -174,10 +174,10 @@ export class HouseInteriorSystem {
     room.fillStyle(0x56351f, 1).fillRect(297, 326, 46, 22);
     room.fillStyle(0xd6b36b, 1).fillRect(333, 335, 4, 4);
 
-    this.title = this.scene.add.text(28, 18, "", { fontFamily: this.language.getFontFamily(), fontSize: "15px", color: "#fff0cf", fontStyle: "bold" });
+    this.title = this.scene.add.text(28, 18, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(15), color: "#fff0cf", fontStyle: "bold" });
     const cookerArt = this.scene.add.image(502, 166, "cooking_hearth_asset").setScale(1.8);
     this.avatar = this.scene.add.sprite(this.avatarX, this.avatarY, "farmer_green_sheet", 0).setOrigin(0.5, 1).setScale(2);
-    this.statusText = this.scene.add.text(320, 310, "", { fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#f0d69e", backgroundColor: "#39271e", padding: { x: 4, y: 2 } }).setOrigin(0.5).setVisible(false);
+    this.statusText = this.scene.add.text(320, 310, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#f0d69e", backgroundColor: "#39271e", padding: { x: 4, y: 2 } }).setOrigin(0.5).setVisible(false);
     this.roomPromptHitArea = this.scene.add.rectangle(320, 245, 250, 42, 0x527044, 0.98)
       .setStrokeStyle(2, 0xd6b36b, 1)
       .setVisible(false);
@@ -186,7 +186,7 @@ export class HouseInteriorSystem {
     // Desktop continues to use the E key; this canvas hit-area is never used.
     this.roomPrompt = this.scene.add.text(320, 245, "", {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "9px",
+      fontSize: uiFontSize(9),
       color: "#fff1cf",
       fontStyle: "bold",
       align: "center",

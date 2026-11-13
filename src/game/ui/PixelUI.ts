@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { isMobilePlatform } from "../utils/DeviceMode";
 
 export const PALETTE = {
   outline: 0x2a1a14,
@@ -11,6 +12,23 @@ export const PALETTE = {
   panelGreen: 0x2d3829,
   cream: 0xfff1cf
 };
+
+/** Shared readable type scale for canvas-based game interfaces. */
+export function uiFontSize(size: number, mobileScale = 1.16): string {
+  const scaled = isMobilePlatform() ? Math.max(size + 1, size * mobileScale) : size;
+  return `${Math.round(scaled * 10) / 10}px`;
+}
+
+/** Consistent word wrapping for compact descriptions and labels. */
+export function uiDescriptionStyle(languageFont: string, width: number, size = 10): Phaser.Types.GameObjects.Text.TextStyle {
+  return {
+    fontFamily: languageFont,
+    fontSize: uiFontSize(size),
+    color: "#eadfca",
+    lineSpacing: 2,
+    wordWrap: { width, useAdvancedWrap: true }
+  };
+}
 
 export interface PixelPanelOptions {
   fill?: number;
@@ -131,7 +149,7 @@ export function createRedCloseButton(
 
   const cross = scene.add.text(0, -1, "×", {
     fontFamily: '"Noto Sans", "Noto Sans Myanmar", "Myanmar Text", sans-serif',
-    fontSize: "20px",
+    fontSize: uiFontSize(20),
     color: "#fff7e8",
     fontStyle: "bold"
   }).setOrigin(0.5);

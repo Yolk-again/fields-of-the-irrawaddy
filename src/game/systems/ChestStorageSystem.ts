@@ -4,7 +4,7 @@ import { FishingSystem, type FishKind } from "./FishingSystem";
 import { CookingSystem, type MealKind } from "./CookingSystem";
 import { LanguageSystem } from "./LanguageSystem";
 import { ModalUIManager } from "./ModalUIManager";
-import { createRedCloseButton, modalClosePosition, modalPanel } from "../ui/PixelUI";
+import { createRedCloseButton, modalClosePosition, modalPanel, uiFontSize } from "../ui/PixelUI";
 import { adjustQuantity, maximumQuantitySelection, normalizeQuantity, quantityAdjustmentStep } from "../ui/QuantityMath";
 import { isMobilePlatform } from "../utils/DeviceMode";
 
@@ -100,10 +100,10 @@ export class ChestStorageSystem {
   private createInterface(): void {
     this.panel = this.scene.add.container(0, 0).setScrollFactor(0);
     const background = modalPanel(this.scene, 320, 180, 570, 340);
-    this.title = this.scene.add.text(320, 29, "", { fontFamily: this.language.getFontFamily(), fontSize: "17px", color: "#e6c47e", fontStyle: "bold" }).setOrigin(0.5);
-    this.subtitle = this.scene.add.text(320, 52, "", { fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d7e6c5" }).setOrigin(0.5);
-    this.columns = this.scene.add.text(270, 68, "", { fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#e6c47e" }).setOrigin(0.5);
-    this.quantityHeader = this.scene.add.text(390, 68, "", { fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#e6c47e" }).setOrigin(0.5);
+    this.title = this.scene.add.text(320, 29, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(17), color: "#e6c47e", fontStyle: "bold" }).setOrigin(0.5);
+    this.subtitle = this.scene.add.text(320, 52, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5" }).setOrigin(0.5);
+    this.columns = this.scene.add.text(270, 68, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#e6c47e" }).setOrigin(0.5);
+    this.quantityHeader = this.scene.add.text(390, 68, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#e6c47e" }).setOrigin(0.5);
     this.panel.add([background, this.title, this.subtitle, this.columns, this.quantityHeader]);
 
     ITEMS.forEach((item, index) => {
@@ -111,20 +111,20 @@ export class ChestStorageSystem {
       const card = this.scene.add.rectangle(320, y, 520, 19, index % 2 ? 0x35462f : 0x3d5136, 1)
         .setStrokeStyle(1, 0xb58a55);
       const icon = this.scene.add.image(73, y, item.texture).setDisplaySize(20, 17);
-      const name = this.scene.add.text(92, y, "", { fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#fff1cf" }).setOrigin(0, 0.5);
-      const bag = this.scene.add.text(238, y, "0", { fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#ffffff" }).setOrigin(0.5);
-      const chest = this.scene.add.text(302, y, "0", { fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#f0d69e" }).setOrigin(0.5);
+      const name = this.scene.add.text(92, y, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#fff1cf" }).setOrigin(0, 0.5);
+      const bag = this.scene.add.text(238, y, "0", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#ffffff" }).setOrigin(0.5);
+      const chest = this.scene.add.text(302, y, "0", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#f0d69e" }).setOrigin(0.5);
       const decrease = this.scene.add.rectangle(342, y, 20, 21, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
-      const amount = this.scene.add.text(372, y, "1", { fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
+      const amount = this.scene.add.text(372, y, "1", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
       const increase = this.scene.add.rectangle(402, y, 20, 21, 0x527044, 1).setStrokeStyle(1, 0xd6b36b);
-      const decreaseLabel = this.scene.add.text(342, y, "−", { fontFamily: this.language.getFontFamily(), fontSize: "11px", color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
-      const increaseLabel = this.scene.add.text(402, y, "+", { fontFamily: this.language.getFontFamily(), fontSize: "11px", color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
+      const decreaseLabel = this.scene.add.text(342, y, "−", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(11), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
+      const increaseLabel = this.scene.add.text(402, y, "+", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(11), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
       const maximum = this.scene.add.rectangle(441, y, 36, 21, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
-      const maximumLabel = this.scene.add.text(441, y, "MAX", { fontFamily: this.language.getFontFamily(), fontSize: "7px", color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
+      const maximumLabel = this.scene.add.text(441, y, "MAX", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
       const put = this.scene.add.rectangle(495, y, 54, 21, 0x527044, 1).setStrokeStyle(1, 0xd6b36b);
       const take = this.scene.add.rectangle(555, y, 54, 21, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
-      const putLabel = this.scene.add.text(495, y, "", { fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#fff1cf" }).setOrigin(0.5);
-      const takeLabel = this.scene.add.text(555, y, "", { fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#fff1cf" }).setOrigin(0.5);
+      const putLabel = this.scene.add.text(495, y, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#fff1cf" }).setOrigin(0.5);
+      const takeLabel = this.scene.add.text(555, y, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#fff1cf" }).setOrigin(0.5);
       this.rowNames.push(name);
       this.playerCounts.push(bag);
       this.chestCounts.push(chest);
@@ -143,11 +143,11 @@ export class ChestStorageSystem {
     });
 
     this.emptyState = this.scene.add.text(320, 190, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "11px", color: "#e6c47e", align: "center",
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(11), color: "#e6c47e", align: "center",
       wordWrap: { width: 420 }
     }).setOrigin(0.5).setVisible(false);
-    this.message = this.scene.add.text(320, 322, "", { fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#f0d69e" }).setOrigin(0.5);
-    this.exitHint = this.scene.add.text(320, 338, "", { fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d7e6c5" }).setOrigin(0.5);
+    this.message = this.scene.add.text(320, 322, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#f0d69e" }).setOrigin(0.5);
+    this.exitHint = this.scene.add.text(320, 338, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5" }).setOrigin(0.5);
     const close = modalClosePosition(320, 180, 570, 340);
     this.closeButton = createRedCloseButton(this.scene, close.x, close.y);
     this.panel.add([this.emptyState, this.message, this.exitHint, this.closeButton]);

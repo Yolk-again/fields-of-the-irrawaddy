@@ -89,6 +89,59 @@ const mobileHud = document.getElementById("mobile-game-hud");
 const menuButton = document.getElementById("game-menu-button");
 const mobileContextAction = document.getElementById("mobile-context-action") as HTMLButtonElement | null;
 const titleScrollCue = document.getElementById("title-scroll-cue");
+const installGameButton = document.getElementById("install-game-button") as HTMLButtonElement | null;
+const installGameHint = document.getElementById("install-game-hint");
+
+interface DeferredInstallPrompt extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+}
+
+let deferredInstallPrompt: DeferredInstallPrompt | null = null;
+const isInstalledApp = window.matchMedia("(display-mode: standalone)").matches ||
+  (navigator as Navigator & { standalone?: boolean }).standalone === true;
+if (isInstalledApp && installGameButton) installGameButton.hidden = true;
+
+window.addEventListener("beforeinstallprompt", event => {
+  event.preventDefault();
+  deferredInstallPrompt = event as DeferredInstallPrompt;
+  if (installGameButton) installGameButton.hidden = false;
+  if (installGameHint) installGameHint.hidden = true;
+});
+
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  if (installGameButton) installGameButton.hidden = true;
+  if (installGameHint) {
+    installGameHint.textContent = "Fields of the Irrawaddy is installed on this device.";
+    installGameHint.hidden = false;
+  }
+});
+
+installGameButton?.addEventListener("click", async () => {
+  if (deferredInstallPrompt) {
+    const promptEvent = deferredInstallPrompt;
+    deferredInstallPrompt = null;
+    await promptEvent.prompt();
+    const choice = await promptEvent.userChoice;
+    if (installGameHint) {
+      installGameHint.textContent = choice.outcome === "accepted"
+        ? "Installation started. You can open the game from your home screen or apps list."
+        : "You can install the game later from your browser menu.";
+      installGameHint.hidden = false;
+    }
+    return;
+  }
+
+  const ua = navigator.userAgent;
+  const isAppleMobile = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (installGameHint) {
+    installGameHint.textContent = isAppleMobile
+      ? "To install: tap Share in Safari, then choose Add to Home Screen."
+      : "To install: open your browser menu and choose Install app or Add to Home Screen.";
+    installGameHint.hidden = false;
+  }
+});
 
 const isTouchDevice = isMobilePlatform();
 if (isTouchDevice) document.body.classList.add("foi-touch-device");
@@ -364,3 +417,11 @@ document.addEventListener("keydown", event => {
 renderSaveSlots();
 setupMobileHud();
 window.requestAnimationFrame(updateTitleScrollCue);
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    void navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(error => {
+      console.warn("Offline install support could not be registered:", error);
+    });
+  }, { once: true });
+}

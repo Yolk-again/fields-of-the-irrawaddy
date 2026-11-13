@@ -5,7 +5,7 @@ import { FishingSystem, type FishKind } from "./FishingSystem";
 import { CookingSystem, type MealKind } from "./CookingSystem";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
-import { createRedCloseButton, modalClosePosition, modalPanel } from "../ui/PixelUI";
+import { createRedCloseButton, modalClosePosition, modalPanel, uiFontSize } from "../ui/PixelUI";
 import { isMobilePlatform } from "../utils/DeviceMode";
 
 type RequestKind = "rice" | "fish" | "meals" | "tomatoes" | "greenBeans";
@@ -190,12 +190,12 @@ export class VillageBoardSystem {
     board.add([shadow, posts, pin]);
 
     this.boardLabel = this.scene.add.text(this.boardX, this.boardY - 61, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf",
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#fff1cf",
       backgroundColor: "#2a1a14", padding: { x: 5, y: 3 }, stroke: "#2a1a14", strokeThickness: 2
     }).setOrigin(0.5).setDepth(600);
 
     this.promptText = this.scene.add.text(320, 286, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf",
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#fff1cf",
       backgroundColor: "#2a1a14", padding: { x: 7, y: 4 }, stroke: "#2a1a14", strokeThickness: 2
     }).setOrigin(0.5).setScrollFactor(0).setDepth(7200).setVisible(false);
   }
@@ -215,11 +215,11 @@ export class VillageBoardSystem {
     const background = modalPanel(this.scene, 320, 180, 560, 328);
     const divider = this.scene.add.rectangle(320, 76, 510, 2, 0x9b7047, 0.9);
     this.titleText = this.scene.add.text(320, 34, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "16px", color: "#e6c47e", fontStyle: "bold",
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(16), color: "#e6c47e", fontStyle: "bold",
       align: "center", wordWrap: { width: 450 }
     }).setOrigin(0.5);
     this.subtitleText = this.scene.add.text(320, 57, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d7e6c5", align: "center",
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#d7e6c5", align: "center",
       wordWrap: { width: 452 }
     }).setOrigin(0.5);
 
@@ -227,27 +227,27 @@ export class VillageBoardSystem {
       const backgroundCard = this.scene.add.rectangle(320, centerY, 520, 58, 0x3d4b34, 1).setStrokeStyle(2, 0x9b7047);
       const icon = this.scene.add.image(79, centerY, "wheat_basket_asset").setDisplaySize(30, 25);
       const requestText = this.scene.add.text(108, centerY - 13, "", {
-        fontFamily: this.language.getFontFamily(), fontSize: "11px", color: "#fff1cf", fontStyle: "bold",
+        fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(11), color: "#fff1cf", fontStyle: "bold",
         wordWrap: { width: 300 }, lineSpacing: 1
       }).setOrigin(0, 0.5);
       const progressText = this.scene.add.text(108, centerY + 13, "", {
-        fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d7e6c5",
+        fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#d7e6c5",
         wordWrap: { width: 300 }
       }).setOrigin(0, 0.5);
       const rewardText = this.scene.add.text(520, centerY - 16, "", {
-        fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#f0d69e", fontStyle: "bold",
+        fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#f0d69e", fontStyle: "bold",
         align: "center", wordWrap: { width: 112 }
       }).setOrigin(0.5);
       const deliverButton = this.scene.add.rectangle(520, centerY + 10, 108, 25, 0x527044, 1).setStrokeStyle(1, 0xd6b36b);
       const deliverText = this.scene.add.text(520, centerY + 10, "", {
-        fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#fff1cf", fontStyle: "bold",
+        fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#fff1cf", fontStyle: "bold",
         align: "center", wordWrap: { width: 100 }
       }).setOrigin(0.5);
       return { background: backgroundCard, icon, requestText, progressText, rewardText, deliverButton, deliverText };
     });
 
     this.exitHintText = this.scene.add.text(320, 309, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d7e6c5", align: "center"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#d7e6c5", align: "center"
     }).setOrigin(0.5);
     const closePosition = modalClosePosition(320, 180, 560, 328);
     this.closeButton = createRedCloseButton(this.scene, closePosition.x, closePosition.y);

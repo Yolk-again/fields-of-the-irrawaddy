@@ -3,7 +3,7 @@ import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
 import { getGraphicsQuality, saveGraphicsQuality } from "./GraphicsQuality";
 import type { GraphicsQuality } from "./GraphicsQuality";
-import { createRedCloseButton, modalClosePosition, modalPanel, pixelPanel } from "../ui/PixelUI";
+import { createRedCloseButton, modalClosePosition, modalPanel, pixelPanel, uiFontSize } from "../ui/PixelUI";
 
 /**
  * Original Fields of the Irrawaddy audio system.
@@ -28,10 +28,18 @@ const EFFECT_NAMES = [
 ];
 
 const EFFECT_BASE_GAIN: Record<string, number> = {
-  hoe: 0.72, plant: 0.62, water: 0.72, harvest: 0.70, dead: 0.62,
-  request: 0.55, buy: 0.62, sell: 0.65, talk: 0.40, error: 0.62,
-  cast: 0.70, bite: 0.62, catch: 0.70, miss: 0.63,
-  cook: 0.62, eat: 0.45, sleep: 0.48, footstep: 0.34, chicken: 0.38
+  hoe: 0.48, plant: 0.40, water: 0.44, harvest: 0.46, dead: 0.36,
+  request: 0.34, buy: 0.36, sell: 0.38, talk: 0.28, error: 0.32,
+  cast: 0.42, bite: 0.36, catch: 0.44, miss: 0.30,
+  cook: 0.38, eat: 0.30, sleep: 0.30, footstep: 0.20, chicken: 0.24
+};
+
+const EFFECT_OUTPUT_SCALE = 0.62;
+const EFFECT_MAX_DURATION: Record<string, number> = {
+  hoe: 0.34, plant: 0.22, water: 0.28, harvest: 0.30, dead: 0.26,
+  request: 0.30, buy: 0.16, sell: 0.18, talk: 0.34, error: 0.16,
+  cast: 0.28, bite: 0.14, catch: 0.32, miss: 0.18,
+  cook: 0.34, eat: 0.20, sleep: 0.42, footstep: 0.10, chicken: 0.16
 };
 
 export class MusicSystem {
@@ -167,7 +175,7 @@ export class MusicSystem {
       .setScrollFactor(0).setDepth(8502)
       .setInteractive({ useHandCursor: true });
     this.tip = this.scene.add.text(x, y + 22, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf",
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#fff1cf",
       backgroundColor: "#2a1a14", padding: { x: 4, y: 2 }
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(8503).setVisible(false);
     this.language.onChange(() => this.refreshButton());
@@ -210,20 +218,20 @@ export class MusicSystem {
     const background = modalPanel(this.scene, 320, 180, 420, 286);
     const divider = this.scene.add.rectangle(320, 87, 380, 2, 0x9b7047, 0.9);
     this.settingsTitle = this.scene.add.text(320, 63, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "16px", color: "#e6c47e", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(16), color: "#e6c47e", fontStyle: "bold"
     }).setOrigin(0.5);
 
     this.musicLabel = this.scene.add.text(170, 108, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#fff1cf", fontStyle: "bold"
     }).setOrigin(0, 0.5);
     this.musicValueText = this.scene.add.text(475, 108, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#e6c47e", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#e6c47e", fontStyle: "bold"
     }).setOrigin(1, 0.5);
     this.effectsLabel = this.scene.add.text(170, 163, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#fff1cf", fontStyle: "bold"
     }).setOrigin(0, 0.5);
     this.effectsValueText = this.scene.add.text(475, 163, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#e6c47e", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#e6c47e", fontStyle: "bold"
     }).setOrigin(1, 0.5);
 
     const musicTrack = this.scene.add.rectangle(320, 132, 230, 8, 0x241a14, 1);
@@ -234,7 +242,7 @@ export class MusicSystem {
     this.effectsKnob = this.scene.add.circle(435, 187, 7, 0xe6c47e, 1).setStrokeStyle(2, 0x2a1a14);
 
     this.qualityLabel = this.scene.add.text(170, 220, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#fff1cf", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#fff1cf", fontStyle: "bold"
     }).setOrigin(0, 0.5);
     this.qualityButtons = ([
       { quality: "high", x: 235 },
@@ -244,7 +252,7 @@ export class MusicSystem {
       const button = this.scene.add.container(x, 248).setScrollFactor(0);
       const plate = this.scene.add.rectangle(0, 0, 78, 28, 0x3a4a32, 1).setStrokeStyle(1, 0x9b7047);
       const label = this.scene.add.text(0, 0, "", {
-        fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#e7dfc8", fontStyle: "bold"
+        fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#e7dfc8", fontStyle: "bold"
       }).setOrigin(0.5);
       button.add([plate, label]);
       button.setSize(78, 28);
@@ -256,7 +264,7 @@ export class MusicSystem {
     });
 
     this.settingsFooter = this.scene.add.text(320, 298, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "7px", color: "#d7e6c5", align: "center", wordWrap: { width: 360 }
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#d7e6c5", align: "center", wordWrap: { width: 360 }
     }).setOrigin(0.5);
     const closePosition = modalClosePosition(320, 180, 420, 286);
     this.settingsCloseButton = createRedCloseButton(this.scene, closePosition.x, closePosition.y);
@@ -684,10 +692,16 @@ export class MusicSystem {
     const baseGain = EFFECT_BASE_GAIN[effect] ?? 0.58;
     source.buffer = buffer;
     source.playbackRate.value = 0.975 + Math.random() * 0.05;
-    gain.gain.value = baseGain * attenuation * (0.94 + Math.random() * 0.12);
+    const now = this.ctx.currentTime;
+    const effectGain = baseGain * EFFECT_OUTPUT_SCALE * attenuation * (0.94 + Math.random() * 0.12);
+    const duration = Math.min(buffer.duration, EFFECT_MAX_DURATION[effect] ?? 0.28);
+    const stopAt = now + Math.max(0.08, duration);
+    gain.gain.setValueAtTime(Math.max(0.0001, effectGain), now);
+    gain.gain.linearRampToValueAtTime(0.0001, Math.max(now + 0.035, stopAt - 0.045));
     panner.pan.value = Phaser.Math.Clamp(pan, -1, 1);
     source.connect(gain).connect(panner).connect(this.effectsBus);
-    source.start();
+    source.start(now);
+    source.stop(stopAt);
   }
   private trackSource(source: AudioBufferSourceNode): AudioBufferSourceNode {
     this.activeSources.add(source);

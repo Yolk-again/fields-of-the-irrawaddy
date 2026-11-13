@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
-import { createRedCloseButton, modalClosePosition, modalPanel } from "../ui/PixelUI";
+import { createRedCloseButton, modalClosePosition, modalPanel, uiDescriptionStyle, uiFontSize } from "../ui/PixelUI";
 
 interface HelpCard {
   title: Phaser.GameObjects.Text;
@@ -51,12 +51,13 @@ export class HelpSystem {
     const iconFrame = scene.add.rectangle(x - 56, y, 34, 34, 0x2d3829, 1).setStrokeStyle(1, 0xd6b36b);
     const icon = scene.add.image(x - 56, y, this.mobileMode ? mobileIconKey : iconKey).setScale(1.35);
     const title = scene.add.text(x - 31, y - 17, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#e6c47e", fontStyle: "bold",
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#e6c47e", fontStyle: "bold",
       wordWrap: { width: 120 }
     }).setOrigin(0, 0.5);
     const body = scene.add.text(x - 31, y + 7, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: this.mobileMode ? "7px" : "8px", color: "#f5e8c6", lineSpacing: 2,
-      wordWrap: { width: 120 }
+      ...uiDescriptionStyle(this.language.getFontFamily(), 120, 8),
+      color: "#f5e8c6",
+      lineSpacing: 1
     }).setOrigin(0, 0.5);
     this.panel.add([background, iconFrame, icon, title, body]);
     this.cardTexts.push({ title, body, titleKey, bodyKey, mobileTitleKey, mobileBodyKey });
@@ -67,10 +68,10 @@ export class HelpSystem {
     const background = modalPanel(scene, 320, 180, 550, 310);
     const topLine = scene.add.rectangle(320, 91, 490, 2, 0x9b7047, 0.8);
     this.titleText = scene.add.text(320, 43, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "18px", color: "#e6c47e", fontStyle: "bold"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(18), color: "#e6c47e", fontStyle: "bold"
     }).setOrigin(0.5);
     this.subtitleText = scene.add.text(320, 69, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d7e6c5", align: "center", wordWrap: { width: 450 }
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5", align: "center", wordWrap: { width: 450 }
     }).setOrigin(0.5);
     this.panel.add([background, topLine, this.titleText, this.subtitleText]);
 
@@ -82,7 +83,7 @@ export class HelpSystem {
     this.createCard(scene, 495, 224, "ui_icon_bed", "help.houseTitle", "help.houseBody", "help.mobileHouseTitle", "help.mobileHouseBody", "ui_icon_bed");
 
     this.exitHintText = scene.add.text(320, 318, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "9px", color: "#d7e6c5", align: "center"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#d7e6c5", align: "center"
     }).setOrigin(0.5);
     const closePosition = modalClosePosition(320, 180, 550, 310);
     this.closeButton = createRedCloseButton(scene, closePosition.x, closePosition.y);

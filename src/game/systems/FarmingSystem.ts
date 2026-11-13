@@ -3,6 +3,7 @@ import Phaser from "phaser";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
 import { INVENTORY_ITEM_DEFINITIONS, type InventoryItemId } from "../ui/InventoryItems";
+import { uiFontSize } from "../ui/PixelUI";
 
 type FarmingTool = "hoe" | "seeds" | "water" | "harvest";
 export type FarmCropKind = "rice" | "tomato" | "greenBean";
@@ -212,7 +213,7 @@ export class FarmingSystem {
   private floatText(tile: FarmTile, text: string): void {
     const label = this.scene.add.text(tile.x + 16, tile.y, text, {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "12px",
+      fontSize: uiFontSize(12),
       color: "#ffe070",
       stroke: "#2a1a14",
       strokeThickness: 3
@@ -244,7 +245,7 @@ export class FarmingSystem {
     // Toast message above the hotbar (fades out)
     this.statusText = this.scene.add.text(320, 298, "", {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "10px",
+      fontSize: uiFontSize(10),
       color: "#fff1cf",
       backgroundColor: "#2a1a14",
       padding: { x: 7, y: 4 },
@@ -265,7 +266,7 @@ export class FarmingSystem {
 
       const label = this.scene.add.text(centers[index] - 17, 319, String(index + 1), {
         fontFamily: this.language.getFontFamily(),
-        fontSize: "9px",
+        fontSize: uiFontSize(9),
         color: "#fff1cf",
         stroke: "#2a1a14",
         strokeThickness: 2
@@ -278,7 +279,7 @@ export class FarmingSystem {
 
     this.toolTip = this.scene.add.text(320, 314, "", {
       fontFamily: this.language.getFontFamily(),
-      fontSize: "9px",
+      fontSize: uiFontSize(9),
       color: "#ffd978",
       stroke: "#2a1a14",
       strokeThickness: 3

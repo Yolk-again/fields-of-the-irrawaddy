@@ -4,7 +4,7 @@ import { FishingSystem } from "./FishingSystem";
 import { CookingSystem } from "./CookingSystem";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
-import { createRedCloseButton, modalClosePosition, modalPanel } from "../ui/PixelUI";
+import { createRedCloseButton, modalClosePosition, modalPanel, uiFontSize } from "../ui/PixelUI";
 import { INVENTORY_ITEM_DEFINITIONS, type InventoryItemId } from "../ui/InventoryItems";
 import { isMobilePlatform } from "../utils/DeviceMode";
 
@@ -109,16 +109,16 @@ export class InventorySystem {
     this.inventoryPanel = this.scene.add.container(0, 0).setScrollFactor(0);
     const background = modalPanel(this.scene, 320, 180, 540, 330);
     this.titleText = this.scene.add.text(320, 31, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "18px", color: "#e6c47e"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(18), color: "#e6c47e"
     }).setOrigin(0.5);
     this.hotbarTitleText = this.scene.add.text(320, 61, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#d6b36b"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#d6b36b"
     }).setOrigin(0.5);
     this.seedPacketText = this.scene.add.text(320, 119, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d7e6c5", align: "center"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5", align: "center"
     }).setOrigin(0.5);
     this.backpackTitleText = this.scene.add.text(320, 140, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "10px", color: "#d6b36b"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#d6b36b"
     }).setOrigin(0.5);
     this.inventoryPanel.add([background, this.titleText, this.hotbarTitleText, this.seedPacketText, this.backpackTitleText]);
 
@@ -132,11 +132,11 @@ export class InventorySystem {
     }
 
     this.instructionText = this.scene.add.text(320, 303, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d6e6c2", align: "center",
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d6e6c2", align: "center",
       wordWrap: { width: 490 }
     }).setOrigin(0.5);
     this.exitHintText = this.scene.add.text(320, 322, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#d7e6c5"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5"
     }).setOrigin(0.5);
     const closePosition = modalClosePosition(320, 180, 540, 330);
     this.closeButton = createRedCloseButton(this.scene, closePosition.x, closePosition.y);
@@ -161,14 +161,14 @@ export class InventorySystem {
       .setStrokeStyle(1, 0xc29a62);
     const icon = this.scene.add.image(x, y - 5, "ui_icon_hand").setScale(1.15).setVisible(false);
     const name = this.scene.add.text(x, y + (address.zone === "hotbar" ? 15 : 13), "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "7px", color: "#fff1cf", align: "center"
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#fff1cf", align: "center"
     }).setOrigin(0.5).setVisible(false);
     const amount = this.scene.add.text(x + width / 2 - 4, y - 17, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#ffe070",
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#ffe070",
       stroke: "#2a1a14", strokeThickness: 2
     }).setOrigin(1, 0).setVisible(false);
     const keyLabel = hotkey ? this.scene.add.text(x - width / 2 + 4, y - 18, hotkey, {
-      fontFamily: this.language.getFontFamily(), fontSize: "8px", color: "#fff1cf",
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#fff1cf",
       stroke: "#2a1a14", strokeThickness: 2
     }).setOrigin(0, 0).setVisible(!this.mobileMode) : undefined;
     this.cells.push({
@@ -212,10 +212,10 @@ export class InventorySystem {
     for (const item of ALL_ITEMS) {
       const count = this.countFor(item);
       const previous = this.lastCounts.get(item) ?? 0;
-      const isTool = INVENTORY_ITEM_DEFINITIONS[item].tool !== undefined;
+      const isPermanentTool = item === "hoe" || item === "water" || item === "harvest";
       // Consumables disappear when depleted, then return in a free backpack
       // slot as soon as the player obtains one again.
-      if (!isTool && count <= 0) {
+      if (!isPermanentTool && count <= 0) {
         const nextHotbar = this.hotbarSlots.map(slot => slot === item ? null : slot);
         hotbarChanged ||= nextHotbar.some((slot, index) => slot !== this.hotbarSlots[index]);
         this.hotbarSlots = nextHotbar;
@@ -263,7 +263,8 @@ export class InventorySystem {
       cell.background.setStrokeStyle(isTarget && !isSource ? 3 : selected ? 2 : 1, isTarget ? 0xffe08a : selected ? 0xe0bb70 : 0xc29a62);
       cell.name.setFontFamily(font);
       cell.amount.setFontFamily(font);
-      if (!item || (!INVENTORY_ITEM_DEFINITIONS[item].tool && this.countFor(item) <= 0)) {
+      const isPermanentTool = item === "hoe" || item === "water" || item === "harvest";
+      if (!item || (!isPermanentTool && this.countFor(item) < 1)) {
         cell.icon.setVisible(false);
         cell.name.setVisible(false);
         cell.amount.setVisible(false);
@@ -277,7 +278,13 @@ export class InventorySystem {
       if (item === "rod") {
         quantityText = count > 0 ? "1" : "0";
       }
-      cell.amount.setText(quantityText).setVisible(true);
+      if (count < 1) {
+        cell.icon.setVisible(false);
+        cell.name.setVisible(false);
+        cell.amount.setVisible(false);
+      } else {
+        cell.amount.setText(quantityText).setVisible(true);
+      }
     }
   }
 
