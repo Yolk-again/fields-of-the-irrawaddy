@@ -101,14 +101,6 @@ export class FarmScene extends Phaser.Scene {
     S: Phaser.Input.Keyboard.Key;
     D: Phaser.Input.Keyboard.Key;
   };
-  private desktopShortcutKeys!: {
-    inventory: Phaser.Input.Keyboard.Key;
-    profile: Phaser.Input.Keyboard.Key;
-    language: Phaser.Input.Keyboard.Key;
-    help: Phaser.Input.Keyboard.Key;
-    audio: Phaser.Input.Keyboard.Key;
-  };
-
   private obstacles: Obstacle[] = [];
   private worldLabels: { text: Phaser.GameObjects.Text; key: string; radius: number }[] = [];
 
@@ -487,8 +479,8 @@ export class FarmScene extends Phaser.Scene {
     document.body.classList.add("foi-in-game");
     document.getElementById("app")?.setAttribute("aria-hidden", "false");
     document.getElementById("title-screen")?.classList.add("is-hidden");
-    // Expose the DOM HUD to assistive technology on both platforms; desktop
-    // CSS hides every mobile-only action and leaves the fullscreen button visible.
+    // Expose the shared clickable HUD to assistive technology on both platforms.
+    // Windows uses the full top-right button row; no panel-opening hotkeys are bound.
     document.getElementById("mobile-game-hud")?.setAttribute("aria-hidden", "false");
 
     if (!this.loadExistingSave) {
@@ -1386,23 +1378,6 @@ export class FarmScene extends Phaser.Scene {
     const keyboard = this.input.keyboard!;
     this.cursors = keyboard.createCursorKeys();
     this.wasd = keyboard.addKeys("W,A,S,D") as typeof this.wasd;
-    this.desktopShortcutKeys = {
-      inventory: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I),
-      profile: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P),
-      language: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.L),
-      help: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H),
-      audio: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M)
-    };
-  }
-
-  private handleDesktopShortcutKeys(): void {
-    if (this.isTouchDevice || this.openingStoryActive || this.ui.hasActiveModal()) return;
-    const keys = this.desktopShortcutKeys;
-    if (Phaser.Input.Keyboard.JustDown(keys.inventory)) this.inventory.mobileToggle();
-    if (Phaser.Input.Keyboard.JustDown(keys.profile)) this.profile.mobileToggle();
-    if (Phaser.Input.Keyboard.JustDown(keys.language)) this.language.toggleLanguage();
-    if (Phaser.Input.Keyboard.JustDown(keys.help)) this.help.mobileToggle();
-    if (Phaser.Input.Keyboard.JustDown(keys.audio)) this.music.mobileToggle();
   }
 
   private createCamera(): void {
@@ -1413,8 +1388,8 @@ export class FarmScene extends Phaser.Scene {
   private createHUD(): void {
     this.isTouchDevice = isMobilePlatform();
 
-    // Mobile gets its own touch HUD. Windows keeps a clean canvas and uses
-    // keyboard shortcuts for panels, plus the separate fullscreen/Menu controls.
+    // The same clickable HUD controls are available on touch devices and Windows.
+    // Windows uses the on-screen buttons for panels instead of panel-opening hotkeys.
     window.addEventListener("foi-mobile-hud-action", this.handleMobileHudAction);
     this.registerFullscreenEvents();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -1805,8 +1780,6 @@ export class FarmScene extends Phaser.Scene {
       this.animatePlayer(0, 0, false);
       return;
     }
-
-    this.handleDesktopShortcutKeys();
 
     if (!this.canMoveTo(this.player.x, this.player.y)) {
       this.player.setPosition(320, 330);

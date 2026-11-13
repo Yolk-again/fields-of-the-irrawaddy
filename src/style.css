@@ -3529,3 +3529,62 @@ body.foi-in-game:not(.foi-touch-device) #game-container:-webkit-full-screen > .g
 }
 
 /* Chest rows keep names, counts, amounts and transfer buttons on separate baselines. */
+
+/* Windows keeps the complete clickable HUD in the upper-right corner. */
+body.foi-in-game:not(.foi-touch-device) .game-hud-stack {
+  position: absolute !important;
+  top: max(8px, env(safe-area-inset-top)) !important;
+  right: max(8px, env(safe-area-inset-right)) !important;
+  bottom: auto !important;
+  left: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  z-index: 10020 !important;
+  pointer-events: none !important;
+}
+
+body.foi-in-game:not(.foi-touch-device) .game-hud-stack > .mobile-game-hud {
+  position: relative !important;
+  inset: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+body.foi-in-game:not(.foi-touch-device) .game-hud-stack > .mobile-game-hud button {
+  display: grid !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+body.foi-in-game:not(.foi-touch-device) .game-hud-stack > .desktop-fullscreen-button {
+  display: none !important;
+}
+
+body.foi-in-game:not(.foi-touch-device) .game-hud-stack > .game-menu-button {
+  display: grid !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+body.foi-in-game:not(.foi-touch-device).foi-modal-open .game-hud-stack > .mobile-game-hud {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+body.foi-in-game:not(.foi-touch-device).foi-cutscene-active .game-hud-stack > .mobile-game-hud button:not([data-action="fullscreen"]) {
+  display: none !important;
+}
+
+body.foi-in-game:not(.foi-touch-device).foi-cutscene-active .game-hud-stack > .game-menu-button {
+  display: none !important;
+}
+

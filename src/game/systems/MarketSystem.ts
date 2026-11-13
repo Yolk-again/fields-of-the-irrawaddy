@@ -491,7 +491,7 @@ export class MarketSystem {
     } else {
       this.actionTexts[0].setText(this.language.t("market.seedPackets"));
       this.actionTexts[1].setText(this.language.t("market.sellProduce"));
-      this.actionTexts[2].setText(this.fishing.getHasRod() ? this.language.t("market.rodOwned") : this.language.t("market.buyRodShort"));
+      this.actionTexts[2].setText(this.fishing.getHasRod() ? this.language.t("market.rodOwned") : this.language.t("market.rodShort"));
       this.actionTexts[3].setText(this.language.t("market.mealsShort"));
       this.actionTexts[4].setText(this.language.t("market.fishShort"));
       this.actionTexts[5].setText(this.language.t("market.baitShort"));

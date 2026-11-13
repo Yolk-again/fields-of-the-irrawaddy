@@ -76,7 +76,7 @@ const translations: Record<Language, TranslationTable> = {
     "menu.footer": "CHOOSE A SLOT TO CONTINUE OR BEGIN A NEW JOURNEY",
 
     "help.title": "HOW TO PLAY",
-    "help.subtitle": "WINDOWS GUIDE · I ITEMS · P PROFILE · L LANGUAGE · H HELP · M SETTINGS",
+    "help.subtitle": "WINDOWS GUIDE · USE THE TOP-RIGHT BUTTONS FOR ITEMS, PROFILE, LANGUAGE, HELP AND SETTINGS",
     "help.moveTitle": "MOVE AROUND",
     "help.moveBody": "WASD / ARROWS TO MOVE\nTOOLS: 1–4",
     "help.villageTitle": "VILLAGE ACTIONS",
@@ -659,7 +659,7 @@ const translations: Record<Language, TranslationTable> = {
     "menu.footer": "ဆက်ကစားရန် သို့မဟုတ် ဂိမ်းအသစ်စရန် နေရာရွေးပါ",
 
     "help.title": "ကစားနည်း လမ်းညွှန်",
-    "help.subtitle": "ကီးဘုတ်လမ်းညွှန် · I ပစ္စည်း · P ကိုယ်ရေး · L ဘာသာ · H အကူအညီ · M ဆက်တင်များ",
+    "help.subtitle": "အပေါ်ညာဘက်ခလုတ်များဖြင့် ပစ္စည်း၊ ကိုယ်ရေး၊ ဘာသာ၊ အကူအညီနှင့် ဆက်တင်များကို ဖွင့်ပါ",
     "help.moveTitle": "ရွှေ့လျားရန်",
     "help.moveBody": "W A S D / မြှားခလုတ်များ\nကိရိယာ: 1–4",
     "help.villageTitle": "ရွာတွင်း လုပ်ဆောင်ချက်",
