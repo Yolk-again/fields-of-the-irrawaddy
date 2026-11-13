@@ -1221,10 +1221,10 @@ export class FarmScene extends Phaser.Scene {
   }
 
   private applyReadableTextRendering(): void {
-    // Render UI fonts at 2x texture resolution so antialiased letter edges stay clear
-    // when the pixel-art canvas is scaled to the player's screen.
+    // Render UI fonts at 3x texture resolution so English and Myanmar glyphs
+    // stay sharp when the game canvas is scaled to desktop and mobile screens.
     const applyToObject = (object: Phaser.GameObjects.GameObject): void => {
-      if (object instanceof Phaser.GameObjects.Text) object.setResolution(2);
+      if (object instanceof Phaser.GameObjects.Text) object.setResolution(3);
       if (object instanceof Phaser.GameObjects.Container) {
         for (const child of object.list) applyToObject(child);
       }
@@ -1683,7 +1683,7 @@ export class FarmScene extends Phaser.Scene {
     const fullscreenButtons = document.querySelectorAll<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"], #desktop-game-hud [data-action="fullscreen"]');
     if (document.body.classList.contains("foi-mobile-fullscreen")) {
       document.body.classList.remove("foi-mobile-fullscreen");
-      fullscreenButtons.forEach(button => button.classList.remove("is-fullscreen"));
+      fullscreenButtons.forEach(button => button.classList.remove("is-fullscreen", "is-fullscreen-warning"));
       this.scale.refresh();
       return;
     }
@@ -1699,7 +1699,6 @@ export class FarmScene extends Phaser.Scene {
           void result.catch(() => {
             if (this.isTouchDevice) {
               document.body.classList.add("foi-mobile-fullscreen");
-              fullscreenButtons.forEach(button => button.classList.add("is-fullscreen"));
               this.scale.refresh();
             } else {
               this.handleFullscreenFailed();
@@ -1709,7 +1708,6 @@ export class FarmScene extends Phaser.Scene {
       } catch {
         if (this.isTouchDevice) {
           document.body.classList.add("foi-mobile-fullscreen");
-          fullscreenButtons.forEach(button => button.classList.add("is-fullscreen"));
           this.scale.refresh();
         } else {
           this.handleFullscreenFailed();
@@ -1717,7 +1715,6 @@ export class FarmScene extends Phaser.Scene {
       }
     } else if (this.isTouchDevice) {
       document.body.classList.add("foi-mobile-fullscreen");
-      fullscreenButtons.forEach(button => button.classList.add("is-fullscreen"));
       this.scale.refresh();
     } else {
       this.handleFullscreenFailed();
@@ -1726,13 +1723,16 @@ export class FarmScene extends Phaser.Scene {
 
   private handleFullscreenEntered(): void {
     document.querySelectorAll<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"], #desktop-game-hud [data-action="fullscreen"]')
-      .forEach(button => button.classList.add("is-fullscreen"));
+      .forEach(button => {
+        button.classList.remove("is-fullscreen", "is-fullscreen-warning");
+        if (!this.isTouchDevice) button.blur();
+      });
     this.scale.refresh();
   }
 
   private handleFullscreenLeft(): void {
     document.querySelectorAll<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"], #desktop-game-hud [data-action="fullscreen"]')
-      .forEach(button => button.classList.remove("is-fullscreen"));
+      .forEach(button => button.classList.remove("is-fullscreen", "is-fullscreen-warning"));
     this.scale.refresh();
   }
 
@@ -1835,7 +1835,6 @@ export class FarmScene extends Phaser.Scene {
           case "board": this.villageBoard.update(this.player.x, this.player.y); break;
           case "dialogue": this.village.update(this.player.x, this.player.y); break;
           case "cooking": this.cooking.update(this.player.x, this.player.y); break;
-          case "chest": this.chest.update(); break;
         }
       }
       if (this.house.isInside()) {

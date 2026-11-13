@@ -105,3 +105,13 @@ cooked meals between the backpack and persistent home storage. The cooker is
 now indoors beside the kitchen hearth; recipes and meal buffs are unchanged.
 Sleeping advances the shared village clock and synchronizes crop growth, daily
 requests, NPC schedules, lighting, and ambient audio.
+
+2026-11-13 — Market panel, house and fullscreen polish
+- Reflowed the market menu rows and lower balance/help/status/close lines so text stays inside the panel in English and Burmese.
+- Added width and spacing to the market upgrade detail description to prevent it colliding with the price/status and action row.
+- Removed the red close X from the house interior; the player exits through the door interaction as before.
+- During the Windows intro cutscene, only the Menu control remains visible in the HUD.
+- Removed persistent green fullscreen selection state on mobile and cleared fullscreen highlight state on native fullscreen events.
+- Removed the fullscreen button focus ring while Windows fullscreen is active.
+- Changed the fishing rod deficit badge to use the same compact shortage label as the other upgrades; rod detail cost now uses the shared one-time upgrade format in both languages.
+- Bumped the service-worker shell cache to v11.

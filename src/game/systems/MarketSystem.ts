@@ -100,7 +100,7 @@ export class MarketSystem {
   private selectedRodDetail = false;
   private readonly touchMode = isMobilePlatform();
 
-  private readonly cardY = [80, 112, 144, 176, 208, 240, 272];
+  private readonly cardY = [76, 106, 136, 166, 196, 226, 256];
 
   constructor(
     scene: Phaser.Scene,
@@ -181,11 +181,11 @@ export class MarketSystem {
       const icon = this.scene.add.image(145, y, icons[index]).setDisplaySize(22, 22);
       const text = this.scene.add.text(178, y, "", {
         fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#fff1cf", fontStyle: "bold",
-        align: "left", wordWrap: { width: 280 }, lineSpacing: 0
+        align: "left", wordWrap: { width: 230, useAdvancedWrap: true }, lineSpacing: 1
       }).setOrigin(0, 0.5).setMaxLines(2);
-      const status = this.scene.add.text(492, y, "", {
-        fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#fff1cf", fontStyle: "bold",
-        align: "center", backgroundColor: "#527044", padding: { x: 4, y: 2 }, wordWrap: { width: 74 }, lineSpacing: 0
+      const status = this.scene.add.text(470, y, "", {
+        fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#fff7e6", fontStyle: "bold",
+        stroke: "#243426", strokeThickness: 0.75, align: "center", backgroundColor: "#527044", padding: { x: 3, y: 1 }, wordWrap: { width: 104, useAdvancedWrap: true }, lineSpacing: 0
       }).setOrigin(0.5).setMaxLines(2);
       this.actionCards.push(card);
       this.actionIcons.push(icon);
@@ -194,19 +194,19 @@ export class MarketSystem {
       this.marketPanel.add([card, icon, text, status]);
     });
 
-    const balanceCard = this.scene.add.rectangle(320, 302, 230, 24, 0x2f432f, 1).setStrokeStyle(1, 0xe0bb70);
-    this.coinBalanceIcon = this.scene.add.image(232, 302, "coin_asset").setScale(1.1);
-    this.moneyText = this.scene.add.text(342, 302, "", {
+    const balanceCard = this.scene.add.rectangle(320, 286, 230, 22, 0x2f432f, 1).setStrokeStyle(1, 0xe0bb70);
+    this.coinBalanceIcon = this.scene.add.image(232, 286, "coin_asset").setScale(1.1);
+    this.moneyText = this.scene.add.text(342, 286, "", {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(12), color: "#ffe49a", fontStyle: "bold", align: "center", wordWrap: { width: 160, useAdvancedWrap: true }
     }).setOrigin(0.5).setMaxLines(1);
-    this.clickHintText = this.scene.add.text(320, 322, "", {
+    this.clickHintText = this.scene.add.text(320, 305, "", {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#b9dca3", align: "center", wordWrap: { width: 440, useAdvancedWrap: true }
     }).setOrigin(0.5).setMaxLines(1);
-    this.messageText = this.scene.add.text(320, 337, "", {
+    this.messageText = this.scene.add.text(320, 326, "", {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#d7e6c5", align: "center",
       wordWrap: { width: 440, useAdvancedWrap: true }
-    }).setOrigin(0.5).setMaxLines(1);
-    this.exitHintText = this.scene.add.text(320, 349, "", {
+    }).setOrigin(0.5).setMaxLines(2);
+    this.exitHintText = this.scene.add.text(320, 348, "", {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#d7e6c5", align: "center", wordWrap: { width: 440, useAdvancedWrap: true }
     }).setOrigin(0.5).setMaxLines(1);
 
@@ -226,10 +226,10 @@ export class MarketSystem {
     this.saleTitleText = this.scene.add.text(320, 94, "", {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(14), color: "#e6c47e", fontStyle: "bold", align: "center", wordWrap: { width: 360, useAdvancedWrap: true }
     }).setOrigin(0.5).setMaxLines(2);
-    this.saleDescriptionText = this.scene.add.text(320, 125, "", {
+    this.saleDescriptionText = this.scene.add.text(320, 126, "", {
       ...uiDescriptionStyle(this.language.getFontFamily(), 346, 8.5), align: "center"
     }).setOrigin(0.5).setMaxLines(3);
-    this.saleAvailableText = this.scene.add.text(320, 161, "", {
+    this.saleAvailableText = this.scene.add.text(320, 163, "", {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5", align: "center", wordWrap: { width: 420, useAdvancedWrap: true }
     }).setOrigin(0.5).setMaxLines(2);
     this.saleMinus = this.scene.add.rectangle(238, 194, 40, 30, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
@@ -250,14 +250,14 @@ export class MarketSystem {
 
   private createUpgradeDetail(): void {
     this.upgradeDetailPanel = this.scene.add.container(0, 0).setVisible(false);
-    const background = modalPanel(this.scene, 320, 180, 410, 212);
-    this.upgradeDetailTitle = this.scene.add.text(320, 94, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(14), color: "#e6c47e", fontStyle: "bold", align: "center", wordWrap: { width: 350, useAdvancedWrap: true }
+    const background = modalPanel(this.scene, 320, 180, 410, 232);
+    this.upgradeDetailTitle = this.scene.add.text(320, 88, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(14), color: "#e6c47e", fontStyle: "bold", align: "center", wordWrap: { width: 370, useAdvancedWrap: true }
     }).setOrigin(0.5).setMaxLines(2);
-    this.upgradeDetailDescription = this.scene.add.text(320, 145, "", {
-      ...uiDescriptionStyle(this.language.getFontFamily(), 346, 9.5), align: "center"
+    this.upgradeDetailDescription = this.scene.add.text(320, 132, "", {
+      ...uiDescriptionStyle(this.language.getFontFamily(), 374, 8.5), align: "center"
     }).setOrigin(0.5).setMaxLines(3);
-    this.upgradeDetailInfo = this.scene.add.text(320, 207, "", {
+    this.upgradeDetailInfo = this.scene.add.text(320, 198, "", {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#ffe49a", fontStyle: "bold", align: "center", wordWrap: { width: 350, useAdvancedWrap: true }
     }).setOrigin(0.5).setMaxLines(2);
     this.upgradeDetailBuy = this.scene.add.rectangle(260, 263, 112, 28, 0x527044, 1).setStrokeStyle(1, 0xd6b36b);
@@ -429,7 +429,7 @@ export class MarketSystem {
     if (this.saleKind) { this.handleSaleSelectorPointer(pointer); return; }
     if (pointer.x < 110 || pointer.x > 530) return;
     const index = this.cardY.findIndex(y => pointer.y >= y - 15 && pointer.y <= y + 15);
-    if (index >= 0) this.performAction(index);
+    if (index >= 0 && this.actionCards[index]?.visible) this.performAction(index);
   };
 
   private handleMarketPointerMove = (pointer: Phaser.Input.Pointer): void => {
@@ -463,15 +463,22 @@ export class MarketSystem {
       this.scene.game.canvas.style.cursor = (canAdjust && (overMinus || overPlus || overMax || overConfirm)) || overCancel ? "pointer" : "default";
       return;
     }
-    const index = pointer.x >= 110 && pointer.x <= 530
+    const candidateIndex = pointer.x >= 110 && pointer.x <= 530
       ? this.cardY.findIndex(y => pointer.y >= y - 15 && pointer.y <= y + 15)
       : -1;
-    this.actionCards.forEach((card, cardIndex) => card.setFillStyle(cardIndex === index ? 0x58734b : (cardIndex % 2 === 0 ? 0x40513a : 0x3d4b34), 1));
-    this.scene.game.canvas.style.cursor = index >= 0 ? "pointer" : "default";
+    const index = candidateIndex >= 0 && this.actionCards[candidateIndex]?.visible ? candidateIndex : -1;
+    this.actionCards.forEach((card, cardIndex) => {
+      if (card.visible) card.setFillStyle(cardIndex === index ? 0x58734b : (cardIndex % 2 === 0 ? 0x40513a : 0x3d4b34), 1);
+    });
+    this.scene.game.canvas.style.cursor = index >= 0 && this.actionCards[index]?.visible ? "pointer" : "default";
   };
 
   private updateInterface(): void {
     const font = this.language.getFontFamily();
+    this.actionCards.forEach(card => card.setVisible(true));
+    this.actionIcons.forEach(icon => icon.setVisible(true));
+    this.actionTexts.forEach(text => text.setVisible(true));
+    this.actionStatusBadges.forEach(text => text.setVisible(true));
     this.titleText.setText(this.language.t(
       this.upgradeMenuOpen ? "market.upgradesTitle" : this.seedMenuOpen ? "market.seedPacketsTitle" : this.baitMenuOpen ? "market.baitTitle" : this.produceMenuOpen ? "market.produceTitle" : this.fishMenuOpen ? "market.fishTitle" : this.mealMenuOpen ? "market.mealsTitle" : "market.title"
     ));
@@ -491,20 +498,23 @@ export class MarketSystem {
     } else {
       this.actionTexts[0].setText(this.language.t("market.seedPackets"));
       this.actionTexts[1].setText(this.language.t("market.sellProduce"));
-      this.actionTexts[2].setText(this.fishing.getHasRod() ? this.language.t("market.rodOwned") : this.language.t("market.rodShort"));
+      this.actionTexts[2].setText(this.language.t("market.upgradesShort"));
       this.actionTexts[3].setText(this.language.t("market.mealsShort"));
       this.actionTexts[4].setText(this.language.t("market.fishShort"));
       this.actionTexts[5].setText(this.language.t("market.baitShort"));
-      this.actionTexts[6].setText(this.language.t("market.upgradesShort"));
-      const icons = ["wheat_seed_bag_asset", "wheat_basket_asset", "fishing_rod_asset", "meal_fish_rice_asset", "fish_silver_barb_asset", "worm_bait_asset", "hoe_asset"];
-      this.actionIcons.forEach((icon, index) => icon.setVisible(true).setTexture(icons[index]).setDisplaySize(22, 22));
+      this.actionTexts[6].setText("");
+      const icons = ["wheat_seed_bag_asset", "wheat_basket_asset", "hoe_asset", "meal_fish_rice_asset", "fish_silver_barb_asset", "worm_bait_asset", "ui_icon_hand"];
+      this.actionIcons.forEach((icon, index) => icon.setVisible(index < 6).setTexture(icons[index]).setDisplaySize(22, 22));
+      this.actionCards[6].setVisible(false);
+      this.actionTexts[6].setVisible(false);
+      this.actionStatusBadges[6].setVisible(false);
+      this.actionStatusBadges[6].setText("");
       this.setActionStatus(0, "market.status.open", "info");
       this.setActionStatus(1, "market.status.open", "info");
-      this.setActionStatus(2, this.fishing.getHasRod() ? "market.status.owned" : "market.status.price", this.fishing.getHasRod() ? "good" : "info", { amount: FISHING_ROD_COST });
+      this.setActionStatus(2, "market.status.open", "info");
       this.setActionStatus(3, "market.status.open", "info");
       this.setActionStatus(4, "market.status.open", "info");
       this.setActionStatus(5, "market.status.open", "info");
-      this.setActionStatus(6, "market.status.open", "info");
     }
     this.updateSaleSelector();
     if (this.produceMenuOpen && !this.saleKind) {
@@ -521,6 +531,8 @@ export class MarketSystem {
     this.promptText.setText(this.language.t(this.touchMode ? "market.mobilePrompt" : "market.prompt"));
     for (const text of [this.titleText, ...this.actionTexts, ...this.actionStatusBadges, this.moneyText, this.messageText, this.exitHintText, this.clickHintText, this.stallLabel, this.promptText]) text.setFontFamily(font);
     this.updateMoney();
+    if (this.selectedRodDetail) this.inspectFishingRod();
+    else if (this.selectedUpgradeId) this.updateUpgradeDetail();
   }
 
   private updateSeedPacketMenu(): void {
@@ -569,8 +581,11 @@ export class MarketSystem {
       {
         icon: "wheat_basket_asset",
         label: this.language.t("inventory.wheat"),
-        statusKey: "market.status.open",
-        values: {}
+        statusKey: "market.status.wheatPrices",
+        values: {
+          normal: NORMAL_WHEAT_PRICE + this.farming.getRiceSaleBonus(),
+          golden: GOLDEN_WHEAT_PRICE
+        }
       },
       { icon: "tomato_basket_asset", label: this.language.t("inventory.tomatoes"), statusKey: "market.status.unitSell", values: { amount: CROP_SELL_PRICES.tomato } },
       { icon: "green_bean_basket_asset", label: this.language.t("inventory.greenBeans"), statusKey: "market.status.unitSell", values: { amount: CROP_SELL_PRICES.greenBean } }
@@ -653,12 +668,16 @@ export class MarketSystem {
       else if (this.coins >= cost) this.setActionStatus(index, "market.status.ready", "good");
       else this.setActionStatus(index, "market.status.need", "bad", { amount: cost - this.coins });
     });
-    this.setActionStatus(5, "market.status.info", "info");
+    const rodOwned = this.fishing.getHasRod();
+    const rodCanBuy = this.coins >= FISHING_ROD_COST;
+    const rodStatus = rodOwned ? "market.status.owned" : rodCanBuy ? "market.status.ready" : "market.status.need";
+    const rodTone = rodOwned || rodCanBuy ? "good" : "bad";
+    this.setActionStatus(5, rodStatus, rodTone, { amount: Math.max(0, FISHING_ROD_COST - this.coins) });
     this.setActionStatus(6, "market.status.back", "muted");
   }
 
   private updateUpgradeMenu(): void {
-    const icons = ["hoe_asset", "watering_can_asset", "sickle_asset", "granary_asset", "rice_bowl_asset", "wheat_basket_asset", "ui_icon_hand"];
+    const icons = ["hoe_asset", "watering_can_asset", "sickle_asset", "granary_asset", "rice_bowl_asset", "fishing_rod_asset", "ui_icon_hand"];
     this.actionIcons.forEach((icon, index) => icon.setTexture(icons[index]).setDisplaySize(22, 22));
     UPGRADE_ORDER.forEach((id, index) => {
       const definition = FARM_UPGRADE_DEFINITIONS[id];
@@ -672,7 +691,7 @@ export class MarketSystem {
           : this.language.t("market.upgradeRowLevel", { name, level, max: definition.maxLevel });
       this.actionTexts[index].setText(status);
     });
-    this.actionTexts[5].setText(this.language.t("market.upgradesInspectHint"));
+    this.actionTexts[5].setText(this.language.t("market.rodShort"));
     this.actionTexts[6].setText(this.language.t("market.back"));
   }
 
@@ -698,6 +717,8 @@ export class MarketSystem {
     this.upgradeDetailButtons[1].setText(this.language.t("market.back"));
     const canBuy = !this.fishing.getHasRod() && this.coins >= FISHING_ROD_COST;
     this.upgradeDetailBuy.setFillStyle(canBuy ? 0x527044 : 0x65513a, 1).setAlpha(this.fishing.getHasRod() ? 0.75 : 1);
+    const font = this.language.getFontFamily();
+    for (const text of [this.upgradeDetailTitle, this.upgradeDetailDescription, this.upgradeDetailInfo, ...this.upgradeDetailButtons]) text.setFontFamily(font);
     this.upgradeDetailPanel.setVisible(true);
   }
 
@@ -1046,6 +1067,7 @@ export class MarketSystem {
   private performAction(index: number): void {
     if (this.upgradeMenuOpen) {
       if (index < UPGRADE_ORDER.length) this.inspectUpgrade(index);
+      else if (index === 5) this.inspectFishingRod();
       else if (index === 6) this.closeUpgradeMenu();
       return;
     }
@@ -1087,11 +1109,10 @@ export class MarketSystem {
     switch (index) {
       case 0: this.openSeedMenu(); break;
       case 1: this.openProduceMenu(); break;
-      case 2: this.inspectFishingRod(); break;
+      case 2: this.openUpgradeMenu(); break;
       case 3: this.openMealMenu(); break;
       case 4: this.openFishMenu(); break;
       case 5: this.openBaitMenu(); break;
-      case 6: this.openUpgradeMenu(); break;
     }
   }
 
@@ -1139,6 +1160,7 @@ export class MarketSystem {
           if (Phaser.Input.Keyboard.JustDown(this.rodKey)) this.inspectUpgrade(2);
           if (Phaser.Input.Keyboard.JustDown(this.mealSellKey)) this.inspectUpgrade(3);
           if (Phaser.Input.Keyboard.JustDown(this.fishSellKey)) this.inspectUpgrade(4);
+          if (Phaser.Input.Keyboard.JustDown(this.menuSixKey)) this.inspectFishingRod();
           if (Phaser.Input.Keyboard.JustDown(this.upgradesKey)) this.closeUpgradeMenu();
         } else if (this.mealMenuOpen) {
           if (Phaser.Input.Keyboard.JustDown(this.buyKey)) this.beginSale("fishRice");
@@ -1168,11 +1190,11 @@ export class MarketSystem {
         } else {
           if (Phaser.Input.Keyboard.JustDown(this.buyKey)) this.openSeedMenu();
           if (Phaser.Input.Keyboard.JustDown(this.sellKey)) this.openProduceMenu();
-          if (Phaser.Input.Keyboard.JustDown(this.rodKey)) this.inspectFishingRod();
+          if (Phaser.Input.Keyboard.JustDown(this.rodKey)) this.openUpgradeMenu();
           if (Phaser.Input.Keyboard.JustDown(this.mealSellKey)) this.openMealMenu();
           if (Phaser.Input.Keyboard.JustDown(this.fishSellKey)) this.openFishMenu();
           if (Phaser.Input.Keyboard.JustDown(this.menuSixKey)) this.openBaitMenu();
-          if (Phaser.Input.Keyboard.JustDown(this.upgradesKey)) this.openUpgradeMenu();
+          if (Phaser.Input.Keyboard.JustDown(this.upgradesKey)) this.closeMarket();
         }
       }
       if (Phaser.Input.Keyboard.JustDown(this.interactKey)) {

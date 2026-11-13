@@ -15,17 +15,22 @@ export const PALETTE = {
 
 /** Shared readable type scale for canvas-based game interfaces. */
 export function uiFontSize(size: number, mobileScale = 1.1): string {
-  const scaled = isMobilePlatform() ? Math.max(size + 1, size * mobileScale) : size;
-  return `${Math.round(scaled * 10) / 10}px`;
+  const readableBase = Math.max(size, 10);
+  const scaled = isMobilePlatform()
+    ? Math.max(readableBase + 1, readableBase * mobileScale)
+    : readableBase;
+  return `${Math.round(scaled)}px`;
 }
 
 /** Consistent word wrapping for compact descriptions and labels. */
 export function uiDescriptionStyle(languageFont: string, width: number, size = 10): Phaser.Types.GameObjects.Text.TextStyle {
   return {
     fontFamily: languageFont,
-    fontSize: uiFontSize(size),
-    color: "#eadfca",
-    lineSpacing: 1,
+    fontSize: uiFontSize(Math.max(size, 10)),
+    color: "#fff0dc",
+    stroke: "#1e2b20",
+    strokeThickness: 1.25,
+    lineSpacing: 2,
     wordWrap: { width, useAdvancedWrap: true }
   };
 }

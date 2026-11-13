@@ -89,9 +89,9 @@ h1 {
   display: block;
   width: 100% !important;
   height: 100% !important;
-  /* Let the browser smooth the final canvas scale so text stays readable.
-     Phaser still uses nearest-neighbour sampling for the pixel-art textures. */
-  image-rendering: auto;
+  /* Keep both pixel-art edges and high-resolution bilingual UI glyphs crisp. */
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
 }
 
 @media (max-width: 650px) {
@@ -3681,4 +3681,27 @@ body.foi-in-game:not(.foi-touch-device).foi-modal-open #game-container > #game-h
 
 @media (max-width: 760px) and (pointer: coarse) {
   .desktop-game-hud button { width: 42px; height: 42px; }
+}
+
+
+/* During the Windows intro cutscene only the Menu button remains visible. */
+body.foi-in-game:not(.foi-touch-device).foi-cutscene-active #game-container > #game-hud-stack > #desktop-game-hud {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+body.foi-in-game:not(.foi-touch-device).foi-cutscene-active #game-container > #game-hud-stack > #game-menu-button {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Remove the browser's yellow focus ring from the Windows fullscreen toggle only while fullscreen is active. */
+body.foi-in-game:not(.foi-touch-device) #game-container:fullscreen #desktop-game-hud button[data-action="fullscreen"]:focus,
+body.foi-in-game:not(.foi-touch-device) #game-container:fullscreen #desktop-game-hud button[data-action="fullscreen"]:focus-visible,
+body.foi-in-game:not(.foi-touch-device) #game-container:-webkit-full-screen #desktop-game-hud button[data-action="fullscreen"]:focus,
+body.foi-in-game:not(.foi-touch-device) #game-container:-webkit-full-screen #desktop-game-hud button[data-action="fullscreen"]:focus-visible {
+  outline: none !important;
+  box-shadow: inset 2px 2px 0 #8a5a34, inset -2px -2px 0 #2a1a14, 0 2px 0 #21150f !important;
 }

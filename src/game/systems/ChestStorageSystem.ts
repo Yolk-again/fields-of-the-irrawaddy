@@ -74,9 +74,10 @@ export class ChestStorageSystem {
   private putLabels: Phaser.GameObjects.Text[] = [];
   private takeLabels: Phaser.GameObjects.Text[] = [];
   private messageValue = "";
+  private lastHoverKey = "";
   private readonly mobileMode = isMobilePlatform();
-  private readonly rowStartY = 102;
-  private readonly rowY = ITEMS.map((_item, index) => 102 + index * 18);
+  private readonly rowStartY = 110;
+  private readonly rowY = ITEMS.map((_item, index) => 110 + index * 17);
 
   constructor(scene: Phaser.Scene, farming: FarmingSystem, fishing: FishingSystem, cooking: CookingSystem, ui: ModalUIManager, language: LanguageSystem) {
     this.scene = scene;
@@ -103,10 +104,10 @@ export class ChestStorageSystem {
     this.panel = this.scene.add.container(0, 0).setScrollFactor(0);
     const background = modalPanel(this.scene, 320, 180, 570, 340);
     this.title = this.scene.add.text(320, 34, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(16), color: "#e6c47e", fontStyle: "bold", align: "center", wordWrap: { width: 450, useAdvancedWrap: true } }).setOrigin(0.5).setMaxLines(1);
-    this.subtitle = this.scene.add.text(320, 58, "", { ...uiDescriptionStyle(this.language.getFontFamily(), 470, 8), align: "center" }).setOrigin(0.5).setMaxLines(2);
-    this.bagColumn = this.scene.add.text(238, 84, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(6), color: "#e6c47e", align: "center", wordWrap: { width: 54, useAdvancedWrap: true } }).setOrigin(0.5).setMaxLines(1);
-    this.chestColumn = this.scene.add.text(302, 84, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(6), color: "#e6c47e", align: "center", wordWrap: { width: 54, useAdvancedWrap: true } }).setOrigin(0.5).setMaxLines(1);
-    this.quantityHeader = this.scene.add.text(390, 84, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(6.5), color: "#e6c47e", align: "center", wordWrap: { width: 150, useAdvancedWrap: true } }).setOrigin(0.5).setMaxLines(1);
+    this.subtitle = this.scene.add.text(320, 58, "", { ...uiDescriptionStyle(this.language.getFontFamily(), 470, 9), align: "center" }).setOrigin(0.5).setMaxLines(2);
+    this.bagColumn = this.scene.add.text(238, 88, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#f0d18b", stroke: "#243426", strokeThickness: 1, align: "center", wordWrap: { width: 60, useAdvancedWrap: true }, lineSpacing: 0 }).setOrigin(0.5).setMaxLines(2);
+    this.chestColumn = this.scene.add.text(302, 88, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#f0d18b", stroke: "#243426", strokeThickness: 1, align: "center", wordWrap: { width: 60, useAdvancedWrap: true }, lineSpacing: 0 }).setOrigin(0.5).setMaxLines(2);
+    this.quantityHeader = this.scene.add.text(390, 88, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#f0d18b", stroke: "#243426", strokeThickness: 1, align: "center", wordWrap: { width: 150, useAdvancedWrap: true }, lineSpacing: 0 }).setOrigin(0.5).setMaxLines(2);
     this.panel.add([background, this.title, this.subtitle, this.bagColumn, this.chestColumn, this.quantityHeader]);
 
     ITEMS.forEach((item, index) => {
@@ -114,11 +115,11 @@ export class ChestStorageSystem {
       const card = this.scene.add.rectangle(320, y, 520, 17, index % 2 ? 0x35462f : 0x3d5136, 1)
         .setStrokeStyle(1, 0xb58a55);
       const icon = this.scene.add.image(73, y, item.texture).setDisplaySize(20, 17);
-      const name = this.scene.add.text(92, y, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(6), color: "#fff1cf", wordWrap: { width: 132, useAdvancedWrap: true }, lineSpacing: 0 }).setOrigin(0, 0.5).setMaxLines(1);
-      const bag = this.scene.add.text(238, y, "0", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#ffffff" }).setOrigin(0.5);
-      const chest = this.scene.add.text(302, y, "0", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#f0d69e" }).setOrigin(0.5);
+      const name = this.scene.add.text(92, y, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#fff1cf", stroke: "#243426", strokeThickness: 0.75, wordWrap: { width: 132, useAdvancedWrap: true }, lineSpacing: 0 }).setOrigin(0, 0.5).setMaxLines(1);
+      const bag = this.scene.add.text(238, y, "0", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#ffffff", stroke: "#243426", strokeThickness: 0.75 }).setOrigin(0.5);
+      const chest = this.scene.add.text(302, y, "0", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#f0d69e", stroke: "#243426", strokeThickness: 0.75 }).setOrigin(0.5);
       const decrease = this.scene.add.rectangle(342, y, 20, 16, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
-      const amount = this.scene.add.text(372, y, "1", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
+      const amount = this.scene.add.text(372, y, "1", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", stroke: "#243426", strokeThickness: 0.75, fontStyle: "bold" }).setOrigin(0.5);
       const increase = this.scene.add.rectangle(402, y, 20, 16, 0x527044, 1).setStrokeStyle(1, 0xd6b36b);
       const decreaseLabel = this.scene.add.text(342, y, "−", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(11), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
       const increaseLabel = this.scene.add.text(402, y, "+", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(11), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
@@ -126,8 +127,8 @@ export class ChestStorageSystem {
       const maximumLabel = this.scene.add.text(441, y, "MAX", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
       const put = this.scene.add.rectangle(495, y, 54, 16, 0x527044, 1).setStrokeStyle(1, 0xd6b36b);
       const take = this.scene.add.rectangle(555, y, 54, 16, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
-      const putLabel = this.scene.add.text(495, y, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(6), color: "#fff1cf", align: "center", wordWrap: { width: 48 }, lineSpacing: 0 }).setOrigin(0.5).setMaxLines(1);
-      const takeLabel = this.scene.add.text(555, y, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(6), color: "#fff1cf", align: "center", wordWrap: { width: 48 }, lineSpacing: 0 }).setOrigin(0.5).setMaxLines(1);
+      const putLabel = this.scene.add.text(495, y, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#fff1cf", stroke: "#243426", strokeThickness: 0.75, align: "center", wordWrap: { width: 48 }, lineSpacing: 0 }).setOrigin(0.5).setMaxLines(1);
+      const takeLabel = this.scene.add.text(555, y, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#fff1cf", stroke: "#243426", strokeThickness: 0.75, align: "center", wordWrap: { width: 48 }, lineSpacing: 0 }).setOrigin(0.5).setMaxLines(1);
       this.rowNames.push(name);
       this.playerCounts.push(bag);
       this.chestCounts.push(chest);
@@ -149,8 +150,8 @@ export class ChestStorageSystem {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#e6c47e", align: "center",
       wordWrap: { width: 420 }
     }).setOrigin(0.5).setMaxLines(2).setVisible(false);
-    this.message = this.scene.add.text(320, 322, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#f0d69e", align: "center", wordWrap: { width: 460 } }).setOrigin(0.5).setMaxLines(1);
-    this.exitHint = this.scene.add.text(320, 338, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#d7e6c5", align: "center", wordWrap: { width: 460 } }).setOrigin(0.5).setMaxLines(1);
+    this.message = this.scene.add.text(320, 314, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#f0d69e", align: "center", wordWrap: { width: 460 } }).setOrigin(0.5).setMaxLines(1);
+    this.exitHint = this.scene.add.text(320, 332, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#d7e6c5", align: "center", wordWrap: { width: 460 } }).setOrigin(0.5).setMaxLines(1);
     const close = modalClosePosition(320, 180, 570, 340);
     this.closeButton = createRedCloseButton(this.scene, close.x, close.y);
     this.panel.add([this.emptyState, this.message, this.exitHint, this.closeButton]);
@@ -227,7 +228,7 @@ export class ChestStorageSystem {
 
   private visibleRowAt(y: number): number {
     const slot = this.visibleRowIndices.findIndex((_itemIndex, visibleSlot) =>
-      Math.abs(y - (this.rowStartY + visibleSlot * 18)) <= 9
+      Math.abs(y - (this.rowStartY + visibleSlot * 17)) <= 8.5
     );
     return slot < 0 ? -1 : this.visibleRowIndices[slot];
   }
@@ -247,22 +248,40 @@ export class ChestStorageSystem {
 
   private handlePointerMove = (pointer: Phaser.Input.Pointer): void => {
     if (!this.isOpen || !this.ui.isOpen("chest")) {
-      this.scene.game.canvas.style.cursor = "default";
+      if (this.lastHoverKey) {
+        this.lastHoverKey = "";
+        this.resetHoverStyles();
+        this.scene.game.canvas.style.cursor = "default";
+      }
       return;
     }
     const index = this.visibleRowAt(pointer.y);
-    const overDecrease = index >= 0 && pointer.x >= 330 && pointer.x <= 354;
-    const overIncrease = index >= 0 && pointer.x >= 390 && pointer.x <= 414;
-    const overMaximum = index >= 0 && pointer.x >= 420 && pointer.x <= 462;
-    const overPut = index >= 0 && pointer.x >= 468 && pointer.x <= 522;
-    const overTake = index >= 0 && pointer.x >= 528 && pointer.x <= 582;
-    this.decreaseButtons.forEach((button, i) => button.setFillStyle(overDecrease && i === index ? 0x98713d : 0x70532f, 1));
-    this.increaseButtons.forEach((button, i) => button.setFillStyle(overIncrease && i === index ? 0x668651 : 0x527044, 1));
-    this.maxButtons.forEach((button, i) => button.setFillStyle(overMaximum && i === index ? 0x98713d : 0x70532f, 1));
-    this.putButtons.forEach((button, i) => button.setFillStyle(overPut && i === index ? 0x668651 : 0x527044, 1));
-    this.takeButtons.forEach((button, i) => button.setFillStyle(overTake && i === index ? 0x98713d : 0x70532f, 1));
-    this.scene.game.canvas.style.cursor = overDecrease || overIncrease || overMaximum || overPut || overTake ? "pointer" : "default";
+    const region = index < 0 ? "" : pointer.x >= 330 && pointer.x <= 354 ? "decrease"
+      : pointer.x >= 390 && pointer.x <= 414 ? "increase"
+        : pointer.x >= 420 && pointer.x <= 462 ? "maximum"
+          : pointer.x >= 468 && pointer.x <= 522 ? "put"
+            : pointer.x >= 528 && pointer.x <= 582 ? "take" : "";
+    const hoverKey = region ? `${index}:${region}` : "";
+    if (hoverKey === this.lastHoverKey) return;
+    this.lastHoverKey = hoverKey;
+    this.resetHoverStyles();
+    if (region && index >= 0) {
+      if (region === "decrease") this.decreaseButtons[index].setFillStyle(0x98713d, 1);
+      else if (region === "increase") this.increaseButtons[index].setFillStyle(0x668651, 1);
+      else if (region === "maximum") this.maxButtons[index].setFillStyle(0x98713d, 1);
+      else if (region === "put") this.putButtons[index].setFillStyle(0x668651, 1);
+      else if (region === "take") this.takeButtons[index].setFillStyle(0x98713d, 1);
+    }
+    this.scene.game.canvas.style.cursor = region ? "pointer" : "default";
   };
+
+  private resetHoverStyles(): void {
+    this.decreaseButtons.forEach(button => button.setFillStyle(0x70532f, 1));
+    this.increaseButtons.forEach(button => button.setFillStyle(0x527044, 1));
+    this.maxButtons.forEach(button => button.setFillStyle(0x70532f, 1));
+    this.putButtons.forEach(button => button.setFillStyle(0x527044, 1));
+    this.takeButtons.forEach(button => button.setFillStyle(0x70532f, 1));
+  }
 
   private adjustAmount(item: ChestItem, delta: number): void {
     const available = Math.max(this.playerCount(item), this.stored[item]);
@@ -298,7 +317,7 @@ export class ChestStorageSystem {
       const item = ITEMS[index].id;
       const visible = this.playerCount(item) > 0 || this.stored[item] > 0;
       const visibleSlot = this.visibleRowIndices.length;
-      const targetY = this.rowStartY + visibleSlot * 18;
+      const targetY = this.rowStartY + visibleSlot * 17;
       row.forEach(object => {
         const display = object as Phaser.GameObjects.GameObject & {
           x: number;
@@ -332,14 +351,11 @@ export class ChestStorageSystem {
   openFromHouse(): void {
     if (!this.ui.isOpen("house")) return;
     this.isOpen = true;
+    this.lastHoverKey = "";
+    this.resetHoverStyles();
     this.messageValue = "";
     this.updateInterface();
     this.ui.openOver("chest");
-  }
-
-  update(): void {
-    if (!this.isOpen) return;
-    this.updateInterface();
   }
 
   getSaveData(): ChestSaveData {

@@ -7,7 +7,7 @@ import { VillageBoardSystem } from "./VillageBoardSystem";
 import type { SaveSystem } from "./SaveSystem";
 import { ModalUIManager } from "./ModalUIManager";
 import { LanguageSystem } from "./LanguageSystem";
-import { createRedCloseButton, modalClosePosition, uiFontSize } from "../ui/PixelUI";
+import { uiFontSize } from "../ui/PixelUI";
 import { isMobilePlatform } from "../utils/DeviceMode";
 
 type RoomTarget = "bed" | "chest" | "cooker" | "door";
@@ -32,7 +32,6 @@ export class HouseInteriorSystem {
   private lastPlayerY = 0;
   private avatar!: Phaser.GameObjects.Sprite;
   private panel!: Phaser.GameObjects.Container;
-  private closeButton!: Phaser.GameObjects.Container;
   private outsidePrompt!: Phaser.GameObjects.Text;
   private title!: Phaser.GameObjects.Text;
   private statusText!: Phaser.GameObjects.Text;
@@ -101,7 +100,7 @@ export class HouseInteriorSystem {
     this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scene.input.off("pointerup", this.handlePointerUp, this);
     });
-    this.ui.registerPanel("house", this.panel, 300, () => this.restoreOutside(), this.closeButton);
+    this.ui.registerPanel("house", this.panel, 300, () => this.restoreOutside());
     this.ui.registerHud(this.outsidePrompt);
     this.language.onChange(() => this.updateLanguage());
   }
@@ -193,9 +192,7 @@ export class HouseInteriorSystem {
       wordWrap: { width: 232 }
     }).setOrigin(0.5).setVisible(false);
     this.sleepOverlay = this.scene.add.rectangle(320, 180, 640, 360, 0x101827, 1).setAlpha(0);
-    const closePos = modalClosePosition(320, 180, 640, 360);
-    this.closeButton = createRedCloseButton(this.scene, closePos.x, closePos.y);
-    this.panel.add([room, this.title, cookerArt, this.avatar, this.statusText, this.roomPromptHitArea, this.roomPrompt, this.sleepOverlay, this.closeButton]);
+    this.panel.add([room, this.title, cookerArt, this.avatar, this.statusText, this.roomPromptHitArea, this.roomPrompt, this.sleepOverlay]);
     this.panel.setVisible(false);
     this.updateLanguage();
   }
@@ -295,7 +292,6 @@ export class HouseInteriorSystem {
     this.avatarVelocityY = 0;
     this.movementAccumulator = 0;
     this.sleeping = true;
-    this.closeButton.setVisible(false);
     this.statusText.setText(this.language.t("house.sleeping")).setVisible(true);
     this.roomPrompt.setVisible(false);
     this.roomPromptHitArea.setVisible(false);
@@ -360,7 +356,6 @@ export class HouseInteriorSystem {
                 this.sleepBreathTween?.stop();
                 this.sleepBreathTween = undefined;
                 this.sleeping = false;
-                this.closeButton.setVisible(true);
                 this.avatarTexture = this.getPlayerTexture();
                 this.avatar.setTexture(this.avatarTexture, 0).setOrigin(0.5, 1).setAngle(0).setFlipX(false).setScale(2);
                 this.avatarX = this.targets.bed.x;
