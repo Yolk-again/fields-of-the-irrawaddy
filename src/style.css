@@ -2663,3 +2663,209 @@ body.foi-in-game:not(.foi-touch-device).foi-cutscene-active #game-container:-web
   .title-screen *,
   .title-scroll-cue { animation: none !important; scroll-behavior: auto !important; }
 }
+
+/* Final title-screen order: artwork, save slots, then the centered install action. */
+.title-screen-content {
+  grid-template-areas:
+    "heading landscape"
+    "saves saves"
+    "install install"
+    "footer footer" !important;
+}
+
+.title-install-row {
+  grid-area: install !important;
+  justify-self: center !important;
+  align-self: center;
+  width: min(100%, 440px);
+  margin: clamp(14px, 2.2vh, 24px) auto 5px !important;
+  padding: 14px 10px 4px !important;
+  border-top: 1px solid rgba(224, 190, 119, .48);
+  box-sizing: border-box;
+}
+
+.title-install-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-width: min(248px, 100%);
+  min-height: 54px;
+  padding: 10px 24px;
+  border: 3px solid #e6c77f;
+  border-radius: 10px;
+  color: #fff5d9;
+  background: linear-gradient(180deg, #709b55 0%, #4e7b43 55%, #355e38 100%);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.28), inset 0 -3px 0 rgba(20,47,27,.35), 0 4px 0 #2a1a14, 0 9px 20px rgba(0,0,0,.2);
+  font-family: "Noto Sans", "Noto Sans Myanmar", sans-serif;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  line-height: 1.2;
+  text-shadow: 0 2px 0 rgba(25,48,25,.42);
+  transition: transform 140ms ease, filter 140ms ease, box-shadow 140ms ease;
+}
+
+.title-install-button span:first-child {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  border: 2px solid #76512c;
+  border-radius: 50%;
+  color: #5a3a1f;
+  background: linear-gradient(180deg, #fff0b6, #e9bd62);
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: none;
+}
+
+.title-install-button:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.3), inset 0 -3px 0 rgba(20,47,27,.35), 0 6px 0 #2a1a14, 0 12px 22px rgba(0,0,0,.24);
+}
+
+.title-install-button:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.2), inset 0 -2px 0 rgba(20,47,27,.3), 0 1px 0 #2a1a14;
+}
+
+.title-install-button.is-installed,
+.title-install-button:disabled {
+  cursor: default;
+  border-color: #c5bd9d;
+  color: #f6f1df;
+  background: linear-gradient(180deg, #687b5b, #4c6149);
+  filter: none;
+  transform: none;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.2), 0 3px 0 #2a1a14;
+}
+
+.title-install-button.is-installed span:first-child {
+  color: #fff;
+  background: linear-gradient(180deg, #80aa65, #4f7947);
+}
+
+.title-install-hint {
+  max-width: 38rem;
+  margin: 5px auto 0;
+  color: #f4e3bb;
+  font-family: "Noto Sans", "Noto Sans Myanmar", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.55;
+  text-align: center;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+@media (max-width: 760px) {
+  .title-screen-content {
+    grid-template-areas:
+      "heading landscape"
+      "saves saves"
+      "install install"
+      "footer footer" !important;
+  }
+  .title-install-row { width: min(100%, 400px); margin-top: 16px !important; }
+  .title-install-button { min-height: 52px; min-width: min(240px, 100%); font-size: 13px; }
+}
+
+@media (max-width: 700px) and (orientation: portrait) {
+  .title-screen-content {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas:
+      "heading"
+      "landscape"
+      "saves"
+      "install"
+      "footer" !important;
+  }
+  .title-install-row { margin: 13px auto 4px !important; padding-top: 12px !important; }
+  .title-install-button { width: min(100%, 270px); min-height: 50px; }
+}
+
+/* Desktop: no mobile icon rail at the top-right. Keep only a standalone
+   fullscreen control beside Menu at the lower-left of the game viewport. */
+.desktop-fullscreen-button {
+  display: none;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  padding: 3px;
+  border: 3px solid #2a1a14;
+  border-radius: 0;
+  color: #fff1cf;
+  background: #4a3324;
+  box-shadow: inset 2px 2px 0 #8a5a34, inset -2px -2px 0 #2a1a14, 0 2px 0 #21150f;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+.desktop-fullscreen-button img {
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.desktop-fullscreen-button:active { transform: translateY(1px); background: #6c4b30; }
+.desktop-fullscreen-button.is-fullscreen { border-color: #f0cf80; background: #5d7942; }
+.desktop-fullscreen-button.is-fullscreen-warning { border-color: #ff9886; background: #8b4035; }
+.desktop-fullscreen-button:focus-visible { outline: 3px solid #ffe49a; outline-offset: 3px; }
+
+body.foi-in-game:not(.foi-touch-device) .game-hud-stack {
+  top: auto !important;
+  right: auto !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  left: max(12px, env(safe-area-inset-left)) !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+}
+
+body.foi-in-game:not(.foi-touch-device) .game-hud-stack > .mobile-game-hud {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body.foi-in-game:not(.foi-touch-device) .game-hud-stack > .desktop-fullscreen-button {
+  display: grid !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+body.foi-touch-device .game-hud-stack > .desktop-fullscreen-button { display: none !important; }
+
+body.foi-in-game:not(.foi-touch-device).foi-cutscene-active .game-hud-stack {
+  z-index: 10040 !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  left: max(12px, env(safe-area-inset-left)) !important;
+}
+
+body.foi-in-game:not(.foi-touch-device) #game-container:fullscreen > .game-hud-stack,
+body.foi-in-game:not(.foi-touch-device) #game-container:-webkit-full-screen > .game-hud-stack {
+  top: auto !important;
+  right: auto !important;
+  bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  left: max(12px, env(safe-area-inset-left)) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title-install-button,
+  .desktop-fullscreen-button { transition: none; }
+}

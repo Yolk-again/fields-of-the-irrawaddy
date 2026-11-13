@@ -1,5 +1,13 @@
-const CACHE_NAME = "foi-app-shell-v2";
-const APP_SHELL = ["/", "/index.html", "/manifest.webmanifest", "/favicon.png", "/icons/icon-192.png", "/icons/icon-512.png"];
+const CACHE_NAME = "foi-app-shell-v3";
+const APP_SHELL = [
+  "/",
+  "/index.html",
+  "/manifest.webmanifest",
+  "/deployment-version.txt",
+  "/favicon.png",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png"
+];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
@@ -8,10 +16,30 @@ self.addEventListener("install", event => {
 
 self.addEventListener("activate", event => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith("foi-") && key !== CACHE_NAME).map(key => caches.delete(key))))
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(key => key.startsWith("foi-app-shell-") && key !== CACHE_NAME)
+          .map(key => caches.delete(key))
+      ))
       .then(() => self.clients.claim())
   );
 });
+
+async function networkFirst(request, fallbackUrl = null) {
+  const cache = await caches.open(CACHE_NAME);
+  try {
+    const response = await fetch(request);
+    if (response.ok && (response.type === "basic" || response.type === "default")) {
+      await cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    return (await cache.match(request)) ||
+      (fallbackUrl ? await cache.match(fallbackUrl) : null) ||
+      (await caches.match(request)) ||
+      Response.error();
+  }
+}
 
 self.addEventListener("fetch", event => {
   const request = event.request;
@@ -20,26 +48,25 @@ self.addEventListener("fetch", event => {
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request).then(response => {
-        const copy = response.clone();
-        void caches.open(CACHE_NAME).then(cache => cache.put("/index.html", copy));
-        return response;
-      }).catch(async () => (await caches.match("/index.html")) || (await caches.match("/")))
-    );
+    event.respondWith(networkFirst(request, "/index.html"));
+    return;
+  }
+
+  // App/game assets use network-first so an installed copy receives updated art
+  // and UI resources without requiring the player to reinstall the PWA.
+  if (url.pathname.startsWith("/assets/") ||
+      url.pathname === "/manifest.webmanifest" ||
+      url.pathname === "/deployment-version.txt" ||
+      url.pathname.startsWith("/icons/") ||
+      url.pathname.startsWith("/favicon")) {
+    event.respondWith(networkFirst(request));
     return;
   }
 
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached;
-      return fetch(request).then(response => {
-        if (response.ok && (response.type === "basic" || response.type === "default")) {
-          const copy = response.clone();
-          void caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
-        }
-        return response;
-      });
+      return networkFirst(request);
     })
   );
 });

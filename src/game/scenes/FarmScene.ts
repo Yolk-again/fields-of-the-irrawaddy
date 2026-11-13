@@ -101,6 +101,13 @@ export class FarmScene extends Phaser.Scene {
     S: Phaser.Input.Keyboard.Key;
     D: Phaser.Input.Keyboard.Key;
   };
+  private desktopShortcutKeys!: {
+    inventory: Phaser.Input.Keyboard.Key;
+    profile: Phaser.Input.Keyboard.Key;
+    language: Phaser.Input.Keyboard.Key;
+    help: Phaser.Input.Keyboard.Key;
+    audio: Phaser.Input.Keyboard.Key;
+  };
 
   private obstacles: Obstacle[] = [];
   private worldLabels: { text: Phaser.GameObjects.Text; key: string; radius: number }[] = [];
@@ -384,7 +391,6 @@ export class FarmScene extends Phaser.Scene {
       this, this.ui, this.language, this.isTouchDevice,
       this.selectedSaveSlot, this.loadExistingSave
     );
-    this.music.setMobileHeaderHidden(this.isTouchDevice);
 
     this.farming = new FarmingSystem(
       this,
@@ -1377,8 +1383,26 @@ export class FarmScene extends Phaser.Scene {
   }
 
   private createControls(): void {
-    this.cursors = this.input.keyboard!.createCursorKeys();
-    this.wasd = this.input.keyboard!.addKeys("W,A,S,D") as typeof this.wasd;
+    const keyboard = this.input.keyboard!;
+    this.cursors = keyboard.createCursorKeys();
+    this.wasd = keyboard.addKeys("W,A,S,D") as typeof this.wasd;
+    this.desktopShortcutKeys = {
+      inventory: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I),
+      profile: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P),
+      language: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.L),
+      help: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H),
+      audio: keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M)
+    };
+  }
+
+  private handleDesktopShortcutKeys(): void {
+    if (this.isTouchDevice || this.openingStoryActive || this.ui.hasActiveModal()) return;
+    const keys = this.desktopShortcutKeys;
+    if (Phaser.Input.Keyboard.JustDown(keys.inventory)) this.inventory.mobileToggle();
+    if (Phaser.Input.Keyboard.JustDown(keys.profile)) this.profile.mobileToggle();
+    if (Phaser.Input.Keyboard.JustDown(keys.language)) this.language.toggleLanguage();
+    if (Phaser.Input.Keyboard.JustDown(keys.help)) this.help.mobileToggle();
+    if (Phaser.Input.Keyboard.JustDown(keys.audio)) this.music.mobileToggle();
   }
 
   private createCamera(): void {
@@ -1389,76 +1413,13 @@ export class FarmScene extends Phaser.Scene {
   private createHUD(): void {
     this.isTouchDevice = isMobilePlatform();
 
-    const headerY = this.isTouchDevice ? 24 : 22;
-    const positions = this.isTouchDevice
-      ? { bag: 420, profile: 460, language: 500, help: 540 }
-      : { bag: 466, profile: 498, language: 530, help: 562 };
-
-    // The DOM fullscreen control is available on both desktop and mobile.
-    // Other DOM HUD actions remain mobile-only; desktop keeps its Phaser HUD icons.
+    // Mobile gets its own touch HUD. Windows keeps a clean canvas and uses
+    // keyboard shortcuts for panels, plus the separate fullscreen/Menu controls.
     window.addEventListener("foi-mobile-hud-action", this.handleMobileHudAction);
     this.registerFullscreenEvents();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       window.removeEventListener("foi-mobile-hud-action", this.handleMobileHudAction);
     });
-
-    if (this.isTouchDevice) return;
-
-    this.createIconButton(positions.help, headerY, "ui_icon_help", "hud.tip.help",
-      () => this.help.mobileToggle());
-    this.createIconButton(positions.language, headerY, "ui_icon_globe", "hud.tip.language",
-      () => this.language.toggleLanguage());
-    this.createIconButton(positions.profile, headerY, "ui_icon_person", "hud.tip.profile",
-      () => this.profile.mobileToggle());
-    this.createIconButton(positions.bag, headerY, "ui_icon_bag", "hud.tip.inventory",
-      () => this.inventory.mobileToggle());
-  }
-
-  private createIconButton(
-    x: number,
-    y: number,
-    icon: string,
-    tipKey: string,
-    action: () => void
-  ): Phaser.GameObjects.Image {
-    const frameSize = this.isTouchDevice ? 32 : 28;
-    const hitSize = this.isTouchDevice ? 38 : 28;
-    const frame = this.add.graphics().setScrollFactor(0).setDepth(8500);
-    const left = Math.round(x - frameSize / 2);
-    const top = Math.round(y - frameSize / 2);
-    frame.fillStyle(0x21150f, 1).fillRect(left + 2, top + 2, frameSize, frameSize);
-    frame.fillStyle(0x2a1a14, 1).fillRect(left, top, frameSize, frameSize);
-    frame.fillStyle(0x4a3324, 1).fillRect(left + 3, top + 3, frameSize - 6, frameSize - 6);
-    frame.fillStyle(0x8a5a34, 1).fillRect(left + 3, top + 3, frameSize - 6, 2);
-    frame.fillStyle(0x8a5a34, 1).fillRect(left + 3, top + 3, 2, frameSize - 6);
-    frame.fillStyle(0x2a1a14, 1).fillRect(left + 3, top + frameSize - 5, frameSize - 6, 2);
-    frame.fillStyle(0x2a1a14, 1).fillRect(left + frameSize - 5, top + 3, 2, frameSize - 6);
-    const image = this.add.image(x, y, icon)
-      .setScale(this.isTouchDevice ? 1.45 : 1)
-      .setScrollFactor(0).setDepth(8501);
-    const hit = this.add.rectangle(x, y, hitSize, hitSize, 0xffffff, 0.001)
-      .setScrollFactor(0).setDepth(8502).setInteractive({ useHandCursor: true });
-    const tip = this.add.text(x, y + 22, this.language.t(tipKey), {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf",
-      backgroundColor: "#2a1a14", padding: { x: 4, y: 2 }
-    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(8503).setVisible(false);
-    this.language.onChange(() => {
-      tip.setText(this.language.t(tipKey));
-      tip.setFontFamily(this.language.getFontFamily());
-    });
-
-    hit.on("pointerover", () => { image.setY(y - 1); tip.setVisible(true); });
-    hit.on("pointerout", () => { image.setY(y); tip.setVisible(false); });
-    hit.on("pointerdown", () => { tip.setVisible(false); action(); });
-    const hideTip = (): void => { tip.setVisible(false); image.setY(y); };
-    this.input.on("gameout", hideTip);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.input.off("gameout", hideTip);
-      hideTip();
-    });
-    this.ui.registerHud(frame, image, hit, tip);
-    this.ui.registerTooltip(tip);
-    return image;
   }
 
   private createResourceHud(): void {
@@ -1743,10 +1704,10 @@ export class FarmScene extends Phaser.Scene {
   private toggleFullscreenForDevice(): void {
     const container = document.getElementById("game-container");
     if (!container) return;
-    const fullscreenButton = document.querySelector<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"]');
+    const fullscreenButtons = document.querySelectorAll<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"], #desktop-fullscreen-button');
     if (document.body.classList.contains("foi-mobile-fullscreen")) {
       document.body.classList.remove("foi-mobile-fullscreen");
-      fullscreenButton?.classList.remove("is-fullscreen");
+      fullscreenButtons.forEach(button => button.classList.remove("is-fullscreen"));
       this.scale.refresh();
       return;
     }
@@ -1762,7 +1723,7 @@ export class FarmScene extends Phaser.Scene {
           void result.catch(() => {
             if (this.isTouchDevice) {
               document.body.classList.add("foi-mobile-fullscreen");
-              fullscreenButton?.classList.add("is-fullscreen");
+              fullscreenButtons.forEach(button => button.classList.add("is-fullscreen"));
               this.scale.refresh();
             } else {
               this.handleFullscreenFailed();
@@ -1772,7 +1733,7 @@ export class FarmScene extends Phaser.Scene {
       } catch {
         if (this.isTouchDevice) {
           document.body.classList.add("foi-mobile-fullscreen");
-          fullscreenButton?.classList.add("is-fullscreen");
+          fullscreenButtons.forEach(button => button.classList.add("is-fullscreen"));
           this.scale.refresh();
         } else {
           this.handleFullscreenFailed();
@@ -1780,7 +1741,7 @@ export class FarmScene extends Phaser.Scene {
       }
     } else if (this.isTouchDevice) {
       document.body.classList.add("foi-mobile-fullscreen");
-      fullscreenButton?.classList.add("is-fullscreen");
+      fullscreenButtons.forEach(button => button.classList.add("is-fullscreen"));
       this.scale.refresh();
     } else {
       this.handleFullscreenFailed();
@@ -1788,19 +1749,21 @@ export class FarmScene extends Phaser.Scene {
   }
 
   private handleFullscreenEntered(): void {
-    document.querySelector<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"]')?.classList.add("is-fullscreen");
+    document.querySelectorAll<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"], #desktop-fullscreen-button')
+      .forEach(button => button.classList.add("is-fullscreen"));
     this.scale.refresh();
   }
 
   private handleFullscreenLeft(): void {
-    document.querySelector<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"]')?.classList.remove("is-fullscreen");
+    document.querySelectorAll<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"], #desktop-fullscreen-button')
+      .forEach(button => button.classList.remove("is-fullscreen"));
     this.scale.refresh();
   }
 
   private handleFullscreenFailed(): void {
-    const button = document.querySelector<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"]');
-    button?.classList.add("is-fullscreen-warning");
-    this.time.delayedCall(1800, () => button?.classList.remove("is-fullscreen-warning"));
+    const buttons = document.querySelectorAll<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"], #desktop-fullscreen-button');
+    buttons.forEach(button => button.classList.add("is-fullscreen-warning"));
+    this.time.delayedCall(1800, () => buttons.forEach(button => button.classList.remove("is-fullscreen-warning")));
   }
 
   private handleGraphicsQualityChange = (quality: GraphicsQuality): void => {
@@ -1842,6 +1805,8 @@ export class FarmScene extends Phaser.Scene {
       this.animatePlayer(0, 0, false);
       return;
     }
+
+    this.handleDesktopShortcutKeys();
 
     if (!this.canMoveTo(this.player.x, this.player.y)) {
       this.player.setPosition(320, 330);

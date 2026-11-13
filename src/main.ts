@@ -87,6 +87,7 @@ const saveNameCancel = document.getElementById("save-name-cancel");
 const saveNameSave = document.getElementById("save-name-save");
 const mobileHud = document.getElementById("mobile-game-hud");
 const menuButton = document.getElementById("game-menu-button");
+const desktopFullscreenButton = document.getElementById("desktop-fullscreen-button");
 const mobileContextAction = document.getElementById("mobile-context-action") as HTMLButtonElement | null;
 const titleScrollCue = document.getElementById("title-scroll-cue");
 const titleScrollCueLabel = titleScrollCue?.querySelector("span");
@@ -102,34 +103,56 @@ interface DeferredInstallPrompt extends Event {
 let deferredInstallPrompt: DeferredInstallPrompt | null = null;
 const isInstalledApp = window.matchMedia("(display-mode: standalone)").matches ||
   (navigator as Navigator & { standalone?: boolean }).standalone === true;
-if (isInstalledApp && installGameButton) installGameButton.hidden = true;
+
+function showInstalledState(): void {
+  if (installGameButton) {
+    installGameButton.disabled = true;
+    installGameButton.classList.add("is-installed");
+    const icon = installGameButton.querySelector<HTMLElement>("span:first-child");
+    const label = installGameButton.querySelector<HTMLElement>("span:last-child");
+    if (icon) icon.textContent = "✓";
+    if (label) label.textContent = "ALREADY INSTALLED";
+    installGameButton.setAttribute("aria-label", "Fields of the Irrawaddy is already installed on this device");
+  }
+  if (installGameHint) {
+    installGameHint.textContent = "Already installed on your device. New versions update automatically when you reopen the game.";
+    installGameHint.hidden = false;
+  }
+}
+
+if (isInstalledApp) showInstalledState();
 
 window.addEventListener("beforeinstallprompt", event => {
   event.preventDefault();
+  if (isInstalledApp) return;
   deferredInstallPrompt = event as DeferredInstallPrompt;
-  if (installGameButton) installGameButton.hidden = false;
+  if (installGameButton) {
+    installGameButton.hidden = false;
+    installGameButton.disabled = false;
+    installGameButton.classList.remove("is-installed");
+  }
   if (installGameHint) installGameHint.hidden = true;
 });
 
 window.addEventListener("appinstalled", () => {
   deferredInstallPrompt = null;
-  if (installGameButton) installGameButton.hidden = true;
-  if (installGameHint) {
-    installGameHint.textContent = "Fields of the Irrawaddy is installed on this device.";
-    installGameHint.hidden = false;
-  }
+  showInstalledState();
 });
 
 installGameButton?.addEventListener("click", async () => {
+  if (installGameButton.disabled) return;
   if (deferredInstallPrompt) {
     const promptEvent = deferredInstallPrompt;
     deferredInstallPrompt = null;
     await promptEvent.prompt();
     const choice = await promptEvent.userChoice;
-    if (installGameHint) {
-      installGameHint.textContent = choice.outcome === "accepted"
-        ? "Installation started. You can open the game from your home screen or apps list."
-        : "You can install the game later from your browser menu.";
+    if (choice.outcome === "accepted") {
+      if (installGameHint) {
+        installGameHint.textContent = "Installation started. The game will update automatically; you do not need to reinstall future versions.";
+        installGameHint.hidden = false;
+      }
+    } else if (installGameHint) {
+      installGameHint.textContent = "You can install the game later from your browser menu.";
       installGameHint.hidden = false;
     }
     return;
@@ -139,8 +162,8 @@ installGameButton?.addEventListener("click", async () => {
   const isAppleMobile = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   if (installGameHint) {
     installGameHint.textContent = isAppleMobile
-      ? "To install: tap Share in Safari, then choose Add to Home Screen."
-      : "To install: open your browser menu and choose Install app or Add to Home Screen.";
+      ? "To install: tap Share in Safari, then choose Add to Home Screen. Future updates arrive automatically."
+      : "To install: open your browser menu and choose Install app or Add to Home Screen. Future updates arrive automatically.";
     installGameHint.hidden = false;
   }
 });
@@ -357,6 +380,10 @@ function setupMobileHud(): void {
       window.dispatchEvent(new CustomEvent("foi-mobile-hud-action", { detail: action }));
     });
   });
+  desktopFullscreenButton?.addEventListener("click", () => {
+    if (!document.body.classList.contains("foi-in-game")) return;
+    window.dispatchEvent(new CustomEvent("foi-mobile-hud-action", { detail: "fullscreen" }));
+  });
   menuButton?.addEventListener("click", () => {
     if (!document.body.classList.contains("foi-in-game")) return;
     window.dispatchEvent(new Event("foi-menu-request"));
@@ -431,10 +458,68 @@ renderSaveSlots();
 setupMobileHud();
 window.requestAnimationFrame(updateTitleScrollCue);
 
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    void navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(error => {
-      console.warn("Offline install support could not be registered:", error);
+const currentBuildId = document.querySelector<HTMLMetaElement>('meta[name="foi-build"]')?.content ?? "";
+const currentBundleSignature = [
+  ...Array.from(document.querySelectorAll<HTMLScriptElement>('script[type="module"][src]')).map(script => new URL(script.src, window.location.href).pathname),
+  ...Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"][href]')).map(link => new URL(link.href, window.location.href).pathname)
+].join("|");
+let appUpdatePending = false;
+
+function getRemoteBundleSignature(html: string): string {
+  const scriptPaths = Array.from(html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+\.js(?:\?[^"']*)?)["'][^>]*>/gi))
+    .map(match => new URL(match[1], window.location.href).pathname);
+  const stylePaths = Array.from(html.matchAll(/<link\b[^>]*\brel=["']stylesheet["'][^>]*\bhref=["']([^"']+\.css(?:\?[^"']*)?)["'][^>]*>/gi))
+    .map(match => new URL(match[1], window.location.href).pathname);
+  return [...scriptPaths, ...stylePaths].join("|");
+}
+
+function applyPendingAppUpdateWhenSafe(): void {
+  if (!appUpdatePending || document.body.classList.contains("foi-in-game")) return;
+  appUpdatePending = false;
+  window.location.reload();
+}
+
+function markAppUpdatePending(): void {
+  appUpdatePending = true;
+  applyPendingAppUpdateWhenSafe();
+}
+
+async function checkForPublishedBuild(): Promise<void> {
+  if (document.visibilityState !== "visible" || !currentBuildId) return;
+  try {
+    const response = await fetch(`/?foi-update-check=${Date.now()}`, {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache" }
     });
+    if (!response.ok) return;
+    const html = await response.text();
+    const remoteBuildId = html.match(/<meta\s+name=["']foi-build["']\s+content=["']([^"']+)["']/i)?.[1];
+    const remoteBundleSignature = getRemoteBundleSignature(html);
+    const buildChanged = Boolean(remoteBuildId && remoteBuildId !== currentBuildId);
+    const bundlesChanged = Boolean(remoteBundleSignature && currentBundleSignature && remoteBundleSignature !== currentBundleSignature);
+    if (buildChanged || bundlesChanged) markAppUpdatePending();
+  } catch {
+    // Offline: keep the installed version running and retry when connectivity returns.
+  }
+}
+
+window.addEventListener("foi-return-to-title", () => {
+  if (appUpdatePending) window.requestAnimationFrame(applyPendingAppUpdateWhenSafe);
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") void checkForPublishedBuild();
+});
+window.setInterval(() => void checkForPublishedBuild(), 60_000);
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.addEventListener("controllerchange", markAppUpdatePending);
+  window.addEventListener("load", () => {
+    void navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" })
+      .then(registration => registration.update())
+      .catch(error => {
+        console.warn("Offline install support could not be registered:", error);
+      });
+    void checkForPublishedBuild();
   }, { once: true });
 }

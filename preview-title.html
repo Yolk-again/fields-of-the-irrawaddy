@@ -1,0 +1,188 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#2a1a14" />
+    <meta name="foi-build" content="profile-ui-new-crops-house-audio-fix-2026-11-11" />
+    <title>Fields of the Irrawaddy | Myanmar Farming Game</title>
+    <meta name="description" content="Play Fields of the Irrawaddy, a pixel-art farming adventure set in rural Myanmar. Grow crops, raise animals, fish, cook meals, and help your village thrive." />
+    <link rel="canonical" href="https://fields-of-the-irrawaddy.vercel.app/" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" href="/favicon.png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <meta property="og:site_name" content="Fields of the Irrawaddy" />
+    <meta property="og:title" content="Fields of the Irrawaddy | Myanmar Farming Game" />
+    <meta property="og:description" content="Play Fields of the Irrawaddy, a pixel-art farming adventure set in rural Myanmar. Grow crops, raise animals, fish, cook meals, and help your village thrive." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://fields-of-the-irrawaddy.vercel.app/" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Fields of the Irrawaddy",
+        "url": "https://fields-of-the-irrawaddy.vercel.app/"
+      }
+    </script>
+    <style>
+      html, body { min-height: 100%; }
+      body:not(.foi-in-game) #app { visibility: hidden; }
+      #title-screen { display: grid; visibility: visible; opacity: 1; pointer-events: auto; }
+      #title-screen.is-hidden { visibility: hidden; opacity: 0; pointer-events: none; }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./src/style.css">
+  </head>
+  <body>
+    <div id="app">
+      <header class="site-header">
+        <div class="brand">
+          <div class="brand-icon" aria-hidden="true">✦</div>
+          <div>
+            <h1>Fields of the Irrawaddy</h1>
+            <p class="eyebrow">MYANMAR COUNTRYSIDE ADVENTURE</p>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section class="game-panel">
+          <div id="game-container">
+            <button id="mobile-context-action" class="mobile-context-action" type="button" hidden>CLICK TO OPEN</button>
+            <div id="game-hud-stack" class="game-hud-stack">
+              <nav id="mobile-game-hud" class="mobile-game-hud" aria-label="Game controls" aria-hidden="true">
+                <button type="button" data-action="inventory" aria-label="Inventory" title="Inventory"><img src="./assets/ui/icon_bag.png" alt=""></button>
+                <button type="button" data-action="profile" aria-label="Profile" title="Profile"><img src="./assets/ui/icon_person.png" alt=""></button>
+                <button type="button" data-action="language" aria-label="Change language" title="Language"><img src="./assets/ui/icon_globe.png" alt=""></button>
+                <button type="button" data-action="help" aria-label="Help" title="Help"><img src="./assets/ui/icon_help.png" alt=""></button>
+                <button type="button" data-action="audio" aria-label="Audio settings" title="Audio"><img src="./assets/ui/icon_note.png" alt=""></button>
+                <button type="button" data-action="fullscreen" aria-label="Fullscreen" title="Fullscreen"><img src="./assets/ui/icon_expand.png" alt=""></button>
+              </nav>
+              <button id="game-menu-button" class="game-menu-button" type="button" aria-label="Return to title screen" title="Menu"><img src="./assets/ui/icon_menu.png" alt=""></button>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <section id="title-screen" class="title-screen" aria-label="Save selection">
+      <div class="title-screen-content">
+        <header class="title-screen-heading">
+          <p class="title-screen-eyebrow">A MYANMAR COUNTRYSIDE ADVENTURE</p>
+          <p class="title-screen-burmese" lang="my">ဧရာဝတီမြစ်ဝှမ်းဒေသ</p>
+          <h2>FIELDS OF THE<br class="title-screen-title-break"> IRRAWADDY</h2>
+          <p class="title-screen-subtitle">A little village. A new beginning.</p>
+          <p class="title-screen-intro" lang="my">မြန်မာ့ကျေးလက်ဘဝ၏ နေ့ရက်သစ်များကို စတင်လိုက်ပါ။</p>
+        </header>
+
+        <div class="title-screen-landscape title-screen-photo-card">
+          <img
+            class="title-landscape-photo"
+            src="/assets/title/irrawaddy-rice-fields.webp"
+            alt="A farmer crossing a lush green rice field, with hills and a golden pagoda in the distance"
+            fetchpriority="high"
+            decoding="async"
+          >
+          <div class="title-landscape-photo-shade" aria-hidden="true"></div>
+          <div class="title-landscape-photo-topline" aria-hidden="true">
+            <span class="title-landscape-photo-mark">✦</span>
+            <span lang="my">မြန်မာနိုင်ငံ</span>
+            <span class="title-landscape-photo-separator">•</span>
+            <span>IRRAWADDY VALLEY</span>
+          </div>
+          <div class="title-landscape-photo-caption" aria-hidden="true">
+            <span class="title-landscape-photo-caption-burmese" lang="my">စိမ်းလန်းသော လယ်ကွင်းများ</span>
+            <span class="title-landscape-photo-caption-english">LIFE IN THE RICE FIELDS</span>
+          </div>
+          <span class="title-landscape-photo-corner title-landscape-photo-corner-tl" aria-hidden="true"></span>
+          <span class="title-landscape-photo-corner title-landscape-photo-corner-br" aria-hidden="true"></span>
+        </div>
+
+        <section class="title-screen-saves" aria-labelledby="save-selection-title">
+          <div class="title-screen-section-heading">
+            <span class="title-screen-section-rule"></span>
+            <div>
+              <h3 id="save-selection-title">YOUR JOURNEY</h3>
+              <p>Choose a place to begin</p>
+            </div>
+            <span class="title-screen-section-rule"></span>
+          </div>
+          <div id="save-slot-grid" class="save-slot-grid" aria-label="Choose a save slot">
+            <article class="save-slot-card"><h3 class="save-slot-title">SAVE SLOT 1</h3><p class="save-slot-details is-empty">EMPTY SLOT</p><div class="save-slot-actions"><button type="button" class="save-button save-button-primary" disabled>START NEW GAME</button></div></article>
+            <article class="save-slot-card"><h3 class="save-slot-title">SAVE SLOT 2</h3><p class="save-slot-details is-empty">EMPTY SLOT</p><div class="save-slot-actions"><button type="button" class="save-button save-button-primary" disabled>START NEW GAME</button></div></article>
+            <article class="save-slot-card"><h3 class="save-slot-title">SAVE SLOT 3</h3><p class="save-slot-details is-empty">EMPTY SLOT</p><div class="save-slot-actions"><button type="button" class="save-button save-button-primary" disabled>START NEW GAME</button></div></article>
+          </div>
+        </section>
+        <div class="title-install-row">
+          <button id="install-game-button" class="title-install-button" type="button">
+            <span aria-hidden="true">↓</span>
+            <span>INSTALL GAME</span>
+          </button>
+          <p id="install-game-hint" class="title-install-hint" hidden aria-live="polite"></p>
+        </div>
+        <footer class="title-screen-footer">
+          <span class="title-screen-footer-mark">✦</span>
+          <span>MADE WITH THE SPIRIT OF MYANMAR</span>
+          <span class="title-screen-footer-burmese" lang="my">မြန်မာ့ကျေးလက်အလှ</span>
+          <span class="title-screen-footer-mark">✦</span>
+        </footer>
+      </div>
+      <div id="title-scroll-cue" class="title-scroll-cue" aria-hidden="true" hidden>
+        <span>SCROLL DOWN TO INSTALL</span>
+        <em lang="my">အောက်သို့ ဆင်းပြီး ဂိမ်းကို ထည့်သွင်းပါ</em>
+        <b>⌄</b>
+      </div>
+    </section>
+    <div id="save-confirmation" class="save-confirmation" role="dialog" aria-modal="true" aria-labelledby="save-confirmation-title" hidden>
+      <div class="save-confirmation-card">
+        <h2 id="save-confirmation-title">CONFIRM</h2>
+        <p id="save-confirmation-message"></p>
+        <div class="save-confirmation-actions">
+          <button id="save-confirmation-cancel" type="button" class="save-button save-button-secondary">CANCEL</button>
+          <button id="save-confirmation-accept" type="button" class="save-button save-button-danger">CONFIRM</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="save-name-dialog" class="save-name-dialog" role="dialog" aria-modal="true" aria-labelledby="save-name-title" hidden>
+      <form class="save-name-card" onsubmit="return false">
+        <span class="save-name-kicker" lang="my">သိမ်းဆည်းမှု အမည်</span>
+        <h2 id="save-name-title">NAME THIS SAVE SLOT</h2>
+        <p id="save-name-message">Give this save a name you will recognize later.</p>
+        <label for="save-name-input">SAVE SLOT NAME</label>
+        <input id="save-name-input" type="text" maxlength="24" autocomplete="off" autocapitalize="words" spellcheck="false">
+        <p id="save-name-error" class="save-name-error" aria-live="polite"></p>
+        <div class="save-name-actions">
+          <button id="save-name-cancel" type="button" class="save-button save-button-secondary">CANCEL</button>
+          <button id="save-name-save" type="button" class="save-button save-button-primary">SAVE NAME</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="orientation-overlay" role="status" aria-live="polite">
+      <div class="orientation-card">
+        <div class="orientation-icon">↻</div>
+        <strong>PLEASE ROTATE YOUR PHONE</strong>
+        <span>Turn your phone sideways to landscape. The title screen will appear automatically.</span>
+        <span class="orientation-burmese" lang="my">ကျေးဇူးပြု၍ ဖုန်းကို အလျားလိုက် လှည့်ပေးပါ။</span>
+      </div>
+    </div>
+
+    <div id="game-loading-overlay" class="game-loading-overlay" role="status" aria-live="polite" aria-label="Loading game">
+      <div class="game-loading-card">
+        <span class="loading-wheat" aria-hidden="true">🌾</span>
+        <strong>PREPARING YOUR VILLAGE</strong>
+        <span lang="my">ရွာလေးကို ပြင်ဆင်နေပါသည်...</span>
+        <span class="loading-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      </div>
+    </div>
+
+    
+  </body>
+</html>

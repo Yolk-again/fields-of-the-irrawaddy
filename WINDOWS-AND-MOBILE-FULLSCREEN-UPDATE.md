@@ -9,3 +9,8 @@
 - Other DOM HUD actions remain mobile-only.
 
 - Windows fullscreen control is positioned at the upper-right HUD, with only the fullscreen button visible from the shared DOM control rail.
+
+
+## Installed app updates
+
+Installed copies do not need to be reinstalled for new deployments. The service worker checks for updates, refreshes app assets from the network, and the app checks the published `foi-build` marker. Updates reload automatically on the title screen; while gameplay is active, applying a build is deferred until the player returns to the title screen to avoid interrupting a session. The install button shows `ALREADY INSTALLED` when the page is running as an installed PWA.

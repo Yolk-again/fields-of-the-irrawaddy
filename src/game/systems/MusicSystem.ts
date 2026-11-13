@@ -85,12 +85,7 @@ export class MusicSystem {
   private activeSlider: "music" | "effects" | null = null;
   private graphicsQuality: GraphicsQuality = getGraphicsQuality();
   private phase: DayPhase = "day";
-  private button!: Phaser.GameObjects.Rectangle;
-  private icon!: Phaser.GameObjects.Image;
-  private tip!: Phaser.GameObjects.Text;
   private language: LanguageSystem;
-  private headerControls: Phaser.GameObjects.GameObject[] = [];
-  private mobileLayout: boolean;
   private readonly musicVolumeStorageKey: string;
   private readonly effectsVolumeStorageKey: string;
   private readonly activeSources = new Set<AudioBufferSourceNode>();
@@ -101,14 +96,13 @@ export class MusicSystem {
     scene: Phaser.Scene,
     ui: ModalUIManager,
     language: LanguageSystem,
-    mobileLayout = false,
+    _mobileLayout = false,
     saveSlot = 1,
     loadExistingSave = false
   ) {
     this.scene = scene;
     this.ui = ui;
     this.language = language;
-    this.mobileLayout = mobileLayout;
     // New-game profile setup stays silent. Existing worlds may start their day theme after audio unlock.
     this.playbackMode = loadExistingSave ? "world" : "profile";
     const safeSlot = Number.isInteger(saveSlot) && saveSlot >= 1 && saveSlot <= 3 ? saveSlot : 1;
@@ -142,7 +136,6 @@ export class MusicSystem {
       this.effectsVolume = 0.3;
     }
 
-    this.createButton(ui);
     this.createSettingsPanel(ui);
     this.scene.events.on("sound-effect", this.handleSoundEffect, this);
     this.scene.input.on("pointerdown", this.handleSliderPointerDown, this);
@@ -160,42 +153,6 @@ export class MusicSystem {
     window.addEventListener("keydown", unlock, true);
 
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
-  }
-
-  private createButton(ui: ModalUIManager): void {
-    const x = this.mobileLayout ? 580 : 594;
-    const y = this.mobileLayout ? 24 : 22;
-    const frameSize = this.mobileLayout ? 32 : 28;
-    const hitSize = this.mobileLayout ? 38 : 28;
-    const frame = pixelPanel(this.scene, x, y, frameSize, frameSize, { fill: 0x4a3324 }).setDepth(8500);
-    this.icon = this.scene.add.image(x, y, "ui_icon_note")
-      .setScale(this.mobileLayout ? 1.45 : 1)
-      .setScrollFactor(0).setDepth(8501);
-    this.button = this.scene.add.rectangle(x, y, hitSize, hitSize, 0xffffff, 0.001)
-      .setScrollFactor(0).setDepth(8502)
-      .setInteractive({ useHandCursor: true });
-    this.tip = this.scene.add.text(x, y + 22, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#fff1cf",
-      backgroundColor: "#2a1a14", padding: { x: 4, y: 2 }
-    }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(8503).setVisible(false);
-    this.language.onChange(() => this.refreshButton());
-
-    this.button.on("pointerover", () => this.tip.setVisible(true));
-    this.button.on("pointerout", this.hideTooltip);
-    this.button.on("pointerdown", () => { this.hideTooltip(); this.openSettings(); });
-    this.scene.input.on("gameout", this.hideTooltip);
-    window.addEventListener("blur", this.hideTooltip);
-    document.addEventListener("visibilitychange", this.handleVisibilityChange);
-    ui.registerHud(frame, this.icon, this.button, this.tip);
-    ui.registerTooltip(this.tip);
-    this.headerControls = [frame, this.icon, this.button, this.tip];
-    this.refreshButton();
-  }
-
-  private refreshButton(): void {
-    this.icon.setTexture("ui_icon_note");
-    this.tip.setText(this.language.getLanguage() === "my" ? "ဂိမ်းဆက်တင်များ" : "GAME SETTINGS");
-    this.tip.setFontFamily(this.language.getFontFamily());
   }
 
   private readStoredVolume(key: string, fallback: number): number {
@@ -391,16 +348,7 @@ export class MusicSystem {
     this.activeSlider = null;
   };
 
-  private hideTooltip = (): void => {
-    if (this.tip?.active) this.tip.setVisible(false);
-  };
-
-  private handleVisibilityChange = (): void => {
-    if (document.visibilityState === "hidden") this.hideTooltip();
-  };
-
   private openSettings(): void {
-    this.hideTooltip();
     if (this.ui.isOpen("audio")) {
       this.ui.close("audio");
       return;
@@ -413,13 +361,6 @@ export class MusicSystem {
 
   /** Opens audio settings from a mobile control. */
   mobileToggle(): void { this.openSettings(); }
-
-  /** Allows the header music control to remain visible on touch layouts. */
-  setMobileHeaderHidden(hidden: boolean): void {
-    for (const control of this.headerControls) {
-      (control as unknown as { setVisible: (visible: boolean) => void }).setVisible(!hidden);
-    }
-  }
 
   private applyVolume(): void {
     if (!this.ctx) return;
@@ -724,10 +665,6 @@ export class MusicSystem {
     this.scene.input.off("pointerdown", this.handleSliderPointerDown, this);
     this.scene.input.off("pointermove", this.handleSliderPointerMove, this);
     this.scene.input.off("pointerup", this.handleSliderPointerUp, this);
-    this.scene.input.off("gameout", this.hideTooltip);
-    window.removeEventListener("blur", this.hideTooltip);
-    document.removeEventListener("visibilitychange", this.handleVisibilityChange);
-    this.hideTooltip();
     if (this.unlockHandler) {
       window.removeEventListener("pointerdown", this.unlockHandler, true);
       window.removeEventListener("keydown", this.unlockHandler, true);
