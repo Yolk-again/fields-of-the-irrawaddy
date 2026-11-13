@@ -100,10 +100,10 @@ export class ChestStorageSystem {
   private createInterface(): void {
     this.panel = this.scene.add.container(0, 0).setScrollFactor(0);
     const background = modalPanel(this.scene, 320, 180, 570, 340);
-    this.title = this.scene.add.text(320, 29, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(17), color: "#e6c47e", fontStyle: "bold", align: "center", wordWrap: { width: 470 } }).setOrigin(0.5);
-    this.subtitle = this.scene.add.text(320, 52, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5", align: "center", wordWrap: { width: 460 } }).setOrigin(0.5);
-    this.columns = this.scene.add.text(270, 68, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#e6c47e", align: "center", wordWrap: { width: 110 } }).setOrigin(0.5);
-    this.quantityHeader = this.scene.add.text(390, 68, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#e6c47e", align: "center", wordWrap: { width: 150 } }).setOrigin(0.5);
+    this.title = this.scene.add.text(320, 29, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(17), color: "#e6c47e", fontStyle: "bold", align: "center", wordWrap: { width: 470 } }).setOrigin(0.5).setMaxLines(1);
+    this.subtitle = this.scene.add.text(320, 52, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#d7e6c5", align: "center", wordWrap: { width: 460 } }).setOrigin(0.5).setMaxLines(2);
+    this.columns = this.scene.add.text(270, 68, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#e6c47e", align: "center", wordWrap: { width: 110 } }).setOrigin(0.5).setMaxLines(1);
+    this.quantityHeader = this.scene.add.text(390, 68, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#e6c47e", align: "center", wordWrap: { width: 150 } }).setOrigin(0.5).setMaxLines(1);
     this.panel.add([background, this.title, this.subtitle, this.columns, this.quantityHeader]);
 
     ITEMS.forEach((item, index) => {
@@ -111,7 +111,7 @@ export class ChestStorageSystem {
       const card = this.scene.add.rectangle(320, y, 520, 19, index % 2 ? 0x35462f : 0x3d5136, 1)
         .setStrokeStyle(1, 0xb58a55);
       const icon = this.scene.add.image(73, y, item.texture).setDisplaySize(20, 17);
-      const name = this.scene.add.text(92, y, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#fff1cf", wordWrap: { width: 132 }, lineSpacing: 0 }).setOrigin(0, 0.5);
+      const name = this.scene.add.text(92, y, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#fff1cf", wordWrap: { width: 138, useAdvancedWrap: true }, lineSpacing: 0 }).setOrigin(0, 0.5).setMaxLines(2);
       const bag = this.scene.add.text(238, y, "0", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#ffffff" }).setOrigin(0.5);
       const chest = this.scene.add.text(302, y, "0", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#f0d69e" }).setOrigin(0.5);
       const decrease = this.scene.add.rectangle(342, y, 20, 21, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
@@ -123,8 +123,8 @@ export class ChestStorageSystem {
       const maximumLabel = this.scene.add.text(441, y, "MAX", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
       const put = this.scene.add.rectangle(495, y, 54, 21, 0x527044, 1).setStrokeStyle(1, 0xd6b36b);
       const take = this.scene.add.rectangle(555, y, 54, 21, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
-      const putLabel = this.scene.add.text(495, y, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#fff1cf", align: "center", wordWrap: { width: 48 }, lineSpacing: 0 }).setOrigin(0.5);
-      const takeLabel = this.scene.add.text(555, y, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#fff1cf", align: "center", wordWrap: { width: 48 }, lineSpacing: 0 }).setOrigin(0.5);
+      const putLabel = this.scene.add.text(495, y, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(6), color: "#fff1cf", align: "center", wordWrap: { width: 48 }, lineSpacing: 0 }).setOrigin(0.5).setMaxLines(1);
+      const takeLabel = this.scene.add.text(555, y, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(6), color: "#fff1cf", align: "center", wordWrap: { width: 48 }, lineSpacing: 0 }).setOrigin(0.5).setMaxLines(1);
       this.rowNames.push(name);
       this.playerCounts.push(bag);
       this.chestCounts.push(chest);
@@ -143,11 +143,11 @@ export class ChestStorageSystem {
     });
 
     this.emptyState = this.scene.add.text(320, 190, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(11), color: "#e6c47e", align: "center",
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#e6c47e", align: "center",
       wordWrap: { width: 420 }
-    }).setOrigin(0.5).setVisible(false);
-    this.message = this.scene.add.text(320, 322, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#f0d69e", align: "center", wordWrap: { width: 460 } }).setOrigin(0.5);
-    this.exitHint = this.scene.add.text(320, 338, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5", align: "center", wordWrap: { width: 460 } }).setOrigin(0.5);
+    }).setOrigin(0.5).setMaxLines(2).setVisible(false);
+    this.message = this.scene.add.text(320, 322, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#f0d69e", align: "center", wordWrap: { width: 460 } }).setOrigin(0.5).setMaxLines(1);
+    this.exitHint = this.scene.add.text(320, 338, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#d7e6c5", align: "center", wordWrap: { width: 460 } }).setOrigin(0.5).setMaxLines(1);
     const close = modalClosePosition(320, 180, 570, 340);
     this.closeButton = createRedCloseButton(this.scene, close.x, close.y);
     this.panel.add([this.emptyState, this.message, this.exitHint, this.closeButton]);
@@ -321,6 +321,8 @@ export class ChestStorageSystem {
     this.maxLabels.forEach(text => text.setText(this.language.t("chest.max")));
     const font = this.language.getFontFamily();
     for (const text of [this.title, this.subtitle, this.columns, this.quantityHeader, this.emptyState, this.message, this.exitHint, ...this.rowNames, ...this.playerCounts, ...this.chestCounts, ...this.putLabels, ...this.takeLabels, ...this.maxLabels, ...this.amountTexts]) text.setFontFamily(font);
+    for (const text of this.rowNames) text.setMaxLines(2);
+    for (const text of [...this.playerCounts, ...this.chestCounts, ...this.amountTexts, ...this.maxLabels]) text.setMaxLines(1);
   }
 
   openFromHouse(): void {

@@ -110,34 +110,34 @@ export class InventorySystem {
     const background = modalPanel(this.scene, 320, 180, 540, 330);
     this.titleText = this.scene.add.text(320, 31, "", {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(18), color: "#e6c47e", align: "center", wordWrap: { width: 460 }
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setMaxLines(1);
     this.hotbarTitleText = this.scene.add.text(320, 61, "", {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#d6b36b", align: "center", wordWrap: { width: 460 }
-    }).setOrigin(0.5);
-    this.seedPacketText = this.scene.add.text(320, 119, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5", align: "center", wordWrap: { width: 460 }
-    }).setOrigin(0.5);
-    this.backpackTitleText = this.scene.add.text(320, 140, "", {
+    }).setOrigin(0.5).setMaxLines(1);
+    this.seedPacketText = this.scene.add.text(320, 128, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#d7e6c5", align: "center", wordWrap: { width: 460 }
+    }).setOrigin(0.5).setMaxLines(1);
+    this.backpackTitleText = this.scene.add.text(320, 146, "", {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#d6b36b", align: "center", wordWrap: { width: 460 }
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setMaxLines(1);
     this.inventoryPanel.add([background, this.titleText, this.hotbarTitleText, this.seedPacketText, this.backpackTitleText]);
 
     const hotbarX = [230, 290, 350, 410];
     hotbarX.forEach((x, index) => this.createCell({ zone: "hotbar", index }, x, 96, 52, String(index + 1)));
 
     const backpackX = [192, 256, 320, 384, 448];
-    const backpackY = [176, 223, 270];
+    const backpackY = [178, 224, 270];
     for (let index = 0; index < 15; index++) {
       this.createCell({ zone: "backpack", index }, backpackX[index % 5], backpackY[Math.floor(index / 5)], 56);
     }
 
-    this.instructionText = this.scene.add.text(320, 303, "", {
+    this.instructionText = this.scene.add.text(320, 307, "", {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d6e6c2", align: "center",
       wordWrap: { width: 490 }
-    }).setOrigin(0.5);
-    this.exitHintText = this.scene.add.text(320, 322, "", {
+    }).setOrigin(0.5).setMaxLines(1);
+    this.exitHintText = this.scene.add.text(320, 328, "", {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5", align: "center", wordWrap: { width: 460 }
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setMaxLines(1);
     const closePosition = modalClosePosition(320, 180, 540, 330);
     this.closeButton = createRedCloseButton(this.scene, closePosition.x, closePosition.y);
     this.dragPreviewBackground = this.scene.add.rectangle(-100, -100, 38, 38, 0x2a1d16, 0.94)
@@ -167,6 +167,7 @@ export class InventorySystem {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#ffe070",
       stroke: "#2a1a14", strokeThickness: 2
     }).setOrigin(1, 0).setVisible(false);
+    name.setMaxLines(2);
     const keyLabel = hotkey ? this.scene.add.text(x - width / 2 + 4, y - 18, hotkey, {
       fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#fff1cf",
       stroke: "#2a1a14", strokeThickness: 2
@@ -232,8 +233,21 @@ export class InventorySystem {
   }
 
   private labelFor(item: InventoryItemId): string {
-    const value = this.language.t(INVENTORY_ITEM_DEFINITIONS[item].nameKey);
-    return value.length > 10 ? `${value.slice(0, 9)}…` : value;
+    const compactKeys: Partial<Record<InventoryItemId, string>> = {
+      seeds: "inventory.short.seeds",
+      tomatoSeeds: "inventory.short.tomatoSeeds",
+      greenBeanSeeds: "inventory.short.greenBeanSeeds",
+      wormBait: "inventory.short.wormBait",
+      shrimpBait: "inventory.short.shrimpBait",
+      goldenCricketBait: "inventory.short.goldenCricketBait",
+      silverBarb: "inventory.short.silverBarb",
+      goldenCarp: "inventory.short.goldenCarp",
+      greenBeans: "inventory.short.greenBeans",
+      meals: "inventory.short.meals",
+      catfish: "inventory.short.catfish"
+    };
+    const shortKey = compactKeys[item];
+    return this.language.t(shortKey ?? INVENTORY_ITEM_DEFINITIONS[item].nameKey);
   }
 
   private updateInventoryDisplay(): void {
@@ -251,6 +265,7 @@ export class InventorySystem {
     for (const text of [this.titleText, this.hotbarTitleText, this.seedPacketText, this.backpackTitleText, this.instructionText, this.exitHintText]) {
       text.setFontFamily(font);
     }
+    for (const text of [this.titleText, this.hotbarTitleText, this.seedPacketText, this.backpackTitleText, this.instructionText, this.exitHintText]) text.setMaxLines(1);
     this.ensureNewItemsHaveSlots();
 
     for (const cell of this.cells) {

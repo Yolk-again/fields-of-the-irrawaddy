@@ -50,15 +50,15 @@ export class HelpSystem {
     const background = scene.add.rectangle(x, y, width, height, 0x40513a, 1).setStrokeStyle(2, 0x9b7047);
     const iconFrame = scene.add.rectangle(x - 56, y, 34, 34, 0x2d3829, 1).setStrokeStyle(1, 0xd6b36b);
     const icon = scene.add.image(x - 56, y, this.mobileMode ? mobileIconKey : iconKey).setScale(1.35);
-    const title = scene.add.text(x - 31, y - 17, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#e6c47e", fontStyle: "bold",
-      wordWrap: { width: 120 }
-    }).setOrigin(0, 0.5);
-    const body = scene.add.text(x - 31, y + 7, "", {
-      ...uiDescriptionStyle(this.language.getFontFamily(), 120, 8),
+    const title = scene.add.text(x - 30, y - 19, "", {
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#e6c47e", fontStyle: "bold",
+      wordWrap: { width: 108, useAdvancedWrap: true }, lineSpacing: 0
+    }).setOrigin(0, 0.5).setMaxLines(2);
+    const body = scene.add.text(x - 30, y + 8, "", {
+      ...uiDescriptionStyle(this.language.getFontFamily(), 108, 7.5),
       color: "#f5e8c6",
-      lineSpacing: 1
-    }).setOrigin(0, 0.5);
+      lineSpacing: 0
+    }).setOrigin(0, 0.5).setMaxLines(3);
     this.panel.add([background, iconFrame, icon, title, body]);
     this.cardTexts.push({ title, body, titleKey, bodyKey, mobileTitleKey, mobileBodyKey });
   }
@@ -68,11 +68,11 @@ export class HelpSystem {
     const background = modalPanel(scene, 320, 180, 550, 310);
     const topLine = scene.add.rectangle(320, 91, 490, 2, 0x9b7047, 0.8);
     this.titleText = scene.add.text(320, 43, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(18), color: "#e6c47e", fontStyle: "bold"
-    }).setOrigin(0.5);
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(17), color: "#e6c47e", fontStyle: "bold", align: "center", wordWrap: { width: 450, useAdvancedWrap: true }
+    }).setOrigin(0.5).setMaxLines(1);
     this.subtitleText = scene.add.text(320, 69, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5", align: "center", wordWrap: { width: 450 }
-    }).setOrigin(0.5);
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#d7e6c5", align: "center", wordWrap: { width: 450, useAdvancedWrap: true }
+    }).setOrigin(0.5).setMaxLines(1);
     this.panel.add([background, topLine, this.titleText, this.subtitleText]);
 
     this.createCard(scene, 145, 136, "ui_icon_hand", "help.moveTitle", "help.moveBody", "help.mobileMoveTitle", "help.mobileMoveBody", "ui_icon_hand");
@@ -83,8 +83,8 @@ export class HelpSystem {
     this.createCard(scene, 495, 224, "ui_icon_bed", "help.houseTitle", "help.houseBody", "help.mobileHouseTitle", "help.mobileHouseBody", "ui_icon_bed");
 
     this.exitHintText = scene.add.text(320, 318, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#d7e6c5", align: "center"
-    }).setOrigin(0.5);
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#d7e6c5", align: "center", wordWrap: { width: 440, useAdvancedWrap: true }
+    }).setOrigin(0.5).setMaxLines(1);
     const closePosition = modalClosePosition(320, 180, 550, 310);
     this.closeButton = createRedCloseButton(scene, closePosition.x, closePosition.y);
     this.panel.add([this.exitHintText, this.closeButton]);

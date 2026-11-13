@@ -456,7 +456,7 @@ export class FarmingSystem {
       tile.dryDays = 0;
       tile.dead = false;
       tile.cropType = this.selectedSeedKind;
-      tile.goldenWheat = tile.cropType === "rice" && this.isMealBlessingActive() && Math.random() < 0.24;
+      tile.goldenWheat = tile.cropType === "rice" && this.isMealBlessingActive() && Math.random() < 0.03;
       tile.watered = false;
       tile.wateredAtGameMinute = null;
       tile.plantedAtGameMinute = Math.max(0, Math.floor(this.getElapsedGameMinutes()));
@@ -590,13 +590,9 @@ export class FarmingSystem {
 
   applyMealBlessing(): void {
     const now = Math.max(0, Math.floor(this.getElapsedGameMinutes()));
+    // Keep the existing two-day crop-growth boost. Golden rice is now rolled
+    // only when a rice seed is planted during this blessing, at a rare 3% rate.
     this.mealBoostUntilGameMinute = Math.max(this.mealBoostUntilGameMinute, now) + 2880;
-    for (const tile of this.tiles) {
-      if (tile.planted && !tile.dead && !tile.goldenWheat && Math.random() < 0.24) {
-        tile.goldenWheat = true;
-        this.drawTile(tile);
-      }
-    }
     this.updateInterface();
   }
 

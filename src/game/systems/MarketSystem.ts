@@ -8,7 +8,7 @@ import { createRedCloseButton, modalClosePosition, modalPanel, uiFontSize, uiDes
 import { adjustQuantity, maximumQuantity, maximumQuantitySelection, normalizeQuantity, quantityAdjustmentStep } from "../ui/QuantityMath";
 import { isMobilePlatform } from "../utils/DeviceMode";
 
-type SaleKind = "wheat" | "tomatoes" | "greenBeans" | "meals" | "silverBarb" | "catfish" | "goldenCarp" | "seeds" | "tomatoSeeds" | "greenBeanSeeds" | "wormBait" | "shrimpBait" | "goldenCricketBait";
+type SaleKind = "wheat" | "tomatoes" | "greenBeans" | MealKind | "silverBarb" | "catfish" | "goldenCarp" | "seeds" | "tomatoSeeds" | "greenBeanSeeds" | "wormBait" | "shrimpBait" | "goldenCricketBait";
 
 const SEED_PACK_COST = 25;
 const FISHING_ROD_COST = 120;
@@ -82,6 +82,7 @@ export class MarketSystem {
   private baitMenuOpen = false;
   private produceMenuOpen = false;
   private fishMenuOpen = false;
+  private mealMenuOpen = false;
   private upgradeDetailPanel!: Phaser.GameObjects.Container;
   private upgradeDetailTitle!: Phaser.GameObjects.Text;
   private upgradeDetailDescription!: Phaser.GameObjects.Text;
@@ -162,8 +163,8 @@ export class MarketSystem {
     const background = modalPanel(this.scene, 320, 180, 500, 350);
     const divider = this.scene.add.rectangle(320, 57, 450, 2, 0x9b7047, 0.8);
     this.titleText = this.scene.add.text(320, 33, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(18), color: "#e6c47e", fontStyle: "bold", align: "center", wordWrap: { width: 430 }
-    }).setOrigin(0.5);
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(17), color: "#e6c47e", fontStyle: "bold", align: "center", wordWrap: { width: 430, useAdvancedWrap: true }
+    }).setOrigin(0.5).setMaxLines(2);
     this.marketPanel.add([background, divider, this.titleText]);
 
     const icons = ["wheat_seed_bag_asset", "wheat_basket_asset", "fishing_rod_asset", "meal_fish_rice_asset", "fish_silver_barb_asset", "hoe_asset", "ui_icon_hand"];
@@ -175,11 +176,11 @@ export class MarketSystem {
       const text = this.scene.add.text(178, y, "", {
         fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#fff1cf", fontStyle: "bold",
         align: "left", wordWrap: { width: 280 }, lineSpacing: 0
-      }).setOrigin(0, 0.5);
+      }).setOrigin(0, 0.5).setMaxLines(2);
       const status = this.scene.add.text(492, y, "", {
         fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#fff1cf", fontStyle: "bold",
         align: "center", backgroundColor: "#527044", padding: { x: 4, y: 2 }, wordWrap: { width: 74 }, lineSpacing: 0
-      }).setOrigin(0.5);
+      }).setOrigin(0.5).setMaxLines(2);
       this.actionCards.push(card);
       this.actionIcons.push(icon);
       this.actionTexts.push(text);
@@ -190,18 +191,18 @@ export class MarketSystem {
     const balanceCard = this.scene.add.rectangle(320, 302, 230, 24, 0x2f432f, 1).setStrokeStyle(1, 0xe0bb70);
     this.coinBalanceIcon = this.scene.add.image(232, 302, "coin_asset").setScale(1.1);
     this.moneyText = this.scene.add.text(342, 302, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(13), color: "#ffe49a", fontStyle: "bold", align: "center", wordWrap: { width: 200 }
-    }).setOrigin(0.5);
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(12), color: "#ffe49a", fontStyle: "bold", align: "center", wordWrap: { width: 160, useAdvancedWrap: true }
+    }).setOrigin(0.5).setMaxLines(1);
     this.clickHintText = this.scene.add.text(320, 322, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#b9dca3", align: "center", wordWrap: { width: 440 }
-    }).setOrigin(0.5);
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#b9dca3", align: "center", wordWrap: { width: 440, useAdvancedWrap: true }
+    }).setOrigin(0.5).setMaxLines(1);
     this.messageText = this.scene.add.text(320, 337, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5", align: "center",
-      wordWrap: { width: 440 }
-    }).setOrigin(0.5);
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#d7e6c5", align: "center",
+      wordWrap: { width: 440, useAdvancedWrap: true }
+    }).setOrigin(0.5).setMaxLines(1);
     this.exitHintText = this.scene.add.text(320, 349, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5", align: "center", wordWrap: { width: 440 }
-    }).setOrigin(0.5);
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(7), color: "#d7e6c5", align: "center", wordWrap: { width: 440, useAdvancedWrap: true }
+    }).setOrigin(0.5).setMaxLines(1);
 
     const closePosition = modalClosePosition(320, 180, 500, 350);
     this.closeButton = createRedCloseButton(this.scene, closePosition.x, closePosition.y);
@@ -217,25 +218,25 @@ export class MarketSystem {
     this.salePanel = this.scene.add.container(0, 0).setVisible(false);
     const background = modalPanel(this.scene, 320, 180, 410, 212);
     this.saleTitleText = this.scene.add.text(320, 94, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(15), color: "#e6c47e", fontStyle: "bold", align: "center", wordWrap: { width: 360 }
-    }).setOrigin(0.5);
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(14), color: "#e6c47e", fontStyle: "bold", align: "center", wordWrap: { width: 360, useAdvancedWrap: true }
+    }).setOrigin(0.5).setMaxLines(2);
     this.saleDescriptionText = this.scene.add.text(320, 125, "", {
-      ...uiDescriptionStyle(this.language.getFontFamily(), 346, 9), align: "center"
-    }).setOrigin(0.5);
+      ...uiDescriptionStyle(this.language.getFontFamily(), 346, 8.5), align: "center"
+    }).setOrigin(0.5).setMaxLines(3);
     this.saleAvailableText = this.scene.add.text(320, 161, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#d7e6c5", align: "center", wordWrap: { width: 420 }
-    }).setOrigin(0.5);
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#d7e6c5", align: "center", wordWrap: { width: 420, useAdvancedWrap: true }
+    }).setOrigin(0.5).setMaxLines(2);
     this.saleMinus = this.scene.add.rectangle(238, 194, 40, 30, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
     const minusLabel = this.scene.add.text(238, 194, "−", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(17), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
     this.saleAmountText = this.scene.add.text(320, 194, "1", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(15), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
     this.salePlus = this.scene.add.rectangle(402, 194, 40, 30, 0x527044, 1).setStrokeStyle(1, 0xd6b36b);
     const plusLabel = this.scene.add.text(402, 194, "+", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(17), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
     this.saleMax = this.scene.add.rectangle(320, 228, 90, 22, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
-    const maxLabel = this.scene.add.text(320, 228, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold", align: "center", wordWrap: { width: 100 } }).setOrigin(0.5);
+    const maxLabel = this.scene.add.text(320, 228, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#fff1cf", fontStyle: "bold", align: "center", wordWrap: { width: 100, useAdvancedWrap: true } }).setOrigin(0.5).setMaxLines(2);
     this.saleConfirm = this.scene.add.rectangle(262, 263, 112, 27, 0x527044, 1).setStrokeStyle(1, 0xd6b36b);
-    const confirmLabel = this.scene.add.text(262, 263, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
+    const confirmLabel = this.scene.add.text(262, 263, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#fff1cf", fontStyle: "bold", wordWrap: { width: 100, useAdvancedWrap: true } }).setOrigin(0.5).setMaxLines(2);
     this.saleCancel = this.scene.add.rectangle(378, 263, 112, 27, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
-    const cancelLabel = this.scene.add.text(378, 263, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
+    const cancelLabel = this.scene.add.text(378, 263, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(8), color: "#fff1cf", fontStyle: "bold", wordWrap: { width: 100, useAdvancedWrap: true } }).setOrigin(0.5).setMaxLines(2);
     this.saleButtonTexts = [minusLabel, plusLabel, maxLabel, confirmLabel, cancelLabel];
     this.salePanel.add([background, this.saleTitleText, this.saleDescriptionText, this.saleAvailableText, this.saleMinus, minusLabel, this.saleAmountText, this.salePlus, plusLabel, this.saleMax, maxLabel, this.saleConfirm, confirmLabel, this.saleCancel, cancelLabel]);
     this.updateSaleSelector();
@@ -245,25 +246,25 @@ export class MarketSystem {
     this.upgradeDetailPanel = this.scene.add.container(0, 0).setVisible(false);
     const background = modalPanel(this.scene, 320, 180, 410, 212);
     this.upgradeDetailTitle = this.scene.add.text(320, 94, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(15), color: "#e6c47e", fontStyle: "bold"
-    }).setOrigin(0.5);
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(14), color: "#e6c47e", fontStyle: "bold", align: "center", wordWrap: { width: 350, useAdvancedWrap: true }
+    }).setOrigin(0.5).setMaxLines(2);
     this.upgradeDetailDescription = this.scene.add.text(320, 145, "", {
-      ...uiDescriptionStyle(this.language.getFontFamily(), 346, 11), align: "center"
-    }).setOrigin(0.5);
+      ...uiDescriptionStyle(this.language.getFontFamily(), 346, 9.5), align: "center"
+    }).setOrigin(0.5).setMaxLines(3);
     this.upgradeDetailInfo = this.scene.add.text(320, 207, "", {
-      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#ffe49a", fontStyle: "bold", align: "center", wordWrap: { width: 350 }
-    }).setOrigin(0.5);
+      fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#ffe49a", fontStyle: "bold", align: "center", wordWrap: { width: 350, useAdvancedWrap: true }
+    }).setOrigin(0.5).setMaxLines(2);
     this.upgradeDetailBuy = this.scene.add.rectangle(260, 263, 112, 28, 0x527044, 1).setStrokeStyle(1, 0xd6b36b);
-    const buyLabel = this.scene.add.text(260, 263, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#fff1cf", fontStyle: "bold", align: "center", wordWrap: { width: 100 } }).setOrigin(0.5);
+    const buyLabel = this.scene.add.text(260, 263, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold", align: "center", wordWrap: { width: 100, useAdvancedWrap: true } }).setOrigin(0.5).setMaxLines(2);
     this.upgradeDetailBack = this.scene.add.rectangle(378, 263, 112, 28, 0x70532f, 1).setStrokeStyle(1, 0xd6b36b);
-    const backLabel = this.scene.add.text(378, 263, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(10), color: "#fff1cf", fontStyle: "bold" }).setOrigin(0.5);
+    const backLabel = this.scene.add.text(378, 263, "", { fontFamily: this.language.getFontFamily(), fontSize: uiFontSize(9), color: "#fff1cf", fontStyle: "bold", wordWrap: { width: 100, useAdvancedWrap: true } }).setOrigin(0.5).setMaxLines(2);
     this.upgradeDetailButtons = [buyLabel, backLabel];
     this.upgradeDetailPanel.add([background, this.upgradeDetailTitle, this.upgradeDetailDescription, this.upgradeDetailInfo, this.upgradeDetailBuy, buyLabel, this.upgradeDetailBack, backLabel]);
   }
 
   private availableSaleAmount(): number {
     if (this.saleKind === "wheat") return this.farming.getRice() + this.farming.getGoldenWheat();
-    if (this.saleKind === "meals") return this.cooking.getTotalMeals();
+    if (this.saleKind === "fishRice" || this.saleKind === "mohinga" || this.saleKind === "fishCurry") return this.cooking.getMealCounts()[this.saleKind];
     if (this.saleKind === "silverBarb" || this.saleKind === "catfish" || this.saleKind === "goldenCarp") return this.fishing.getFishCount(this.saleKind);
     if (this.saleKind === "tomatoes") return this.farming.getCropCount("tomato");
     if (this.saleKind === "greenBeans") return this.farming.getCropCount("greenBean");
@@ -280,7 +281,9 @@ export class MarketSystem {
       wheat: "market.inspect.wheat",
       tomatoes: "market.inspect.tomatoes",
       greenBeans: "market.inspect.greenBeans",
-      meals: "market.inspect.meals",
+      fishRice: "market.inspect.fishRice",
+      mohinga: "market.inspect.mohinga",
+      fishCurry: "market.inspect.fishCurry",
       silverBarb: "market.inspect.silverBarb",
       catfish: "market.inspect.catfish",
       goldenCarp: "market.inspect.goldenCarp",
@@ -295,7 +298,10 @@ export class MarketSystem {
       ? { normal: 4 + this.farming.getRiceSaleBonus(), golden: GOLDEN_WHEAT_PRICE }
       : this.saleKind === "tomatoes" ? { price: 8 }
         : this.saleKind === "greenBeans" ? { price: 7 }
-          : this.saleKind === "silverBarb" || this.saleKind === "catfish" || this.saleKind === "goldenCarp"
+        : this.saleKind === "fishRice" ? { price: 18 }
+          : this.saleKind === "mohinga" ? { price: 32 }
+            : this.saleKind === "fishCurry" ? { price: 36 }
+              : this.saleKind === "silverBarb" || this.saleKind === "catfish" || this.saleKind === "goldenCarp"
             ? { price: FISH_SELL_PRICES[this.saleKind] }
             : this.saleKind === "seeds" || this.saleKind === "tomatoSeeds" || this.saleKind === "greenBeanSeeds"
               ? { cost: SEED_PACK_COST }
@@ -337,6 +343,7 @@ export class MarketSystem {
     this.saleButtonTexts[4].setText(this.language.t("market.quantity.cancel"));
     const font = this.language.getFontFamily();
     for (const text of [this.saleTitleText, this.saleDescriptionText, this.saleAvailableText, this.saleAmountText, ...this.saleButtonTexts]) text.setFontFamily(font);
+    for (const text of this.saleButtonTexts) text.setMaxLines(2);
     const canConfirm = available > 0;
     this.saleConfirm.setFillStyle(canConfirm ? 0x527044 : 0x65513a, 1).setAlpha(canConfirm ? 1 : 0.62);
     this.salePanel.setVisible(this.saleKind !== null);
@@ -360,7 +367,7 @@ export class MarketSystem {
     if (amount <= 0) return;
     if (kind === "wheat") this.sellWheat(amount);
     else if (kind === "wormBait" || kind === "shrimpBait" || kind === "goldenCricketBait") this.buyFishingBait(kind, amount);
-    else if (kind === "meals") this.sellMeals(amount);
+    else if (kind === "fishRice" || kind === "mohinga" || kind === "fishCurry") this.sellMeal(kind, amount);
     else if (kind === "silverBarb" || kind === "catfish" || kind === "goldenCarp") this.sellFish(kind, amount);
     else if (kind === "seeds") this.buySeeds(amount);
     else if (kind === "tomatoSeeds") this.buyCropSeeds("tomato", amount);
@@ -458,7 +465,7 @@ export class MarketSystem {
   private updateInterface(): void {
     const font = this.language.getFontFamily();
     this.titleText.setText(this.language.t(
-      this.upgradeMenuOpen ? "market.upgradesTitle" : this.seedMenuOpen ? "market.seedPacketsTitle" : this.baitMenuOpen ? "market.baitTitle" : this.produceMenuOpen ? "market.produceTitle" : this.fishMenuOpen ? "market.fishTitle" : "market.title"
+      this.upgradeMenuOpen ? "market.upgradesTitle" : this.seedMenuOpen ? "market.seedPacketsTitle" : this.baitMenuOpen ? "market.baitTitle" : this.produceMenuOpen ? "market.produceTitle" : this.fishMenuOpen ? "market.fishTitle" : this.mealMenuOpen ? "market.mealsTitle" : "market.title"
     ));
     if (this.upgradeMenuOpen) {
       this.updateUpgradeMenu();
@@ -471,6 +478,8 @@ export class MarketSystem {
       this.updateProduceMenu();
     } else if (this.fishMenuOpen) {
       this.updateFishMenu();
+    } else if (this.mealMenuOpen) {
+      this.updateMealMenu();
     } else {
       const meals = this.cooking.getTotalMeals();
       const fish = this.fishing.getFishTotal();
@@ -593,6 +602,29 @@ export class MarketSystem {
     this.setActionStatus(6, "market.status.back", "muted");
   }
 
+  private updateMealMenu(): void {
+    const counts = this.cooking.getMealCounts();
+    const options: { id: MealKind; icon: string; price: number }[] = [
+      { id: "fishRice", icon: "meal_fish_rice_asset", price: 18 },
+      { id: "mohinga", icon: "meal_mohinga_asset", price: 32 },
+      { id: "fishCurry", icon: "meal_fish_curry_asset", price: 36 }
+    ];
+    options.forEach((option, index) => {
+      const count = counts[option.id];
+      this.actionIcons[index].setVisible(true).setTexture(option.icon).setDisplaySize(24, 24);
+      this.actionTexts[index].setText(this.language.t(`cooking.recipe.${option.id}`));
+      this.setActionStatus(index, "market.mealBagAndPrice", count > 0 ? "good" : "muted", { amount: count, price: option.price });
+    });
+    for (let index = 3; index < 6; index++) {
+      this.actionIcons[index].setVisible(false);
+      this.actionTexts[index].setText("");
+      this.actionStatusBadges[index].setText("");
+    }
+    this.actionIcons[6].setVisible(true).setTexture("ui_icon_hand").setDisplaySize(22, 22);
+    this.actionTexts[6].setText(this.language.t("market.back"));
+    this.setActionStatus(6, "market.status.back", "muted");
+  }
+
   private setActionStatus(index: number, key: string, tone: "good" | "bad" | "muted" | "info", values: Record<string, string | number> = {}): void {
     const badge = this.actionStatusBadges[index];
     if (!badge) return;
@@ -691,6 +723,7 @@ export class MarketSystem {
     this.produceMenuOpen = false;
     this.fishMenuOpen = false;
     this.upgradeMenuOpen = false;
+    this.mealMenuOpen = false;
     this.closeUpgradeDetail();
     this.messageText.setText(this.language.t("market.seedPacketsTitle"));
     this.updateInterface();
@@ -708,6 +741,7 @@ export class MarketSystem {
     this.produceMenuOpen = false;
     this.fishMenuOpen = false;
     this.upgradeMenuOpen = false;
+    this.mealMenuOpen = false;
     this.closeUpgradeDetail();
     this.messageText.setText(this.language.t("market.baitWelcome"));
     this.updateInterface();
@@ -725,6 +759,7 @@ export class MarketSystem {
     this.baitMenuOpen = false;
     this.fishMenuOpen = false;
     this.upgradeMenuOpen = false;
+    this.mealMenuOpen = false;
     this.closeUpgradeDetail();
     this.messageText.setText(this.language.t("market.wheatPriceInfo", {
       normal: 4 + this.farming.getRiceSaleBonus(),
@@ -745,6 +780,7 @@ export class MarketSystem {
     this.baitMenuOpen = false;
     this.produceMenuOpen = false;
     this.fishMenuOpen = false;
+    this.mealMenuOpen = false;
     this.closeUpgradeDetail();
     this.messageText.setText(this.language.t("market.upgradesWelcome"));
     this.updateInterface();
@@ -763,6 +799,7 @@ export class MarketSystem {
     this.baitMenuOpen = false;
     this.produceMenuOpen = false;
     this.upgradeMenuOpen = false;
+    this.mealMenuOpen = false;
     this.closeUpgradeDetail();
     this.messageText.setText(this.language.t("market.fishWelcome"));
     this.updateInterface();
@@ -773,6 +810,25 @@ export class MarketSystem {
     this.messageText.setText(this.language.t("market.welcome"));
     this.updateInterface();
   }
+
+  private openMealMenu(): void {
+    this.mealMenuOpen = true;
+    this.seedMenuOpen = false;
+    this.baitMenuOpen = false;
+    this.produceMenuOpen = false;
+    this.fishMenuOpen = false;
+    this.upgradeMenuOpen = false;
+    this.closeUpgradeDetail();
+    this.messageText.setText(this.language.t("market.mealsWelcome"));
+    this.updateInterface();
+  }
+
+  private closeMealMenu(): void {
+    this.mealMenuOpen = false;
+    this.messageText.setText(this.language.t("market.welcome"));
+    this.updateInterface();
+  }
+
 
   private purchaseUpgradeById(id: FarmUpgradeId): void {
     const definition = FARM_UPGRADE_DEFINITIONS[id];
@@ -812,6 +868,7 @@ export class MarketSystem {
     this.baitMenuOpen = false;
     this.produceMenuOpen = false;
     this.fishMenuOpen = false;
+    this.mealMenuOpen = false;
     this.upgradeMenuOpen = false;
     this.closeUpgradeDetail();
     this.ui.open("market");
@@ -827,6 +884,7 @@ export class MarketSystem {
     this.baitMenuOpen = false;
     this.produceMenuOpen = false;
     this.fishMenuOpen = false;
+    this.mealMenuOpen = false;
     this.upgradeMenuOpen = false;
     this.isOpen = false;
     this.ui.close("market");
@@ -921,27 +979,21 @@ export class MarketSystem {
     this.updateInterface();
   }
 
-  private sellMeals(requested: number): void {
-    const counts = this.cooking.getMealCounts();
-    const total = this.cooking.getTotalMeals();
-    let remaining = Math.min(Math.max(0, Math.floor(requested)), total);
-    if (remaining <= 0) { this.messageText.setText(this.language.t("market.noMeals")); return; }
-    const values: Record<MealKind, number> = { fishRice: 18, mohinga: 32, fishCurry: 36 };
-    let sold = 0;
-    let earnings = 0;
-    for (const kind of ["fishRice", "mohinga", "fishCurry"] as MealKind[]) {
-      const amount = Math.min(counts[kind], remaining);
-      if (amount > 0 && this.cooking.removeMeals(kind, amount)) {
-        sold += amount;
-        remaining -= amount;
-        earnings += amount * values[kind];
-      }
-      if (remaining <= 0) break;
+  private sellMeal(kind: MealKind, requested: number): void {
+    const amount = Math.min(maximumQuantity(requested), this.cooking.getMealCounts()[kind]);
+    if (amount <= 0 || !this.cooking.removeMeals(kind, amount)) {
+      this.messageText.setText(this.language.t("market.noMeals"));
+      return;
     }
-    if (sold <= 0) return;
+    const prices: Record<MealKind, number> = { fishRice: 18, mohinga: 32, fishCurry: 36 };
+    const earnings = amount * prices[kind];
     this.coins += earnings;
     this.scene.events.emit("sound-effect", { name: "sell", x: this.marketX, y: this.marketY, maxDistance: 185 });
-    this.messageText.setText(this.language.t("market.mealsSold", { meals: sold, coins: earnings }));
+    this.messageText.setText(this.language.t("market.mealTypeSold", {
+      amount,
+      meal: this.language.t(`cooking.recipe.${kind}`),
+      coins: earnings
+    }));
     this.updateInterface();
   }
 
@@ -987,6 +1039,13 @@ export class MarketSystem {
       else if (index === 6) this.closeUpgradeMenu();
       return;
     }
+    if (this.mealMenuOpen) {
+      if (index === 0) this.beginSale("fishRice");
+      else if (index === 1) this.beginSale("mohinga");
+      else if (index === 2) this.beginSale("fishCurry");
+      else if (index === 6) this.closeMealMenu();
+      return;
+    }
     if (this.fishMenuOpen) {
       if (index === 0) this.beginSale("silverBarb");
       else if (index === 1) this.beginSale("catfish");
@@ -1019,7 +1078,7 @@ export class MarketSystem {
       case 0: this.openSeedMenu(); break;
       case 1: this.openProduceMenu(); break;
       case 2: this.inspectFishingRod(); break;
-      case 3: this.beginSale("meals"); break;
+      case 3: this.openMealMenu(); break;
       case 4: this.openFishMenu(); break;
       case 5: this.openBaitMenu(); break;
       case 6: this.openUpgradeMenu(); break;
@@ -1071,6 +1130,11 @@ export class MarketSystem {
           if (Phaser.Input.Keyboard.JustDown(this.mealSellKey)) this.inspectUpgrade(3);
           if (Phaser.Input.Keyboard.JustDown(this.fishSellKey)) this.inspectUpgrade(4);
           if (Phaser.Input.Keyboard.JustDown(this.upgradesKey)) this.closeUpgradeMenu();
+        } else if (this.mealMenuOpen) {
+          if (Phaser.Input.Keyboard.JustDown(this.buyKey)) this.beginSale("fishRice");
+          if (Phaser.Input.Keyboard.JustDown(this.sellKey)) this.beginSale("mohinga");
+          if (Phaser.Input.Keyboard.JustDown(this.rodKey)) this.beginSale("fishCurry");
+          if (Phaser.Input.Keyboard.JustDown(this.upgradesKey)) this.closeMealMenu();
         } else if (this.fishMenuOpen) {
           if (Phaser.Input.Keyboard.JustDown(this.buyKey)) this.beginSale("silverBarb");
           if (Phaser.Input.Keyboard.JustDown(this.sellKey)) this.beginSale("catfish");
@@ -1095,7 +1159,7 @@ export class MarketSystem {
           if (Phaser.Input.Keyboard.JustDown(this.buyKey)) this.openSeedMenu();
           if (Phaser.Input.Keyboard.JustDown(this.sellKey)) this.openProduceMenu();
           if (Phaser.Input.Keyboard.JustDown(this.rodKey)) this.inspectFishingRod();
-          if (Phaser.Input.Keyboard.JustDown(this.mealSellKey)) this.beginSale("meals");
+          if (Phaser.Input.Keyboard.JustDown(this.mealSellKey)) this.openMealMenu();
           if (Phaser.Input.Keyboard.JustDown(this.fishSellKey)) this.openFishMenu();
           if (Phaser.Input.Keyboard.JustDown(this.menuSixKey)) this.openBaitMenu();
           if (Phaser.Input.Keyboard.JustDown(this.upgradesKey)) this.openUpgradeMenu();
@@ -1109,6 +1173,7 @@ export class MarketSystem {
         else if (this.baitMenuOpen) this.closeBaitMenu();
         else if (this.produceMenuOpen) this.closeProduceMenu();
         else if (this.fishMenuOpen) this.closeFishMenu();
+        else if (this.mealMenuOpen) this.closeMealMenu();
         else this.closeMarket();
       }
       return;
