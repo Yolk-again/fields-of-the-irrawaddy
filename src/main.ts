@@ -86,8 +86,8 @@ const saveNameError = document.getElementById("save-name-error");
 const saveNameCancel = document.getElementById("save-name-cancel");
 const saveNameSave = document.getElementById("save-name-save");
 const mobileHud = document.getElementById("mobile-game-hud");
+const desktopHud = document.getElementById("desktop-game-hud");
 const menuButton = document.getElementById("game-menu-button");
-const desktopFullscreenButton = document.getElementById("desktop-fullscreen-button");
 const mobileContextAction = document.getElementById("mobile-context-action") as HTMLButtonElement | null;
 const titleScrollCue = document.getElementById("title-scroll-cue");
 const titleScrollCueLabel = titleScrollCue?.querySelector("span");
@@ -372,17 +372,15 @@ function confirmSaveAction(): void {
 }
 
 function setupMobileHud(): void {
-  mobileHud?.querySelectorAll<HTMLButtonElement>("button[data-action]").forEach(button => {
-    button.addEventListener("click", () => {
-      if (!document.body.classList.contains("foi-in-game")) return;
-      const action = button.dataset.action;
-      if (!action) return;
-      window.dispatchEvent(new CustomEvent("foi-mobile-hud-action", { detail: action }));
+  [mobileHud, desktopHud].forEach(toolbar => {
+    toolbar?.querySelectorAll<HTMLButtonElement>("button[data-action]").forEach(button => {
+      button.addEventListener("click", () => {
+        if (!document.body.classList.contains("foi-in-game")) return;
+        const action = button.dataset.action;
+        if (!action) return;
+        window.dispatchEvent(new CustomEvent("foi-mobile-hud-action", { detail: action }));
+      });
     });
-  });
-  desktopFullscreenButton?.addEventListener("click", () => {
-    if (!document.body.classList.contains("foi-in-game")) return;
-    window.dispatchEvent(new CustomEvent("foi-mobile-hud-action", { detail: "fullscreen" }));
   });
   menuButton?.addEventListener("click", () => {
     if (!document.body.classList.contains("foi-in-game")) return;
@@ -420,6 +418,7 @@ window.addEventListener("foi-return-to-title", () => {
   document.body.classList.remove("foi-in-game", "foi-launching", "foi-modal-open", "foi-mobile-fullscreen");
   appElement?.setAttribute("aria-hidden", "true");
   mobileHud?.setAttribute("aria-hidden", "true");
+  desktopHud?.setAttribute("aria-hidden", "true");
   if (mobileContextAction) mobileContextAction.hidden = true;
   titleScreen?.classList.remove("is-hidden");
   if (titleScreen) titleScreen.scrollTop = 0;

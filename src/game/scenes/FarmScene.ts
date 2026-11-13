@@ -482,6 +482,7 @@ export class FarmScene extends Phaser.Scene {
     // Expose the shared clickable HUD to assistive technology on both platforms.
     // Windows uses the full top-right button row; no panel-opening hotkeys are bound.
     document.getElementById("mobile-game-hud")?.setAttribute("aria-hidden", "false");
+    document.getElementById("desktop-game-hud")?.setAttribute("aria-hidden", "false");
 
     if (!this.loadExistingSave) {
       this.profile.openCharacterCreation(() => {
@@ -1679,7 +1680,7 @@ export class FarmScene extends Phaser.Scene {
   private toggleFullscreenForDevice(): void {
     const container = document.getElementById("game-container");
     if (!container) return;
-    const fullscreenButtons = document.querySelectorAll<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"], #desktop-fullscreen-button');
+    const fullscreenButtons = document.querySelectorAll<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"], #desktop-game-hud [data-action="fullscreen"]');
     if (document.body.classList.contains("foi-mobile-fullscreen")) {
       document.body.classList.remove("foi-mobile-fullscreen");
       fullscreenButtons.forEach(button => button.classList.remove("is-fullscreen"));
@@ -1724,19 +1725,19 @@ export class FarmScene extends Phaser.Scene {
   }
 
   private handleFullscreenEntered(): void {
-    document.querySelectorAll<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"], #desktop-fullscreen-button')
+    document.querySelectorAll<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"], #desktop-game-hud [data-action="fullscreen"]')
       .forEach(button => button.classList.add("is-fullscreen"));
     this.scale.refresh();
   }
 
   private handleFullscreenLeft(): void {
-    document.querySelectorAll<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"], #desktop-fullscreen-button')
+    document.querySelectorAll<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"], #desktop-game-hud [data-action="fullscreen"]')
       .forEach(button => button.classList.remove("is-fullscreen"));
     this.scale.refresh();
   }
 
   private handleFullscreenFailed(): void {
-    const buttons = document.querySelectorAll<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"], #desktop-fullscreen-button');
+    const buttons = document.querySelectorAll<HTMLButtonElement>('#mobile-game-hud [data-action="fullscreen"], #desktop-game-hud [data-action="fullscreen"]');
     buttons.forEach(button => button.classList.add("is-fullscreen-warning"));
     this.time.delayedCall(1800, () => buttons.forEach(button => button.classList.remove("is-fullscreen-warning")));
   }

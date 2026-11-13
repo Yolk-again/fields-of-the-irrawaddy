@@ -3588,3 +3588,97 @@ body.foi-in-game:not(.foi-touch-device).foi-cutscene-active .game-hud-stack > .g
   display: none !important;
 }
 
+
+
+/* Dedicated Windows toolbar: isolated from legacy mobile HUD visibility rules. */
+.desktop-game-hud {
+  display: none;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: clamp(3px, 0.6vw, 6px);
+  width: auto;
+  margin: 0;
+  padding: 0;
+  pointer-events: auto;
+  visibility: visible;
+  opacity: 1;
+}
+
+.desktop-game-hud button {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  padding: 3px;
+  border: 3px solid #2a1a14;
+  border-radius: 0;
+  background: #4a3324;
+  box-shadow: inset 2px 2px 0 #8a5a34, inset -2px -2px 0 #2a1a14, 0 2px 0 #21150f;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.desktop-game-hud button:active {
+  transform: translateY(1px);
+  background: #6c4b30;
+}
+
+.desktop-game-hud img {
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.desktop-game-hud button:focus-visible {
+  outline: 3px solid #ffe49a;
+  outline-offset: 3px;
+}
+
+body.foi-in-game:not(.foi-touch-device) #game-container > #game-hud-stack {
+  position: absolute !important;
+  top: max(8px, env(safe-area-inset-top)) !important;
+  right: max(8px, env(safe-area-inset-right)) !important;
+  bottom: auto !important;
+  left: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  z-index: 10040 !important;
+  pointer-events: none !important;
+}
+
+body.foi-in-game:not(.foi-touch-device) #game-container > #game-hud-stack > #desktop-game-hud {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+body.foi-in-game:not(.foi-touch-device) #game-container > #game-hud-stack > #mobile-game-hud,
+body.foi-in-game:not(.foi-touch-device) #game-container > #game-hud-stack > #desktop-fullscreen-button {
+  display: none !important;
+}
+
+body.foi-touch-device #game-container > #game-hud-stack > #desktop-game-hud {
+  display: none !important;
+}
+
+body.foi-in-game:not(.foi-touch-device).foi-modal-open #game-container > #game-hud-stack > #desktop-game-hud {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+@media (max-width: 760px) and (pointer: coarse) {
+  .desktop-game-hud button { width: 42px; height: 42px; }
+}
